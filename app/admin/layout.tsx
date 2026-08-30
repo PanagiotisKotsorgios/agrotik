@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { redirect } from "next/navigation";
 import { Header } from "@/components/site/header";
 import { createSupabaseServer } from "@/lib/supabase/server";

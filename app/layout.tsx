@@ -1,3 +1,6 @@
+// The whole app relies on runtime env (Supabase). Never SSG — always render on demand.
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import { Inter, Fraunces, JetBrains_Mono } from "next/font/google";
 import { config as faConfig } from "@fortawesome/fontawesome-svg-core";
