@@ -8,7 +8,7 @@ npm-debug.log
 Dockerfile
 .dockerignore
 README.md
+COOLIFY.md
 docs
 supabase/.branches
 supabase/.temp
-scripts

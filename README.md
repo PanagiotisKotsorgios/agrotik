@@ -6,6 +6,37 @@
 
 ---
 
+## One-click deploy σε Coolify
+
+Το repo είναι **έτοιμο για production** — δεν χρειάζεται κανένα build βήμα στο local.
+
+1. **Coolify → New Resource → Docker Compose from GitHub**
+2. Repository: `https://github.com/PanagiotisKotsorgios/agrotik`
+3. Branch: `main` · Compose file: `docker-compose.yml` (auto-detected)
+4. Environment variables (Coolify UI):
+
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=https://your-supabase.tld
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+   SUPABASE_SERVICE_ROLE_KEY=eyJ...
+   SUPABASE_DB_URL=postgresql://postgres:password@host:5432/postgres
+   SEED_ADMIN_EMAIL=admin@agrotik.gr
+   APP_ORIGIN=https://agrotik.gr
+   ```
+
+5. Domain → `agrotik.gr` (Coolify handles TLS automatically)
+6. **Deploy** — that's it.
+
+Το container εκτελεί αυτόματα:
+- **Auto-migration**: κάθε νέο `.sql` στο `supabase/migrations/` εφαρμόζεται μία φορά (tracked σε `_agrotik_migrations`)
+- **Seed**: πρώτη φορά μόνο (74 νομοί + 12 προϊόντα)
+- **Production Next.js** (standalone output, χωρίς npm στο runtime · fast cold start)
+- **Health check** στο `/` κάθε 30s
+
+📘 Πλήρης οδηγός — από zero σε live server με SSL — στο [`COOLIFY.md`](./COOLIFY.md).
+
+---
+
 ## Stack
 
 - **Next.js 15** (App Router + Turbopack για dev)

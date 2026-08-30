@@ -1,7 +1,20 @@
-# AGROTIK — Coolify / self-hosted deploy
-# The Next.js app is the only service you build here.
-# Supabase runs as a separate stack (recommended: use https://supabase.com/docs/guides/self-hosting/docker on the same server).
-# Fill in Supabase creds via Coolify environment variables.
+# AGROTIK — one-file production stack for Coolify / any Docker host.
+#
+# Deploy in Coolify: New Resource → Docker Compose from GitHub
+#   Repo:   https://github.com/PanagiotisKotsorgios/agrotik
+#   Branch: main
+#   Compose file path: docker-compose.yml
+#
+# Required environment variables (set in Coolify UI):
+#   NEXT_PUBLIC_SUPABASE_URL       — https://your.supabase.tld  (or the same host on port 8000)
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY  — JWT with role anon
+#   SUPABASE_SERVICE_ROLE_KEY      — JWT with role service_role
+#   SUPABASE_DB_URL                — postgresql://user:pass@host:5432/postgres  (used only for migrations)
+#   SEED_ADMIN_EMAIL               — first email to auto-become admin (default admin@agrotik.gr)
+#   APP_ORIGIN                     — https://agrotik.gr (used inside emails)
+#
+# Migrations + seed run automatically at container start via /entrypoint.sh
+# (idempotent — tracked in table _agrotik_migrations).
 
 services:
   web:
@@ -9,14 +22,16 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # Baked into the client bundle
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    image: agrotik-web:latest
     environment:
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_DB_URL: ${SUPABASE_DB_URL}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@agrotik.gr}
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:3000}
       NODE_ENV: production
       PORT: 3000
       HOSTNAME: 0.0.0.0
@@ -28,4 +43,10 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
+    # If you're running Supabase on the same Docker network, uncomment:
+    # networks: [supabase_default]
+
+# networks:
+#   supabase_default:
+#     external: true
