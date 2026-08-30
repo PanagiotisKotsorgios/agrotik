@@ -261,9 +261,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                   </Card>
                 ) : (
                   <Card key={l.id}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle>{l.products.name_el}</CardTitle>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <CardTitle>{l.title || l.products.name_el}</CardTitle>
+                        {l.title && (
+                          <div className="text-sm text-brand-muted">{l.products.name_el}</div>
+                        )}
                         <div className="mt-2 flex items-baseline gap-2">
                           <span className="figures text-2xl font-semibold text-brand-dark">
                             {l.quantity}
@@ -283,8 +286,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                             {l.available_from ?? "τώρα"} → {l.available_until ?? "ανοιχτό"}
                           </div>
                         )}
+                        {l.notes && (
+                          <p className="mt-3 text-sm text-brand-muted italic border-l-2 border-brand-earth/40 pl-3">{l.notes}</p>
+                        )}
                       </div>
-                      <span className="eyebrow text-brand-muted">
+                      <span className="eyebrow text-brand-muted shrink-0">
                         {formatRelative(l.updated_at)}
                       </span>
                     </div>

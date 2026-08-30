@@ -2,7 +2,7 @@
 import { useState, useTransition } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Select } from "@/components/ui/input";
+import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { saveProductionListing, deleteProductionListing } from "@/lib/actions/listings";
 import type { Product, Region, AttributesSchema } from "@/lib/db/types";
 import { Icon } from "@/components/ui/icon";
@@ -16,6 +16,8 @@ interface Row {
   attributes: Record<string, string | number>;
   available_from: string | null;
   available_until: string | null;
+  notes?: string | null;
+  title?: string | null;
   updated_at: string;
   products: { name_el: string; unit: string; attributes_schema: AttributesSchema };
   regions: { name_el: string };
@@ -83,6 +85,9 @@ export function ProductionListingsManager({
                       Διαθέσιμο: {l.available_from ?? "τώρα"} – {l.available_until ?? "ανοιχτό"}
                     </div>
                   )}
+                  {l.notes && (
+                    <p className="mt-2 text-sm text-brand-text/80 italic border-l-2 border-brand-earth/40 pl-3">{l.notes}</p>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <Button variant="secondary" size="sm" onClick={() => setEditing(l)}>
@@ -138,6 +143,8 @@ function Editor({
   const [attributes, setAttributes] = useState<Record<string, string | number>>(initial.attributes ?? {});
   const [availableFrom, setAvailableFrom] = useState(initial.available_from ?? "");
   const [availableUntil, setAvailableUntil] = useState(initial.available_until ?? "");
+  const [notes, setNotes] = useState(initial.notes ?? "");
+  const [title, setTitle] = useState(initial.title ?? "");
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
@@ -229,6 +236,21 @@ function Editor({
           </div>
         </div>
 
+        <div>
+          <Label>Ονομασία καταχώρησης (προαιρετικό)</Label>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="π.χ. Ελιές Καλαμών — πρώτης ποιότητας" />
+        </div>
+
+        <div>
+          <Label>Σημειώσεις / περιγραφή (προαιρετικό)</Label>
+          <Textarea
+            rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="π.χ. Βιολογικές, χωρίς φυτοφάρμακα. Παραλαβή από το χωράφι ή το ελαιοτριβείο. Διαπραγματεύσιμη τιμή για μεγάλες ποσότητες."
+          />
+        </div>
+
         {error && <p className="text-sm text-red-600">{error}</p>}
         <div className="flex gap-2">
           <Button
@@ -244,6 +266,8 @@ function Editor({
                   attributes,
                   available_from: availableFrom || null,
                   available_until: availableUntil || null,
+                  notes: notes || undefined,
+                  title: title || undefined,
                 });
                 if (!res.ok) return setError(res.error);
                 if (res.id && product) {

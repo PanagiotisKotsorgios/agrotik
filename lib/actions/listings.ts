@@ -232,6 +232,8 @@ const productionListingSchema = z.object({
   attributes: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
   available_from: z.string().nullable().optional(),
   available_until: z.string().nullable().optional(),
+  notes: z.string().max(2000).optional(),
+  title: z.string().max(120).optional(),
 });
 
 export async function saveProductionListing(input: unknown): Promise<ActionResult & { id?: string }> {
@@ -256,6 +258,8 @@ export async function saveProductionListing(input: unknown): Promise<ActionResul
     attributes: parsed.data.attributes ?? {},
     available_from: parsed.data.available_from ?? null,
     available_until: parsed.data.available_until ?? null,
+    notes: parsed.data.notes ?? null,
+    title: parsed.data.title ?? null,
     is_active: true,
   };
 

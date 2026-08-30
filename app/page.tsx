@@ -87,7 +87,7 @@ export default async function LandingPage() {
 
         <div className="max-w-6xl mx-auto px-4 pt-20 pb-24 sm:pt-28 sm:pb-32 relative">
           <div className="max-w-3xl animate-fade-in-up">
-            <div className="eyebrow text-brand-light">
+            <div className="eyebrow !text-white/90">
               Ελληνική αγροτική αγορά · πραγματικές τιμές
             </div>
             <h1 className="display mt-4 text-[46px] sm:text-[68px] leading-[0.98] font-semibold text-white tracking-tight">
