@@ -33,13 +33,13 @@ services:
     image: supabase/postgres:15.1.1.78
     restart: unless-stopped
     volumes:
-      # Renamed from `agrotik-db` → `agrotik-db-v2` on 2026-08-31 to force
+      # Renamed from `agrotik-db` → `agrotik-db-v3` on 2026-08-31 to force
       # Coolify to create a fresh Postgres data volume. The prior volume
       # held reserved Supabase roles with NULL passwords (created before
       # the init scripts were in place) and cannot be repaired from the
       # app. The old volume becomes orphaned and can be removed later via
       # the Coolify server terminal: `docker volume rm <prefix>_agrotik-db`.
-      - agrotik-db-v2:/var/lib/postgresql/data
+      - agrotik-db-v3:/var/lib/postgresql/data
     configs:
       # Supabase's Postgres image runs everything in
       # /docker-entrypoint-initdb.d/{init-scripts,migrations}/ ONLY when
@@ -141,7 +141,11 @@ services:
       PORT: "4000"
       DB_HOST: db
       DB_PORT: "5432"
-      DB_USER: supabase_admin
+      # Connect as `postgres` (POSTGRES_USER) instead of supabase_admin.
+      # In the supabase/postgres image, `postgres` is a superuser with the
+      # password from POSTGRES_PASSWORD — always correct. `supabase_admin`
+      # gets a random image-internal password we cannot control from here.
+      DB_USER: postgres
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       DB_NAME: postgres
       DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
@@ -236,6 +240,7 @@ configs:
       -- Set the reserved Supabase role passwords to POSTGRES_PASSWORD.
       -- Runs only on a fresh PGDATA directory.
       \set pgpass `echo "$POSTGRES_PASSWORD"`
+      alter user supabase_admin with password :'pgpass';
       alter user authenticator with password :'pgpass';
       alter user pgbouncer with password :'pgpass';
       alter user supabase_auth_admin with password :'pgpass';
@@ -372,4 +377,4 @@ configs:
                 allow: [admin]
 
 volumes:
-  agrotik-db-v2:
+  agrotik-db-v3:
