@@ -133,6 +133,64 @@ export default async function LandingPage() {
 
       {carousel.length > 0 && <ProfilesCarousel profiles={carousel} />}
 
+      {/* Public search hub — big, plain-language shortcuts for elderly users */}
+      <section className="max-w-6xl mx-auto px-4 py-14">
+        <div className="mb-8">
+          <Eyebrow>Ξεκίνα εδώ</Eyebrow>
+          <h2 className="display mt-2 text-3xl sm:text-4xl text-brand-dark field-underline">
+            Τι ψάχνεις σήμερα;
+          </h2>
+          <p className="mt-3 text-brand-muted text-[16px] max-w-2xl">
+            Δεν χρειάζεσαι λογαριασμό για να δεις τιμές και παραγωγή. Πάτησε αυτό που ταιριάζει σε εσένα.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <SearchCta
+            icon="store"
+            eyebrow="Είμαι αγρότης"
+            title="Ψάχνω αγοραστή"
+            body="Δες τιμές που δίνουν έμποροι και εργοστάσια στην περιοχή σου. Φιλτράρισε ανά προϊόν, νομό ή δήμο."
+            href="/search/buyers"
+            cta="Δες αγοραστές"
+            tone="dark"
+          />
+          <SearchCta
+            icon="seedling"
+            eyebrow="Είμαι έμπορος ή εργοστάσιο"
+            title="Ψάχνω παραγωγό / προμηθευτή"
+            body="Βρες αγρότες με διαθέσιμη παραγωγή. Φιλτράρισε ανά προϊόν, ποσότητα και ημερομηνία."
+            href="/search/producers"
+            cta="Δες παραγωγούς"
+            tone="olive"
+          />
+        </div>
+
+        {/* Quick category shortcuts */}
+        <div className="mt-6">
+          <div className="eyebrow mb-3">Γρήγορη επιλογή προϊόντος</div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: "Ελιές", cat: "Ελιές", icon: "seedling" as const },
+              { label: "Ελαιόλαδο", cat: "Ελαιόλαδο", icon: "wheat" as const },
+              { label: "Σιτηρά", cat: "Σιτηρά", icon: "wheat" as const },
+              { label: "Εσπεριδοειδή", cat: "Εσπεριδοειδή", icon: "seedling" as const },
+              { label: "Λαχανικά", cat: "Λαχανικά", icon: "seedling" as const },
+              { label: "Πυρηνόκαρπα", cat: "Πυρηνόκαρπα", icon: "seedling" as const },
+            ].map((c) => (
+              <Link
+                key={c.cat}
+                href={`/search/buyers?product_category=${encodeURIComponent(c.cat)}`}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand-surface border border-brand-border text-[15px] font-semibold text-brand-dark hover:border-brand-dark hover:bg-brand-dark hover:text-white transition-colors"
+              >
+                <Icon name={c.icon} className="opacity-80" />
+                {c.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* How it works */}
       <section id="how" className="max-w-6xl mx-auto px-4 py-16">
         <div className="mb-8">
@@ -202,6 +260,51 @@ function RoleCard({
         Εγγραφή <Icon name="arrowRight" className="text-[0.85em]" />
       </Link>
     </Card>
+  );
+}
+
+function SearchCta({
+  icon,
+  eyebrow,
+  title,
+  body,
+  href,
+  cta,
+  tone,
+}: {
+  icon: IconName;
+  eyebrow: string;
+  title: string;
+  body: string;
+  href: string;
+  cta: string;
+  tone: "dark" | "olive";
+}) {
+  const styles =
+    tone === "dark"
+      ? "bg-brand-dark text-white border-brand-dark"
+      : "bg-brand-olive/95 text-white border-brand-olive";
+  return (
+    <Link
+      href={href}
+      className={
+        "group block p-6 sm:p-8 rounded-2xl border shadow-card hover:shadow-elev transition-all hover:-translate-y-0.5 " +
+        styles
+      }
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="w-14 h-14 rounded-xl bg-white/12 text-white flex items-center justify-center shrink-0">
+          <Icon name={icon} className="text-2xl" />
+        </div>
+        <Icon name="arrowRight" className="text-white/70 text-xl mt-2 group-hover:translate-x-1 transition-transform" />
+      </div>
+      <div className="text-[13px] font-semibold uppercase tracking-widest text-white/70 mt-5">{eyebrow}</div>
+      <h3 className="display text-2xl sm:text-3xl mt-1 leading-tight">{title}</h3>
+      <p className="mt-2 text-white/85 text-[15px] leading-relaxed">{body}</p>
+      <div className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-md bg-white text-brand-dark text-[15px] font-semibold shadow-sm">
+        {cta} <Icon name="arrowRight" />
+      </div>
+    </Link>
   );
 }
 
