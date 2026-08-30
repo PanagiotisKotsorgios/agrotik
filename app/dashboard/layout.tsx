@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { Header } from "@/components/site/header";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { LogoutButton } from "@/components/site/logout-button";
 import { DashboardMobileNav } from "@/components/site/dashboard-mobile-nav";
+import { SidebarNav } from "@/components/site/sidebar-nav";
 import { Icon, type IconName } from "@/components/ui/icon";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -66,11 +66,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                 <div className="text-[11px] uppercase tracking-widest text-white/60 font-semibold">Ο λογαριασμός μου</div>
                 <div className="mt-1 text-[15px] font-semibold text-white truncate">{profile.display_name}</div>
               </div>
-              <nav className="space-y-0.5">
-                {items.map((it) => (
-                  <SideLink key={it.href} href={it.href} icon={it.icon}>{it.label}</SideLink>
-                ))}
-              </nav>
+              <SidebarNav items={items} />
               <div className="mt-4 pt-4 border-t border-white/10">
                 <LogoutButton />
               </div>
@@ -83,15 +79,3 @@ export default async function DashboardLayout({ children }: { children: React.Re
   );
 }
 
-function SideLink({ href, icon, children }: { href: string; icon: IconName; children: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      prefetch
-      className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-[15px] font-semibold text-white/85 hover:bg-white/10 hover:text-white transition-colors"
-    >
-      <Icon name={icon} className="text-white/60 w-5 text-center text-[1.05em]" />
-      {children}
-    </Link>
-  );
-}

@@ -36,7 +36,12 @@ export function DashboardMobileNav({
     };
   }, [open]);
 
-  const current = items.find((it) => path === it.href) ?? items[0];
+  const matches = items
+    .map((it) => ({ it, len: path?.startsWith(it.href) ? it.href.length : -1 }))
+    .filter((m) => m.len > 0)
+    .sort((a, b) => b.len - a.len);
+  const activeHref = matches[0]?.it.href ?? items[0].href;
+  const current = items.find((it) => it.href === activeHref) ?? items[0];
 
   const drawer = open ? (
     <div
@@ -60,19 +65,20 @@ export function DashboardMobileNav({
       </div>
       <nav className="flex-1 overflow-y-auto p-3">
         {items.map((it) => {
-          const active = path === it.href;
+          const active = it.href === activeHref;
           return (
             <Link
               key={it.href}
               href={it.href}
+              aria-current={active ? "page" : undefined}
               className={
                 "flex items-center gap-3 px-4 py-3.5 rounded-lg text-[16px] font-semibold transition-colors " +
                 (active
-                  ? "bg-brand-mid text-white"
+                  ? "bg-white text-brand-dark shadow-sm"
                   : "text-white/90 hover:bg-white/10")
               }
             >
-              <Icon name={it.icon} className={active ? "" : "text-white/60"} />
+              <Icon name={it.icon} className={active ? "text-brand-earth" : "text-white/60"} />
               {it.label}
             </Link>
           );

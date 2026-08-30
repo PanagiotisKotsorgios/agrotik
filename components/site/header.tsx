@@ -36,22 +36,14 @@ export async function Header() {
   return (
     <header className="bg-brand-surface/95 backdrop-blur border-b border-brand-border sticky top-0 z-30">
       <div className="max-w-6xl mx-auto px-4 h-[88px] flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <MobileNav
-            authed={!!profile}
-            isAdmin={profile?.role === "admin"}
-            isFarmer={profile?.role === "farmer"}
-            displayName={profile?.display_name}
-          />
-          <Link
-            href="/"
-            prefetch
-            className="flex items-center shrink-0"
-            aria-label="AGROTIK — Αρχική"
-          >
-            <Logo size={72} />
-          </Link>
-        </div>
+        <Link
+          href="/"
+          prefetch
+          className="flex items-center shrink-0"
+          aria-label="AGROTIK — Αρχική"
+        >
+          <Logo size={72} />
+        </Link>
 
         <nav className="hidden md:flex items-center gap-1">
           <NavItem href="/search/buyers" icon="store" label="Αγοραστές" />
@@ -103,6 +95,13 @@ export async function Header() {
               </Link>
             </>
           )}
+          {/* Hamburger at the right for mobile */}
+          <MobileNav
+            authed={!!profile}
+            isAdmin={profile?.role === "admin"}
+            isFarmer={profile?.role === "farmer"}
+            displayName={profile?.display_name}
+          />
         </div>
       </div>
     </header>

@@ -32,7 +32,7 @@ export function LoginForm() {
       <div>
         <div className="flex items-baseline justify-between">
           <Label htmlFor="password">Κωδικός</Label>
-          <a href="mailto:info@agrotik.gr?subject=Reset%20password" className="text-[13px] text-brand-mid hover:text-brand-dark hover:underline">
+          <a href="/forgot-password" className="text-[13px] text-brand-mid hover:text-brand-dark hover:underline">
             Ξέχασες τον κωδικό;
           </a>
         </div>
