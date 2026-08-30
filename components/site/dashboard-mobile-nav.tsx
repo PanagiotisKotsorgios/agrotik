@@ -1,0 +1,105 @@
+"use client";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Icon, type IconName } from "@/components/ui/icon";
+import { LogoutButton } from "./logout-button";
+
+interface Item {
+  href: string;
+  icon: IconName;
+  label: string;
+}
+
+export function DashboardMobileNav({
+  title,
+  items,
+}: {
+  title: string;
+  items: Item[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const path = usePathname();
+  useEffect(() => setMounted(true), []);
+  useEffect(() => setOpen(false), [path]);
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const h = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", h);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", h);
+    };
+  }, [open]);
+
+  const current = items.find((it) => path === it.href) ?? items[0];
+
+  const drawer = open ? (
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 100 }}
+      className="md:hidden flex flex-col bg-brand-dark text-white"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="flex items-center justify-between h-[68px] px-4 border-b border-white/10 shrink-0">
+        <div className="font-bold text-lg inline-flex items-center gap-2">
+          <Icon name="user" /> {title}
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          aria-label="Κλείσιμο"
+          className="w-11 h-11 rounded-md hover:bg-white/10 inline-flex items-center justify-center"
+        >
+          <Icon name="close" className="text-xl" />
+        </button>
+      </div>
+      <nav className="flex-1 overflow-y-auto p-3">
+        {items.map((it) => {
+          const active = path === it.href;
+          return (
+            <Link
+              key={it.href}
+              href={it.href}
+              className={
+                "flex items-center gap-3 px-4 py-3.5 rounded-lg text-[16px] font-semibold transition-colors " +
+                (active
+                  ? "bg-brand-mid text-white"
+                  : "text-white/90 hover:bg-white/10")
+              }
+            >
+              <Icon name={it.icon} className={active ? "" : "text-white/60"} />
+              {it.label}
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="border-t border-white/10 p-4">
+        <LogoutButton />
+      </div>
+    </div>
+  ) : null;
+
+  return (
+    <div className="md:hidden bg-brand-dark text-white sticky top-[88px] z-20">
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left"
+      >
+        <span className="inline-flex items-center gap-3 min-w-0">
+          <Icon name="menu" className="text-xl shrink-0" />
+          <span className="font-semibold truncate">
+            {title} <span className="text-white/60 font-normal">· {current.label}</span>
+          </span>
+        </span>
+        <Icon name="arrowRight" className="text-white/70" />
+      </button>
+      {mounted && drawer ? createPortal(drawer, document.body) : null}
+    </div>
+  );
+}

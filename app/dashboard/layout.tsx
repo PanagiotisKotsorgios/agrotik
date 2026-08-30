@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Header } from "@/components/site/header";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { LogoutButton } from "@/components/site/logout-button";
+import { DashboardMobileNav } from "@/components/site/dashboard-mobile-nav";
 import { Icon, type IconName } from "@/components/ui/icon";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -35,27 +36,44 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   const isFarmer = profile.role === "farmer";
+  const items: { href: string; icon: IconName; label: string }[] = [
+    { href: "/dashboard", icon: "chart", label: "Αρχική" },
+    { href: "/dashboard/profile", icon: "user", label: "Προφίλ" },
+    {
+      href: "/dashboard/listings",
+      icon: isFarmer ? "wheat" : "tag",
+      label: isFarmer ? "Παραγωγή" : "Τιμοκατάλογος",
+    },
+    isFarmer
+      ? { href: "/dashboard/network", icon: "heart", label: "Οι έμποροί μου" }
+      : { href: "/dashboard/network", icon: "users", label: "Οι παραγωγοί μου" },
+    ...(!isFarmer
+      ? [{ href: "/dashboard/purchases", icon: "box" as IconName, label: "Αγορές" }]
+      : []),
+    { href: "/dashboard/messages", icon: "chat", label: "Μηνύματα" },
+    { href: "/dashboard/notifications", icon: "bell", label: "Ειδοποιήσεις" },
+  ];
 
   return (
     <>
       <Header />
-      <div className="min-h-[calc(100vh-76px)] bg-white">
-        <div className="max-w-6xl mx-auto px-4 py-8 grid md:grid-cols-[260px_1fr] gap-8">
-          <aside className="space-y-1 md:sticky md:top-24 self-start">
-            <div className="eyebrow text-brand-muted px-3.5 pb-3 text-[13px]">Το προφίλ μου</div>
-            <NavLink href="/dashboard" icon="chart">Αρχική</NavLink>
-            <NavLink href="/dashboard/profile" icon="user">Στοιχεία προφίλ</NavLink>
-            <NavLink href="/dashboard/listings" icon={isFarmer ? "wheat" : "tag"}>
-              {isFarmer ? "Παραγωγή" : "Τιμοκατάλογος"}
-            </NavLink>
-            {isFarmer && <NavLink href="/dashboard/network" icon="heart">Οι έμποροί μου</NavLink>}
-            {!isFarmer && <NavLink href="/dashboard/network" icon="users">Οι παραγωγοί μου</NavLink>}
-            {!isFarmer && <NavLink href="/dashboard/purchases" icon="box">Αγορές & σεζόν</NavLink>}
-            <NavLink href="/dashboard/messages" icon="chat">Μηνύματα</NavLink>
-            <NavLink href="/dashboard/notifications" icon="bell">Ειδοποιήσεις</NavLink>
-
-            <div className="pt-6 mt-4 border-t border-brand-border">
-              <LogoutButton />
+      <DashboardMobileNav title="Ο λογαριασμός μου" items={items} />
+      <div className="min-h-[calc(100vh-88px)] bg-white">
+        <div className="max-w-6xl mx-auto px-4 py-6 md:py-8 md:grid md:grid-cols-[260px_1fr] md:gap-8">
+          <aside className="hidden md:block">
+            <div className="sticky top-[104px] bg-brand-dark text-white rounded-2xl p-4 shadow-elev">
+              <div className="px-3 pb-3">
+                <div className="text-[11px] uppercase tracking-widest text-white/60 font-semibold">Ο λογαριασμός μου</div>
+                <div className="mt-1 text-[15px] font-semibold text-white truncate">{profile.display_name}</div>
+              </div>
+              <nav className="space-y-0.5">
+                {items.map((it) => (
+                  <SideLink key={it.href} href={it.href} icon={it.icon}>{it.label}</SideLink>
+                ))}
+              </nav>
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <LogoutButton />
+              </div>
             </div>
           </aside>
           <main className="min-w-0">{children}</main>
@@ -65,14 +83,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   );
 }
 
-function NavLink({ href, icon, children }: { href: string; icon: IconName; children: React.ReactNode }) {
+function SideLink({ href, icon, children }: { href: string; icon: IconName; children: React.ReactNode }) {
   return (
     <Link
       href={href}
       prefetch
-      className="flex items-center gap-3.5 px-3.5 py-3 rounded-lg text-[16px] font-semibold text-brand-ink hover:bg-brand-bg hover:text-brand-dark transition-colors"
+      className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-[15px] font-semibold text-white/85 hover:bg-white/10 hover:text-white transition-colors"
     >
-      <Icon name={icon} className="text-brand-muted w-5 text-center text-[1.05em]" />
+      <Icon name={icon} className="text-white/60 w-5 text-center text-[1.05em]" />
       {children}
     </Link>
   );

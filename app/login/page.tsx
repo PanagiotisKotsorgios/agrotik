@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { Header } from "@/components/site/header";
-import { Card, Eyebrow } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { LoginForm } from "./login-form";
 
@@ -23,10 +23,9 @@ export default async function LoginPage() {
           <div className="w-14 h-14 rounded-full bg-brand-dark/8 text-brand-dark inline-flex items-center justify-center mb-4">
             <Icon name="unlock" className="text-xl" />
           </div>
-          <Eyebrow>Επιστροφή στο σύστημα</Eyebrow>
-          <h1 className="display text-4xl text-brand-dark mt-2">Σύνδεση στον λογαριασμό σου</h1>
+          <h1 className="display text-4xl text-brand-dark">Σύνδεση</h1>
           <p className="mt-3 text-brand-muted text-[15px]">
-            Καλωσόρισες πίσω. Χρησιμοποίησε το email και τον κωδικό σου για να μπεις.
+            Καλωσόρισες πίσω στο AGROTIK.
           </p>
         </div>
         <Card>

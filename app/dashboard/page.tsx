@@ -30,99 +30,120 @@ export default async function DashboardHome() {
       : supabase.from("deal_marks").select("id", { count: "exact", head: true }).eq("target_id", user.id),
   ]);
 
+  const firstName = (profile?.display_name ?? "").split(/\s+/)[0] ?? "";
+
   return (
     <>
-      <div className="mb-10">
+      <div className="mb-8">
         <Eyebrow>{roleLabel(profile?.role ?? "")} · {profile?.regions?.name_el}{profile?.municipality ? ` · ${profile?.municipality}` : ""}</Eyebrow>
-        <h1 className="display text-4xl sm:text-5xl text-brand-dark mt-2 leading-tight">
-          Καλωσόρισες, <span className="text-brand-earth">{profile?.display_name}</span>
+        <h1 className="display text-2xl sm:text-3xl text-brand-dark mt-2 leading-snug">
+          Καλωσόρισες, <span className="text-brand-earth">{firstName || profile?.display_name}</span>
         </h1>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatBox
           icon={isBuyer ? "tag" : "wheat"}
-          label={isBuyer ? "Ενεργός τιμοκατάλογος" : "Ενεργές παραγωγές"}
+          label={isBuyer ? "Τιμοκατάλογος" : "Παραγωγές"}
           value={listingCount ?? 0}
           href="/dashboard/listings"
+          tone="dark"
         />
         <StatBox
           icon={isFarmer ? "heart" : "users"}
-          label={isFarmer ? "Αγαπημένοι έμποροι" : "Πελάτες μου"}
+          label={isFarmer ? "Αγαπημένοι" : "Πελάτες"}
           value={networkCount ?? 0}
           href="/dashboard/network"
+          tone="olive"
         />
-        <StatBox icon="chat" label="Αδιάβαστα μηνύματα" value={msgCount ?? 0} href="/dashboard/messages" />
-        <StatBox icon="bell" label="Νέες ειδοποιήσεις" value={notifCount ?? 0} href="/dashboard/notifications" />
+        <StatBox icon="chat" label="Μηνύματα" value={msgCount ?? 0} href="/dashboard/messages" tone="cream" />
+        <StatBox icon="bell" label="Ειδοποιήσεις" value={notifCount ?? 0} href="/dashboard/notifications" tone="cream" />
       </div>
 
-      <div className="mt-12">
-        <h2 className="display text-2xl text-brand-dark mb-4 field-underline">Επόμενα βήματα</h2>
+      <div className="mt-10">
+        <h2 className="display text-xl text-brand-dark mb-3">Τι θα κάνεις τώρα</h2>
         <div className="grid sm:grid-cols-2 gap-3">
-          <ActionRow icon="user" label="Ενημέρωσε τα στοιχεία σου" href="/dashboard/profile" />
+          <ActionRow icon="user" label="Ενημέρωσε το προφίλ" href="/dashboard/profile" tone="brand" />
           <ActionRow
             icon={isFarmer ? "wheat" : "tag"}
-            label={isFarmer ? "Δήλωσε την παραγωγή σου" : "Πρόσθεσε ή ενημέρωσε τιμές"}
+            label={isFarmer ? "Δήλωσε παραγωγή" : "Ενημέρωσε τιμές"}
             href="/dashboard/listings"
+            tone="olive"
           />
-          {isFarmer && (
-            <ActionRow icon="store" label="Ψάξε αγοραστές" href="/search/buyers" />
-          )}
-          {isBuyer && (
-            <ActionRow icon="seedling" label="Ψάξε παραγωγούς" href="/search/producers" />
-          )}
-          <ActionRow icon="eye" label="Δες το δημόσιο προφίλ σου" href={`/profile/${profile?.id}`} />
-          {isFarmer && (
-            <ActionRow icon="heart" label="Οι έμποροί μου" href="/dashboard/network" />
-          )}
-          {isBuyer && (
-            <ActionRow icon="users" label="Οι πελάτες μου" href="/dashboard/network" />
-          )}
+          {isFarmer && <ActionRow icon="store" label="Δες αγοραστές" href="/search/buyers" tone="earth" />}
+          {isBuyer && <ActionRow icon="seedling" label="Δες παραγωγούς" href="/search/producers" tone="earth" />}
+          <ActionRow icon="eye" label="Το δημόσιο προφίλ σου" href={`/profile/${profile?.id}`} tone="cream" />
+          {isFarmer && <ActionRow icon="heart" label="Οι έμποροί σου" href="/dashboard/network" tone="cream" />}
+          {isBuyer && <ActionRow icon="users" label="Οι πελάτες σου" href="/dashboard/network" tone="cream" />}
         </div>
       </div>
     </>
   );
 }
 
+type Tone = "dark" | "olive" | "brand" | "earth" | "cream";
+const statTones: Record<Tone, string> = {
+  dark: "bg-brand-dark text-white border-brand-dark",
+  olive: "bg-brand-olive/95 text-white border-brand-olive",
+  brand: "bg-brand-mid text-white border-brand-mid",
+  earth: "bg-brand-earth text-white border-brand-earth",
+  cream: "bg-brand-bg text-brand-ink border-brand-border",
+};
+
 function StatBox({
   icon,
   label,
   value,
   href,
+  tone,
 }: {
   icon: IconName;
   label: string;
   value: number;
   href: string;
+  tone: Tone;
 }) {
+  const cls = statTones[tone];
+  const light = tone === "cream";
   return (
     <Link
       href={href}
-      className="block bg-white border border-brand-border rounded-card p-5 shadow-card hover:border-brand-dark/40 hover:shadow-elev transition-all"
+      className={"block border rounded-2xl p-5 shadow-card hover:shadow-elev transition-all " + cls}
     >
-      <div className="flex items-center gap-2 text-brand-muted">
+      <div className={"flex items-center gap-2 " + (light ? "text-brand-muted" : "text-white/80")}>
         <Icon name={icon} className="text-[1.1em]" />
-        <span className="text-[13px] font-semibold uppercase tracking-wider">{label}</span>
+        <span className="text-[12px] font-semibold uppercase tracking-wider">{label}</span>
       </div>
-      <div className="figures text-4xl font-semibold text-brand-dark mt-3">{value}</div>
-      <div className="mt-3 text-sm text-brand-mid font-semibold inline-flex items-center gap-1">
+      <div className={"figures text-4xl font-semibold mt-3 " + (light ? "text-brand-dark" : "text-white")}>
+        {value}
+      </div>
+      <div className={"mt-3 text-sm font-semibold inline-flex items-center gap-1 " + (light ? "text-brand-mid" : "text-white/90")}>
         Άνοιξε <Icon name="arrowRight" className="text-[0.85em]" />
       </div>
     </Link>
   );
 }
 
-function ActionRow({ icon, label, href }: { icon: IconName; label: string; href: string }) {
+const rowTones: Record<Tone, { bg: string; icon: string; iconBg: string; text: string }> = {
+  dark: { bg: "bg-brand-dark text-white border-brand-dark", icon: "text-white", iconBg: "bg-white/15", text: "text-white" },
+  olive: { bg: "bg-brand-olive/10 border-brand-olive/25", icon: "text-brand-olive", iconBg: "bg-brand-olive/20", text: "text-brand-dark" },
+  brand: { bg: "bg-brand-dark/8 border-brand-dark/15", icon: "text-brand-dark", iconBg: "bg-brand-dark/12", text: "text-brand-dark" },
+  earth: { bg: "bg-brand-earth/10 border-brand-earth/25", icon: "text-brand-earth", iconBg: "bg-brand-earth/20", text: "text-brand-ink" },
+  cream: { bg: "bg-brand-bg border-brand-border", icon: "text-brand-muted", iconBg: "bg-brand-border/50", text: "text-brand-ink" },
+};
+
+function ActionRow({ icon, label, href, tone }: { icon: IconName; label: string; href: string; tone: Tone }) {
+  const t = rowTones[tone];
   return (
     <Link
       href={href}
-      className="flex items-center gap-4 p-4 rounded-lg border border-brand-border bg-white hover:border-brand-dark/40 hover:bg-brand-bg/40 transition-colors"
+      className={"flex items-center gap-4 p-4 rounded-xl border transition-all hover:shadow-elev hover:-translate-y-0.5 " + t.bg}
     >
-      <div className="w-11 h-11 rounded-lg bg-brand-dark/8 text-brand-dark flex items-center justify-center shrink-0">
-        <Icon name={icon} className="text-[1.05em]" />
+      <div className={"w-11 h-11 rounded-lg flex items-center justify-center shrink-0 " + t.iconBg + " " + t.icon}>
+        <Icon name={icon} className="text-[1.1em]" />
       </div>
-      <span className="text-[16px] text-brand-ink font-semibold">{label}</span>
-      <Icon name="arrowRight" className="text-brand-muted ml-auto text-[1.05em]" />
+      <span className={"text-[15.5px] font-semibold " + t.text}>{label}</span>
+      <Icon name="arrowRight" className={"ml-auto " + t.icon} />
     </Link>
   );
 }

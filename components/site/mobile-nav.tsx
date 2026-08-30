@@ -16,6 +16,7 @@ export function MobileNav({ authed, isAdmin, isFarmer, displayName }: Props) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const path = usePathname();
+  const hideMobileTrigger = path?.startsWith("/dashboard") || path?.startsWith("/admin");
 
   useEffect(() => setMounted(true), []);
 
@@ -140,15 +141,17 @@ export function MobileNav({ authed, isAdmin, isFarmer, displayName }: Props) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Άνοιγμα μενού"
-        aria-expanded={open}
-        className="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-md text-brand-dark hover:bg-brand-border/40"
-      >
-        <Icon name="menu" className="text-xl" />
-      </button>
+      {!hideMobileTrigger && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Άνοιγμα μενού"
+          aria-expanded={open}
+          className="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-md text-brand-dark hover:bg-brand-border/40"
+        >
+          <Icon name="menu" className="text-xl" />
+        </button>
+      )}
 
       {mounted && drawer ? createPortal(drawer, document.body) : null}
     </>
