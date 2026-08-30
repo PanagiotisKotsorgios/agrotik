@@ -84,16 +84,29 @@ export function SignupForm({ regions, initialRole }: { regions: Region[]; initia
         <Input id="phone" name="phone" type="tel" required />
       </div>
 
-      <div>
-        <Label htmlFor="region_code">Περιοχή (Νομός / Π.Ε.)</Label>
-        <Select id="region_code" name="region_code" required defaultValue="">
-          <option value="" disabled>— Επίλεξε —</option>
-          {regions.map((r) => (
-            <option key={r.code} value={r.code}>
-              {r.name_el}
-            </option>
-          ))}
-        </Select>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="region_code">Νομός / Π.Ε.</Label>
+          <Select id="region_code" name="region_code" required defaultValue="">
+            <option value="" disabled>— Επίλεξε —</option>
+            {regions.map((r) => (
+              <option key={r.code} value={r.code}>
+                {r.name_el}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="municipality">Δήμος / πόλη / χωριό</Label>
+          <Input
+            id="municipality"
+            name="municipality"
+            required
+            minLength={2}
+            placeholder="π.χ. Μεσολόγγι, Καλαμάτα, Χανιά"
+          />
+          <p className="mt-1 text-[12px] text-brand-muted">Πιο συγκεκριμένη περιοχή — βοηθά τους αγοραστές να σε βρουν.</p>
+        </div>
       </div>
 
       {role !== "farmer" && (

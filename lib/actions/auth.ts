@@ -14,7 +14,8 @@ const signupSchema = z.object({
   role: roleEnum,
   display_name: z.string().min(2, "Απαιτείται όνομα"),
   phone: z.string().min(6, "Απαιτείται τηλέφωνο"),
-  region_code: z.string().min(1, "Απαιτείται περιοχή"),
+  region_code: z.string().min(1, "Απαιτείται Νομός / Π.Ε."),
+  municipality: z.string().min(2, "Απαιτείται συγκεκριμένη περιοχή (Δήμος / πόλη / χωριό)"),
   bio: z.string().optional(),
 });
 
@@ -49,6 +50,7 @@ export async function signup(formData: FormData): Promise<ActionResult> {
     display_name: data.display_name,
     phone: data.phone,
     region_code: data.region_code,
+    municipality: data.municipality,
     bio: data.bio || null,
     is_public: true,
     is_active: true,
