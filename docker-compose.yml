@@ -182,8 +182,11 @@ services:
       NODE_ENV: production
       PORT: "3000"
       HOSTNAME: 0.0.0.0
-    ports:
-      - "3000:3000"
+    # Do NOT publish to the host — Coolify routes via Traefik on its internal
+    # `coolify` network. Publishing collides with whatever else uses :3000
+    # (often Coolify itself). Just expose so Traefik can reach it.
+    expose:
+      - "3000"
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
       interval: 30s
