@@ -1,3 +1,6 @@
+// Server-only page — never SSG. Requires runtime env (Supabase URL + keys).
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Header } from "@/components/site/header";
@@ -9,31 +12,40 @@ import { ProfilesCarousel, type CarouselProfile } from "@/components/site/profil
 import { createSupabaseService } from "@/lib/supabase/service";
 import { bestVariant } from "@/lib/domain/variants";
 
+async function safeFetchLandingData() {
+  try {
+    const svc = createSupabaseService();
+    return await Promise.all([
+      svc
+        .from("price_listings")
+        .select(
+          `id, updated_at, variants, region_code,
+           products(name_el, unit),
+           profiles!inner(id, display_name, role, is_active),
+           regions(name_el)`,
+        )
+        .eq("is_active", true)
+        .eq("profiles.is_active", true)
+        .order("updated_at", { ascending: false })
+        .limit(12),
+      svc
+        .from("profiles")
+        .select("id, display_name, role, region_code, municipality, bio, is_active, is_public, deleted_at, regions(name_el)")
+        .eq("is_active", true)
+        .neq("role", "admin")
+        .or("role.in.(merchant,factory),and(role.eq.farmer,is_public.eq.true)")
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(8),
+    ]);
+  } catch (e) {
+    console.error("[landing] Supabase unavailable:", e);
+    return [{ data: [] as any[] }, { data: [] as any[] }] as const;
+  }
+}
+
 export default async function LandingPage() {
-  const svc = createSupabaseService();
-  const [{ data: latest }, { data: newestUsers }] = await Promise.all([
-    svc
-      .from("price_listings")
-      .select(
-        `id, updated_at, variants, region_code,
-         products(name_el, unit),
-         profiles!inner(id, display_name, role, is_active),
-         regions(name_el)`,
-      )
-      .eq("is_active", true)
-      .eq("profiles.is_active", true)
-      .order("updated_at", { ascending: false })
-      .limit(12),
-    svc
-      .from("profiles")
-      .select("id, display_name, role, region_code, municipality, bio, is_active, is_public, deleted_at, regions(name_el)")
-      .eq("is_active", true)
-      .neq("role", "admin")
-      .or("role.in.(merchant,factory),and(role.eq.farmer,is_public.eq.true)")
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .limit(8),
-  ]);
+  const [{ data: latest }, { data: newestUsers }] = await safeFetchLandingData();
 
   const ticker: TickerItem[] = ((latest as any[]) ?? [])
     .map((row) => {

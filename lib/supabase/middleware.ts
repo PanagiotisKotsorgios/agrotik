@@ -5,10 +5,13 @@ export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const url =
-    process.env.SUPABASE_INTERNAL_URL || process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    process.env.SUPABASE_INTERNAL_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    "http://127.0.0.1:54321";
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
   const supabase = createServerClient(
     url,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    anonKey,
     {
       cookies: {
         getAll: () => request.cookies.getAll(),
