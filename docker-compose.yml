@@ -33,7 +33,13 @@ services:
     image: supabase/postgres:15.1.1.78
     restart: unless-stopped
     volumes:
-      - agrotik-db:/var/lib/postgresql/data
+      # Renamed from `agrotik-db` → `agrotik-db-v2` on 2026-08-31 to force
+      # Coolify to create a fresh Postgres data volume. The prior volume
+      # held reserved Supabase roles with NULL passwords (created before
+      # the init scripts were in place) and cannot be repaired from the
+      # app. The old volume becomes orphaned and can be removed later via
+      # the Coolify server terminal: `docker volume rm <prefix>_agrotik-db`.
+      - agrotik-db-v2:/var/lib/postgresql/data
     configs:
       # Supabase's Postgres image runs everything in
       # /docker-entrypoint-initdb.d/{init-scripts,migrations}/ ONLY when
@@ -367,4 +373,4 @@ configs:
                 allow: [admin]
 
 volumes:
-  agrotik-db:
+  agrotik-db-v2:
