@@ -5,6 +5,8 @@ node_modules/
 .env*.local
 *.log
 .DS_Store
+tsconfig.tsbuildinfo
+next-env.d.ts
 
 supabase/.branches/
 supabase/.temp/
