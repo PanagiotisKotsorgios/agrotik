@@ -1,0 +1,238 @@
+import Link from "next/link";
+import { Header } from "@/components/site/header";
+import { Card, Badge, Eyebrow } from "@/components/ui/card";
+import { Select, Label, Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { searchBuyers, getRegions, getActiveProducts, getProductCategories } from "@/lib/db/queries";
+import { parseBuyerFilters } from "@/lib/domain/search-params";
+import { formatRelative, priceFormat, roleLabel } from "@/lib/utils";
+import { FilterChips } from "@/components/site/filter-chips";
+import { AttributeFilters } from "@/components/site/attribute-filters";
+import { FiltersDrawer } from "@/components/site/filters-drawer";
+import { Footer } from "@/components/site/footer";
+
+export default async function BuyersSearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const filters = parseBuyerFilters(params);
+  const [regions, products, categories, results] = await Promise.all([
+    getRegions(),
+    getActiveProducts(),
+    getProductCategories(),
+    searchBuyers(filters),
+  ]);
+
+  const regionMap = new Map(regions.map((r) => [r.code, r.name_el]));
+  const productMap = new Map(products.map((p) => [p.id, p.name_el]));
+  const selectedProduct = products.find((p) => p.id === filters.product_id);
+  const filteredProducts = filters.product_category
+    ? products.filter((p) => p.category === filters.product_category)
+    : products;
+
+  const buyerTypeStr = filters.buyer_type?.join(",") ?? "";
+
+  return (
+    <>
+      <Header />
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <Tabs active="buyers" />
+
+        <div className="mt-6 mb-6">
+          <Eyebrow>Αναζήτηση</Eyebrow>
+          <h1 className="display text-[38px] leading-tight text-brand-dark mt-1 field-underline">Βρες Αγοραστή</h1>
+          <p className="mt-3 text-brand-muted text-lg leading-relaxed">
+            Έμποροι και εργοστάσια που δηλώνουν τιμές αγοράς. Φιλτράρισε ανά προϊόν, ποιότητα, νομό, δήμο ή τιμή.
+          </p>
+        </div>
+
+        <FiltersDrawer activeCount={countActive(params)}>
+        <form className="p-5 bg-brand-surface rounded-card border border-brand-border shadow-card mb-6">
+          <div className="grid sm:grid-cols-4 gap-4">
+            <div>
+              <Label>Νομός</Label>
+              <Select name="region_code" defaultValue={filters.region_code ?? ""}>
+                <option value="">Όλοι</option>
+                {regions.map((r) => (
+                  <option key={r.code} value={r.code}>
+                    {r.name_el}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label>Δήμος / περιοχή</Label>
+              <Input name="municipality" placeholder="π.χ. Καλαμάτα" defaultValue={filters.municipality ?? ""} />
+            </div>
+            <div>
+              <Label>Κατηγορία</Label>
+              <Select name="product_category" defaultValue={filters.product_category ?? ""}>
+                <option value="">Όλες</option>
+                {categories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label>Προϊόν</Label>
+              <Select name="product_id" defaultValue={filters.product_id ?? ""}>
+                <option value="">Όλα</option>
+                {filteredProducts.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name_el}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            {selectedProduct && <AttributeFilters product={selectedProduct} values={params} />}
+
+            <div>
+              <Label>Τιμή από (€)</Label>
+              <Input type="number" step="0.01" min="0" name="price_min" defaultValue={filters.price_min ?? ""} placeholder="0" />
+            </div>
+            <div>
+              <Label>Τιμή έως (€)</Label>
+              <Input type="number" step="0.01" min="0" name="price_max" defaultValue={filters.price_max ?? ""} placeholder="∞" />
+            </div>
+
+            <div>
+              <Label>Τύπος αγοραστή</Label>
+              <Select name="buyer_type" defaultValue={buyerTypeStr}>
+                <option value="">Έμπορος + Εργοστάσιο</option>
+                <option value="merchant">Μόνο Έμποροι</option>
+                <option value="factory">Μόνο Εργοστάσια</option>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Επωνυμία</Label>
+              <Input name="name" placeholder="Αναζήτηση…" defaultValue={filters.name ?? ""} />
+            </div>
+
+            <div>
+              <Label>Ταξινόμηση</Label>
+              <Select name="sort" defaultValue={filters.sort ?? "price_asc"}>
+                <option value="price_asc">Καλύτερη τιμή</option>
+                <option value="price_desc">Ακριβότερη πρώτη</option>
+                <option value="updated">Πιο πρόσφατη</option>
+              </Select>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
+            <Link href="/search/buyers" className="text-sm text-brand-muted hover:text-brand-dark underline underline-offset-2">
+              Καθαρισμός
+            </Link>
+            <Button type="submit" icon="search" size="lg">
+              Αναζήτηση
+            </Button>
+          </div>
+        </form>
+        </FiltersDrawer>
+
+        <FilterChips
+          basePath="/search/buyers"
+          params={params}
+          regionLabels={regionMap}
+          productLabels={productMap}
+        />
+
+        <div className="text-sm text-brand-muted mb-3 flex items-center gap-2">
+          <Icon name="listCheck" /> <span className="figures">{results.length}</span> αποτελέσματα
+        </div>
+
+        {results.length === 0 ? (
+          <Card>
+            <div className="text-brand-ink text-lg flex items-center gap-3">
+              <Icon name="info" className="text-brand-muted" /> Δε βρέθηκαν έμποροι/εργοστάσια με αυτά τα κριτήρια. Δοκίμασε να χαλαρώσεις κάποιο φίλτρο.
+            </div>
+          </Card>
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-4">
+            {results.map((r) => (
+              <Card key={r.profile.id} className="hover:border-brand-dark/40 transition-colors">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-brand-dark text-lg truncate">{r.profile.display_name}</h3>
+                      <Badge tone="brand">{roleLabel(r.profile.role)}</Badge>
+                    </div>
+                    <div className="text-sm text-brand-muted mt-0.5 flex items-center gap-1.5">
+                      <Icon name="location" /> {r.region_name}
+                      {r.municipality && ` · ${r.municipality}`}
+                    </div>
+                    <div className="mt-4">
+                      <div className="text-sm text-brand-muted">{r.product.name_el}</div>
+                      <div className="figures text-3xl font-semibold mt-1 text-brand-dark">
+                        {r.best_price != null ? `από ${priceFormat(r.best_price, r.product.unit)}` : "—"}
+                      </div>
+                      {r.best_attributes && (
+                        <div className="text-sm text-brand-muted mt-1">
+                          {Object.entries(r.best_attributes)
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join(" · ")}
+                        </div>
+                      )}
+                    </div>
+                    <div className="eyebrow text-brand-muted mt-3">
+                      Ενημέρωση {formatRelative(r.updated_at)}
+                    </div>
+                  </div>
+                  <Link
+                    href={`/profile/${r.profile.id}`}
+                    className="text-brand-mid hover:text-brand-dark shrink-0"
+                    aria-label="Δες προφίλ"
+                  >
+                    <Icon name="arrowRight" className="text-lg" />
+                  </Link>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+      <Footer />
+    </>
+  );
+}
+
+function countActive(params: Record<string, string | string[] | undefined>): number {
+  let n = 0;
+  for (const [k, v] of Object.entries(params)) {
+    if (!v) continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    if (k === "sort") continue;
+    n++;
+  }
+  return n;
+}
+
+function Tabs({ active }: { active: "buyers" | "producers" }) {
+  const items = [
+    { key: "buyers", href: "/search/buyers", label: "Βρες Αγοραστή", icon: "store" as const },
+    { key: "producers", href: "/search/producers", label: "Βρες Παραγωγό", icon: "seedling" as const },
+  ];
+  return (
+    <div className="flex items-center gap-1 border-b border-brand-border">
+      {items.map((t) => (
+        <Link
+          key={t.key}
+          href={t.href}
+          className={
+            active === t.key
+              ? "inline-flex items-center gap-2 px-5 py-3 border-b-2 border-brand-dark font-semibold text-brand-dark text-lg -mb-px"
+              : "inline-flex items-center gap-2 px-5 py-3 border-b-2 border-transparent text-brand-muted hover:text-brand-dark text-lg"
+          }
+        >
+          <Icon name={t.icon} /> {t.label}
+        </Link>
+      ))}
+    </div>
+  );
+}

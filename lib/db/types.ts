@@ -1,0 +1,108 @@
+/**
+ * Domain types. When Supabase is running you can regenerate the full
+ * database.types.ts with `npm run db:types`. These are the hand-written
+ * types the app uses at the domain boundary.
+ */
+
+export type UserRole = "farmer" | "merchant" | "factory" | "admin";
+export type ProductStatus = "active" | "pending" | "rejected";
+export type NotificationKind = "price_changed";
+
+export interface Profile {
+  id: string;
+  role: UserRole;
+  display_name: string;
+  phone: string;
+  region_code: string;
+  municipality: string | null;
+  avatar_path: string | null;
+  bio: string | null;
+  website: string | null;
+  vat_number: string | null;
+  is_public: boolean;
+  is_active: boolean;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Region {
+  code: string;
+  name_el: string;
+}
+
+export type AttributesSchema = Record<
+  string,
+  | { type: "enum"; label: string; values: string[] }
+  | { type: "number"; label: string; unit?: string }
+  | { type: "text"; label: string }
+>;
+
+export interface Product {
+  id: string;
+  slug: string;
+  name_el: string;
+  category: string;
+  unit: string;
+  attributes_schema: AttributesSchema;
+  status: ProductStatus;
+  proposed_by: string | null;
+  created_at: string;
+}
+
+export interface PriceVariant {
+  attributes: Record<string, string | number>;
+  price: number;
+  currency: "EUR";
+}
+
+export interface PriceListing {
+  id: string;
+  owner_id: string;
+  product_id: string;
+  variants: PriceVariant[];
+  region_code: string;
+  notes: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductionListing {
+  id: string;
+  owner_id: string;
+  product_id: string;
+  attributes: Record<string, string | number>;
+  quantity: number;
+  unit: string | null;
+  region_code: string;
+  available_from: string | null;
+  available_until: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Favorite {
+  user_id: string;
+  target_id: string;
+  created_at: string;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  kind: NotificationKind;
+  payload: {
+    listing_id: string;
+    target_profile_id: string;
+    product_id: string;
+    changed_variants: Array<{
+      attributes: Record<string, string | number>;
+      old_price: number;
+      new_price: number;
+    }>;
+  };
+  read_at: string | null;
+  created_at: string;
+}

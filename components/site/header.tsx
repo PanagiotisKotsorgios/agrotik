@@ -1,0 +1,114 @@
+import Link from "next/link";
+import { Logo } from "./logo";
+import { Icon } from "@/components/ui/icon";
+import { createSupabaseServer } from "@/lib/supabase/server";
+import { NotificationBell } from "./notification-bell";
+
+export async function Header() {
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let profile: { id: string; role: string; display_name: string } | null = null;
+  let unreadNotif = 0;
+  let unreadMsg = 0;
+  if (user) {
+    const [p, n, m] = await Promise.all([
+      supabase.from("profiles").select("id, role, display_name").eq("id", user.id).single(),
+      supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .is("read_at", null),
+      supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("recipient_id", user.id)
+        .is("read_at", null),
+    ]);
+    profile = p.data;
+    unreadNotif = n.count ?? 0;
+    unreadMsg = m.count ?? 0;
+  }
+
+  return (
+    <header className="bg-brand-surface/95 backdrop-blur border-b border-brand-border sticky top-0 z-30">
+      <div className="max-w-6xl mx-auto px-4 h-[76px] flex items-center justify-between gap-4">
+        <Link
+          href="/"
+          prefetch
+          className="flex items-center shrink-0"
+          aria-label="AGROTIK — Αρχική"
+        >
+          <Logo size={56} />
+        </Link>
+
+        <nav className="hidden md:flex items-center gap-1">
+          <NavItem href="/search/buyers" icon="store" label="Αγοραστές" />
+          <NavItem href="/search/producers" icon="seedling" label="Παραγωγοί" />
+        </nav>
+
+        <div className="flex items-center gap-2">
+          {profile ? (
+            <>
+              <NotificationBell
+                initialCount={unreadNotif}
+                initialMessages={unreadMsg}
+                userId={user!.id}
+              />
+              {profile.role === "admin" && (
+                <Link
+                  href="/admin"
+                  prefetch
+                  className="hidden sm:inline-flex items-center gap-2 text-[15px] font-semibold px-4 py-2.5 rounded-md border border-brand-border text-brand-dark hover:bg-brand-dark hover:text-white hover:border-brand-dark transition-colors"
+                >
+                  <Icon name="shield" /> Admin
+                </Link>
+              )}
+              <Link
+                href="/dashboard"
+                prefetch
+                className="inline-flex items-center gap-2 text-[15px] font-semibold px-4 py-2.5 rounded-md bg-brand-dark text-white hover:bg-brand-mid"
+              >
+                <Icon name="user" />
+                <span className="hidden sm:inline">{profile.display_name.split(" ")[0]}</span>
+                <span className="sm:hidden">Λογαριασμός</span>
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                prefetch
+                className="text-[15px] font-semibold px-4 py-2.5 rounded-md text-brand-dark border-2 border-brand-mid hover:bg-brand-mid hover:text-white transition-colors"
+              >
+                Σύνδεση
+              </Link>
+              <Link
+                href="/signup"
+                prefetch
+                className="text-[15px] font-semibold px-4 py-2.5 rounded-md bg-brand-dark text-white hover:bg-brand-mid"
+              >
+                Δωρεάν εγγραφή
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function NavItem({ href, icon, label }: { href: string; icon: any; label: string }) {
+  return (
+    <Link
+      href={href}
+      prefetch
+      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md text-[16px] font-semibold text-brand-ink/85 hover:text-brand-dark hover:bg-brand-border/40 transition-colors"
+    >
+      <Icon name={icon} className="text-brand-muted" />
+      {label}
+    </Link>
+  );
+}
