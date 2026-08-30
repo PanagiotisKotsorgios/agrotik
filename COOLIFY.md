@@ -244,7 +244,7 @@ Push σε `main` → Coolify auto-deploys (αν έχεις ενεργοποιή�
 **Monitoring:**
 
 - Coolify Dashboard δείχνει CPU/RAM/disk για κάθε container
-- Health checks: `/` για το app (κάθε 30s στο docker-compose)
+- Health checks: `/api/health` για το app (κάθε 30s στο docker-compose)
 - Logs: `docker logs <container>` ή Coolify UI
 
 ---

@@ -101,7 +101,7 @@ npm run dev
    ```
 5. Deploy. Coolify θα κάνει build το Dockerfile (multi-stage, standalone output) και θα σηκώσει το app στο port 3000. Πρόσθεσε custom domain + auto-TLS από το Coolify UI.
 
-**Health check:** `GET /` κάθε 30s.
+**Health check:** `GET /api/health` κάθε 30s (χωρίς database/auth dependency).
 
 **Update:** κάθε push σε `main` triggers auto-rebuild (αν το ενεργοποιήσεις στο Coolify).
 

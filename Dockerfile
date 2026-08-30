@@ -43,7 +43,7 @@ RUN chmod +x /entrypoint.sh
 USER nextjs
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --retries=5 --start-period=180s \
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
