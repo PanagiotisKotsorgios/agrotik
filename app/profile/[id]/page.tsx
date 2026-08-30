@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
 import { Card, Badge, Eyebrow, CardTitle } from "@/components/ui/card";
-import { Icon } from "@/components/ui/icon";
+import { Icon, type IconName } from "@/components/ui/icon";
 import { getProfileById, getProfileListings } from "@/lib/db/queries";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { roleLabel, formatRelative, priceFormat } from "@/lib/utils";
@@ -108,21 +108,13 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             </div>
 
             <div className="flex flex-col items-stretch sm:items-end gap-2 shrink-0">
-              {user ? (
-                <a
-                  href={`tel:${profile.phone}`}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-brand-dark text-white text-[15px] font-semibold hover:bg-brand-mid"
-                >
-                  <Icon name="phone" /> {profile.phone}
-                </a>
-              ) : (
-                <Link
-                  href={`/login?next=/profile/${id}`}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-brand-dark text-white text-[15px] font-semibold hover:bg-brand-mid"
-                >
-                  <Icon name="lock" /> Σύνδεση για επικοινωνία
-                </Link>
-              )}
+              {/* Free-to-all contact button — no login gate */}
+              <a
+                href={`tel:${profile.phone}`}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-brand-dark text-white text-[15px] font-semibold hover:bg-brand-mid"
+              >
+                <Icon name="phone" /> {profile.phone}
+              </a>
 
               {canMessage && (
                 <Link
@@ -148,14 +140,46 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {user && (
-            <div className="mt-6 pt-4 border-t border-brand-border grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-              <InfoRow icon="phone" label="Τηλέφωνο"><a className="hover:underline" href={`tel:${profile.phone}`}>{profile.phone}</a></InfoRow>
-              {profile.vat_number && <InfoRow icon="tag" label="ΑΦΜ">{profile.vat_number}</InfoRow>}
-              {profile.address_line && <InfoRow icon="mapLocation" label="Διεύθυνση">{profile.address_line}</InfoRow>}
-              {profile.opening_hours && <InfoRow icon="calendar" label="Ώρες">{profile.opening_hours}</InfoRow>}
-              {profile.certifications && <InfoRow icon="shield" label="Πιστοποιήσεις">{profile.certifications}</InfoRow>}
-              {profile.specialties && <InfoRow icon="wheat" label="Ειδικότητες">{profile.specialties}</InfoRow>}
+          {/* Full contact info — always visible */}
+          <div className="mt-6 pt-4 border-t border-brand-border grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <InfoRow icon="phone" label="Τηλέφωνο">
+              <a className="hover:underline" href={`tel:${profile.phone}`}>{profile.phone}</a>
+            </InfoRow>
+            {profile.vat_number && <InfoRow icon="tag" label="ΑΦΜ">{profile.vat_number}</InfoRow>}
+            {profile.address_line && <InfoRow icon="mapLocation" label="Διεύθυνση">{profile.address_line}</InfoRow>}
+            {profile.opening_hours && <InfoRow icon="calendar" label="Ώρες">{profile.opening_hours}</InfoRow>}
+            {profile.certifications && <InfoRow icon="shield" label="Πιστοποιήσεις">{profile.certifications}</InfoRow>}
+            {profile.specialties && <InfoRow icon="wheat" label="Ειδικότητες">{profile.specialties}</InfoRow>}
+            {profile.website && (
+              <InfoRow icon="globe" label="Ιστότοπος">
+                <a href={profile.website} target="_blank" rel="noreferrer" className="hover:underline text-brand-mid">
+                  {profile.website.replace(/^https?:\/\//, "")}
+                </a>
+              </InfoRow>
+            )}
+          </div>
+
+          {/* Sign-in nudge for extra features */}
+          {!user && (
+            <div className="mt-4 pt-4 border-t border-brand-border flex flex-wrap items-center justify-between gap-3 bg-brand-bg/60 -mx-6 -mb-6 px-6 pb-6 rounded-b-card">
+              <div className="text-sm text-brand-muted">
+                <Icon name="info" className="text-brand-dark mr-1.5" />
+                Θέλεις μηνύματα, αγαπημένα και ειδοποιήσεις τιμών;
+              </div>
+              <div className="flex gap-2">
+                <Link
+                  href={`/login?next=/profile/${id}`}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md border-2 border-brand-mid text-brand-dark text-sm font-semibold hover:bg-brand-mid hover:text-white"
+                >
+                  <Icon name="unlock" /> Σύνδεση
+                </Link>
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-brand-dark text-white text-sm font-semibold hover:bg-brand-mid"
+                >
+                  Δωρεάν εγγραφή
+                </Link>
+              </div>
             </div>
           )}
         </Card>
@@ -296,7 +320,7 @@ function Avatar({ url, name }: { url: string | null; name: string }) {
   );
 }
 
-function InfoRow({ icon, label, children }: { icon: any; label: string; children: React.ReactNode }) {
+function InfoRow({ icon, label, children }: { icon: IconName; label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3">
       <Icon name={icon} className="text-brand-muted mt-1 w-4 shrink-0" />
