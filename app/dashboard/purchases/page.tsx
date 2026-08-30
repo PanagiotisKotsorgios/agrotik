@@ -48,8 +48,9 @@ export default async function PurchasesPage({
   const seasonRows = rows.filter((r) => r.season === season);
 
   // Aggregations for the current season
-  const byFarmer = new Map<string, { name: string; region: string; items: { productName: string; qty: number; unit: string; totalValue: number }[]; totalValue: number }>();
-  const byProduct = new Map<string, { productName: string; qty: number; unit: string; totalValue: number }>();
+  type Line = { productName: string; qty: number; unit: string; totalValue: number };
+  const byFarmer = new Map<string, { name: string; region: string; items: Line[]; totalValue: number }>();
+  const byProduct = new Map<string, Line>();
   let seasonTotal = 0;
   for (const r of seasonRows) {
     const pname = r.profiles?.display_name ?? "—";
@@ -60,7 +61,7 @@ export default async function PurchasesPage({
     seasonTotal += value;
 
     // per farmer
-    const f = byFarmer.get(r.farmer_id) ?? { name: pname, region, items: [], totalValue: 0 };
+    const f = byFarmer.get(r.farmer_id) ?? { name: pname, region, items: [] as Line[], totalValue: 0 };
     const existingItem = f.items.find((x) => x.productName === productName && x.unit === (r.unit || r.products?.unit));
     if (existingItem) {
       existingItem.qty += qty;

@@ -90,7 +90,7 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
   let query = supabase
     .from("price_listings")
     .select(
-      `id, owner_id, product_id, variants, region_code, updated_at,
+      `id, owner_id, product_id, kind, variants, region_code, updated_at,
        products!inner(id, name_el, unit, category, status),
        profiles!inner(id, display_name, region_code, role, avatar_path, municipality, is_active, is_public, deleted_at),
        regions(name_el)`,
@@ -99,6 +99,7 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
     .eq("products.status", "active")
     .eq("profiles.is_active", true)
     .in("profiles.role", filters.buyer_type ?? ["merchant", "factory"])
+    .eq("kind", "buy_from_producer")
     .limit(500);
 
   if (filters.product_id) query = query.eq("product_id", filters.product_id);

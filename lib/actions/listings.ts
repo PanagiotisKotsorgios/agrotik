@@ -19,6 +19,10 @@ const priceListingSchema = z.object({
   product_id: z.string().uuid(),
   region_code: z.string().min(1),
   notes: z.string().optional(),
+  kind: z
+    .enum(["buy_from_producer", "buy_from_merchant", "sell_wholesale", "sell_retail"])
+    .optional(),
+  title: z.string().max(120).optional(),
   variants: z.array(variantSchema).min(1, "Απαιτείται τουλάχιστον μία τιμή"),
 });
 
@@ -42,6 +46,8 @@ export async function savePriceListing(input: unknown): Promise<ActionResult & {
     product_id: parsed.data.product_id,
     region_code: parsed.data.region_code,
     notes: parsed.data.notes ?? null,
+    kind: parsed.data.kind ?? "buy_from_producer",
+    title: parsed.data.title ?? null,
     variants: parsed.data.variants,
     is_active: true,
   };

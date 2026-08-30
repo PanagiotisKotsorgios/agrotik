@@ -125,7 +125,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                 </Link>
               )}
 
-              {viewerIsFarmer && profile.role !== "farmer" && (
+              {user && user.id !== id && viewerRole !== "admin" && (
                 <FavoriteButton targetId={profile.id} initialFavorited={isFavorited} />
               )}
 

@@ -4,13 +4,17 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { savePriceListing, deletePriceListing } from "@/lib/actions/listings";
-import type { Product, Region, PriceVariant, AttributesSchema } from "@/lib/db/types";
+import type { Product, Region, PriceVariant, AttributesSchema, PriceListKind } from "@/lib/db/types";
+import { PRICE_LIST_KIND_LABEL, PRICE_LIST_KIND_HELP } from "@/lib/db/types";
 import { priceFormat } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
+import { Badge } from "@/components/ui/card";
 
 interface ListingRow {
   id: string;
   product_id: string;
+  kind?: PriceListKind;
+  title?: string | null;
   region_code: string;
   notes: string | null;
   variants: PriceVariant[];
@@ -19,15 +23,30 @@ interface ListingRow {
   regions: { name_el: string };
 }
 
+const KIND_OPTIONS_BY_ROLE: Record<"merchant" | "factory", PriceListKind[]> = {
+  merchant: ["buy_from_producer", "sell_wholesale", "sell_retail"],
+  factory: ["buy_from_producer", "buy_from_merchant", "sell_wholesale", "sell_retail"],
+};
+
+const KIND_TONE: Record<PriceListKind, "brand" | "olive" | "warn" | "muted"> = {
+  buy_from_producer: "brand",
+  buy_from_merchant: "olive",
+  sell_wholesale: "warn",
+  sell_retail: "muted",
+};
+
 export function PriceListingsManager({
   initialListings,
   products,
   regions,
+  role = "merchant",
 }: {
   initialListings: ListingRow[];
   products: Product[];
   regions: Region[];
+  role?: "merchant" | "factory";
 }) {
+  const kindOptions = KIND_OPTIONS_BY_ROLE[role];
   const [listings, setListings] = useState(initialListings);
   const [editing, setEditing] = useState<Partial<ListingRow> | null>(null);
 
@@ -43,6 +62,7 @@ export function PriceListingsManager({
         <PriceEditor
           products={products}
           regions={regions}
+          kindOptions={kindOptions}
           initial={editing}
           onCancel={() => setEditing(null)}
           onSaved={(saved) => {
@@ -64,10 +84,15 @@ export function PriceListingsManager({
           {listings.map((l) => (
             <Card key={l.id}>
               <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-brand-dark">{l.products.name_el}</h3>
-                  <div className="text-xs text-brand-text/60">
-                    Παραλαβή: {l.regions?.name_el ?? l.region_code}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-semibold text-brand-dark">{l.title || l.products.name_el}</h3>
+                    {l.kind && (
+                      <Badge tone={KIND_TONE[l.kind]}>{PRICE_LIST_KIND_LABEL[l.kind]}</Badge>
+                    )}
+                  </div>
+                  <div className="text-xs text-brand-text/60 mt-1">
+                    {l.products.name_el} · Παραλαβή {l.regions?.name_el ?? l.region_code}
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -125,12 +150,14 @@ function DeleteButton({ id, onDeleted }: { id: string; onDeleted: () => void }) 
 function PriceEditor({
   products,
   regions,
+  kindOptions,
   initial,
   onCancel,
   onSaved,
 }: {
   products: Product[];
   regions: Region[];
+  kindOptions: PriceListKind[];
   initial: Partial<ListingRow>;
   onCancel: () => void;
   onSaved: (row: ListingRow) => void;
@@ -138,6 +165,8 @@ function PriceEditor({
   const [productId, setProductId] = useState<string>(initial.product_id ?? products[0]?.id ?? "");
   const [regionCode, setRegionCode] = useState<string>(initial.region_code ?? regions[0]?.code ?? "");
   const [notes, setNotes] = useState(initial.notes ?? "");
+  const [kind, setKind] = useState<PriceListKind>(initial.kind ?? kindOptions[0]);
+  const [title, setTitle] = useState<string>(initial.title ?? "");
   const [variants, setVariants] = useState<PriceVariant[]>(
     initial.variants && initial.variants.length > 0
       ? initial.variants
@@ -155,6 +184,17 @@ function PriceEditor({
         {initial.id ? "Επεξεργασία" : "Νέος"} τιμοκατάλογος
       </h3>
       <div className="space-y-4">
+        {kindOptions.length > 1 && (
+          <div>
+            <Label>Τύπος τιμοκαταλόγου</Label>
+            <Select value={kind} onChange={(e) => setKind(e.target.value as PriceListKind)}>
+              {kindOptions.map((k) => (
+                <option key={k} value={k}>{PRICE_LIST_KIND_LABEL[k]}</option>
+              ))}
+            </Select>
+            <p className="mt-1 text-xs text-brand-muted">{PRICE_LIST_KIND_HELP[kind]}</p>
+          </div>
+        )}
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
             <Label>Προϊόν</Label>
@@ -279,6 +319,11 @@ function PriceEditor({
         </div>
 
         <div>
+          <Label>Ονομασία τιμοκαταλόγου (προαιρετικό)</Label>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="π.χ. Ελιές Καλαμών — φθινοπωρινή σεζόν" />
+        </div>
+
+        <div>
           <Label>Σημειώσεις (προαιρετικό)</Label>
           <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
@@ -296,6 +341,8 @@ function PriceEditor({
                   product_id: productId,
                   region_code: regionCode,
                   notes,
+                  kind,
+                  title: title || undefined,
                   variants: variants.filter((v) => v.price > 0),
                 });
                 if (!res.ok) return setError(res.error);
@@ -303,6 +350,8 @@ function PriceEditor({
                   onSaved({
                     id: res.id,
                     product_id: productId,
+                    kind,
+                    title: title || null,
                     region_code: regionCode,
                     notes,
                     variants: variants.filter((v) => v.price > 0),

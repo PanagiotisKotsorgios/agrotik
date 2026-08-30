@@ -15,6 +15,7 @@ export interface BrevoSettings {
   welcome_template?: EmailTemplate;
   price_changed_template?: EmailTemplate;
   new_message_template?: EmailTemplate;
+  password_reset_template?: EmailTemplate;
 }
 
 const DEFAULT: BrevoSettings = {

@@ -71,10 +71,18 @@ export interface PriceVariant {
   currency: "EUR";
 }
 
+export type PriceListKind =
+  | "buy_from_producer"
+  | "buy_from_merchant"
+  | "sell_wholesale"
+  | "sell_retail";
+
 export interface PriceListing {
   id: string;
   owner_id: string;
   product_id: string;
+  kind: PriceListKind;
+  title: string | null;
   variants: PriceVariant[];
   region_code: string;
   notes: string | null;
@@ -82,6 +90,20 @@ export interface PriceListing {
   created_at: string;
   updated_at: string;
 }
+
+export const PRICE_LIST_KIND_LABEL: Record<PriceListKind, string> = {
+  buy_from_producer: "Αγοράζω από παραγωγό",
+  buy_from_merchant: "Αγοράζω από έμπορο",
+  sell_wholesale: "Πουλάω χονδρικής",
+  sell_retail: "Πουλάω λιανικής",
+};
+
+export const PRICE_LIST_KIND_HELP: Record<PriceListKind, string> = {
+  buy_from_producer: "Τιμές αγοράς για αγρότες. Εμφανίζεται στο «Βρες Αγοραστή».",
+  buy_from_merchant: "Τιμές αγοράς για εμπόρους/μεσίτες. Εμφανίζεται σε εμπόρους.",
+  sell_wholesale: "Τιμές χονδρικής πώλησης προς άλλους αγοραστές.",
+  sell_retail: "Τιμές λιανικής — ορατές δημόσια σε όλους.",
+};
 
 export interface ProductionListing {
   id: string;

@@ -11,7 +11,8 @@ export async function toggleFavorite(targetId: string): Promise<ActionResult> {
   if (!user) return { ok: false, error: "Απαιτείται σύνδεση" };
 
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (me?.role !== "farmer") return { ok: false, error: "Μόνο αγρότες μπορούν να προσθέτουν αγαπημένα" };
+  if (!me || me.role === "admin") return { ok: false, error: "Δεν επιτρέπεται" };
+  if (user.id === targetId) return { ok: false, error: "Δεν μπορείς να προσθέσεις τον εαυτό σου" };
 
   const { data: existing } = await supabase
     .from("favorites")

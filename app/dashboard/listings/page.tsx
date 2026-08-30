@@ -46,19 +46,26 @@ export default async function ListingsPage() {
     .eq("owner_id", user.id)
     .order("updated_at", { ascending: false });
 
+  const isFactory = profile?.role === "factory";
+
   return (
     <>
       <div className="mb-6">
-        <Eyebrow>Τιμοκατάλογος</Eyebrow>
-        <h1 className="display text-3xl text-brand-dark mt-1 field-underline">Οι τιμές που αγοράζω</h1>
+        <Eyebrow>Τιμοκατάλογοι</Eyebrow>
+        <h1 className="display text-3xl text-brand-dark mt-1 field-underline">
+          {isFactory ? "Οι τιμοκατάλογοί μου" : "Οι τιμές που αγοράζω"}
+        </h1>
         <p className="mt-3 text-brand-muted">
-          Ενημέρωσε συχνά — οι αγρότες που σε παρακολουθούν λαμβάνουν ειδοποίηση όταν αλλάζεις τιμή.
+          {isFactory
+            ? "Μπορείς να έχεις πολλαπλούς τιμοκαταλόγους: αγοράς από παραγωγό ή έμπορο, χονδρικής/λιανικής πώλησης. Καθένας εμφανίζεται στους σωστούς χρήστες."
+            : "Ενημέρωσε συχνά — οι αγρότες που σε παρακολουθούν λαμβάνουν ειδοποίηση όταν αλλάζεις τιμή."}
         </p>
       </div>
       <PriceListingsManager
         initialListings={(listings as any[]) ?? []}
         products={products}
         regions={regions}
+        role={profile?.role as "merchant" | "factory"}
       />
     </>
   );

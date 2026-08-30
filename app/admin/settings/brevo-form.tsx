@@ -138,6 +138,15 @@ export function BrevoSettingsForm({ initial }: { initial: BrevoSettings }) {
         }}
       />
 
+      <TemplateEditor
+        title="Επαναφορά κωδικού"
+        initial={initial.password_reset_template ?? { subject: "AGROTIK · Επαναφορά κωδικού", heading: "Επαναφορά κωδικού", body_html: "" }}
+        onSave={async (val) => {
+          const res = await saveBrevoSettings({ password_reset_template: val });
+          setMsg(res.ok ? { ok: true, text: "Το template αποθηκεύτηκε" } : { ok: false, text: res.error });
+        }}
+      />
+
       {msg && (
         <p
           className={

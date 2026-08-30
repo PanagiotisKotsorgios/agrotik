@@ -19,22 +19,28 @@ export default async function NetworkPage({
   if (!user) redirect("/login");
 
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  const isFarmer = me?.role === "farmer";
-  const title = isFarmer ? "Οι έμποροί μου" : "Οι πελάτες μου";
+  const role = me?.role ?? "farmer";
+  const isFarmer = role === "farmer";
+  const isFactory = role === "factory";
+  const title = isFarmer
+    ? "Οι έμποροί μου"
+    : isFactory
+    ? "Οι συνεργάτες μου"
+    : "Οι πελάτες μου";
   const description = isFarmer
     ? "Αγοραστές που παρακολουθείς και αυτοί με τους οποίους έχεις κλείσει συμφωνία."
+    : isFactory
+    ? "Παραγωγοί που προμηθεύεσαι, έμποροι-μεσίτες συνεργάτες, και αγαπημένα προφίλ."
     : "Παραγωγοί με τους οποίους έχεις κλείσει συμφωνία μέσω της πλατφόρμας.";
 
   const [favResp, dealResp] = await Promise.all([
-    isFarmer
-      ? supabase
-          .from("favorites")
-          .select(
-            "target_id, created_at, profiles!favorites_target_id_fkey(id, display_name, role, region_code, municipality, avatar_url, regions(name_el))",
-          )
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-      : Promise.resolve({ data: [] as any[] }),
+    supabase
+      .from("favorites")
+      .select(
+        "target_id, created_at, profiles!favorites_target_id_fkey(id, display_name, role, region_code, municipality, avatar_url, regions(name_el))",
+      )
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
     // Deals: farmers → merchants they marked; merchants → farmers who marked them
     isFarmer
       ? supabase
@@ -62,8 +68,8 @@ export default async function NetworkPage({
         { key: "deals", label: "Πούλησα σε…", count: deals.length, icon: "check" },
       ]
     : [
-        { key: "deals", label: "Πελάτες", count: deals.length, icon: "check" },
-        { key: "favorites", label: "Αγαπημένοι", count: 0, icon: "heart" },
+        { key: "deals", label: isFactory ? "Παραγωγοί" : "Πελάτες", count: deals.length, icon: "check" },
+        { key: "favorites", label: "Αγαπημένοι", count: favorites.length, icon: "heart" },
       ];
 
   return (
@@ -102,15 +108,6 @@ export default async function NetworkPage({
 }
 
 function FavoritesGrid({ items, isFarmer }: { items: any[]; isFarmer: boolean }) {
-  if (!isFarmer) {
-    return (
-      <Card>
-        <div className="text-brand-muted flex items-center gap-2 text-[15px]">
-          <Icon name="info" /> Δεν υπάρχουν αγαπημένοι για τον ρόλο σου.
-        </div>
-      </Card>
-    );
-  }
   if (items.length === 0) {
     return (
       <Card>
@@ -118,8 +115,8 @@ function FavoritesGrid({ items, isFarmer }: { items: any[]; isFarmer: boolean })
           <Icon name="heart" />
           <span>
             Δεν έχεις αγαπημένους ακόμα. Άνοιξε την{" "}
-            <Link href="/search/buyers" className="text-brand-mid hover:underline">αναζήτηση αγοραστών</Link>{" "}
-            και πάτησε «Παρακολούθηση».
+            <Link href={isFarmer ? "/search/buyers" : "/search/producers"} className="text-brand-mid hover:underline">αναζήτηση</Link>{" "}
+            και πάτησε «Παρακολούθηση» σε προφίλ που σε ενδιαφέρουν.
           </span>
         </div>
       </Card>
