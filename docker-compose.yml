@@ -9,46 +9,52 @@
 #   - Kong (API gateway, ενοποιεί όλα σε ένα endpoint)
 #   - Web (Next.js — AGROTIK app)
 #
-# No external Supabase URL required — όλα τρέχουν στον ίδιο Coolify server.
-# Το μόνο που εκτίθεται στο internet είναι το `web` (agrotik.gr) και το `kong`
-# (api.agrotik.gr — για το browser να μιλάει με Supabase Auth/REST/Realtime).
+# All config files (kong.yml, roles.sql, jwt.sql, realtime.sql) are inlined
+# via the top-level `configs:` block, so there are NO bind mounts — this
+# avoids the Coolify quirk where a relative-path bind source ends up being
+# created as an empty directory inside the container.
 #
 # Coolify deploy:
 #   New Resource → Docker Compose from GitHub
 #     Repo:   https://github.com/PanagiotisKotsorgios/agrotik
 #     Branch: main
 #     File:   docker-compose.yml
-#   Domains (Coolify UI):
-#     web  → agrotik.gr
-#     kong → api.agrotik.gr
+#   Domain (Coolify UI): web → your domain
 #   Env vars (see .env.example — defaults work out of the box, override για prod).
-
-x-postgres-env: &pg-env
-  POSTGRES_HOST: db
-  POSTGRES_DB: postgres
-  POSTGRES_PORT: "5432"
-  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+#
+# ⚠️  IMPORTANT after a failed deploy that created a Postgres volume without
+# the correct role passwords: DELETE the `agrotik-db` persistent volume in
+# Coolify (Persistent Storage tab) before redeploying, or the reserved
+# Supabase roles (authenticator, supabase_auth_admin, …) will stay unset and
+# auth/rest/realtime will never start.
 
 services:
   db:
     image: supabase/postgres:15.1.1.78
     restart: unless-stopped
     volumes:
-      # Supabase's Postgres image provides the roles, but the self-hosted
-      # compose layer must set their passwords and create Realtime's schema.
-      - ./supabase/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:ro
-      - ./supabase/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:ro
-      - ./supabase/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:ro
       - agrotik-db:/var/lib/postgresql/data
-      - agrotik-db-config:/etc/postgresql-custom
+    configs:
+      # Supabase's Postgres image runs everything in
+      # /docker-entrypoint-initdb.d/{init-scripts,migrations}/ ONLY when
+      # PGDATA is empty. On a fresh volume these set role passwords and
+      # create the _realtime schema. On an existing volume they are ignored
+      # — that is why a broken older volume must be deleted, not repaired.
+      - source: supabase-roles-sql
+        target: /docker-entrypoint-initdb.d/init-scripts/98-roles.sql
+        mode: 0444
+      - source: supabase-jwt-sql
+        target: /docker-entrypoint-initdb.d/init-scripts/99-jwt.sql
+        mode: 0444
+      - source: supabase-realtime-sql
+        target: /docker-entrypoint-initdb.d/migrations/99-realtime.sql
+        mode: 0444
     environment:
       POSTGRES_HOST: /var/run/postgresql
       POSTGRES_PORT: 5432
       POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      PGPORT: 5432
-      PGDATABASE: postgres
-      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
       JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
       JWT_EXP: ${JWT_EXP:-3600}
     healthcheck:
@@ -148,14 +154,14 @@ services:
     image: kong:2.8.1
     restart: unless-stopped
     depends_on:
-      - auth
-      - rest
-      - realtime
-      - meta
-    # Kong is NOT exposed publicly — the web service proxies /api/* through Next.js.
-    # Uncomment if you want direct access for debugging.
-    # ports:
-    #   - "8000:8000/tcp"
+      auth:
+        condition: service_healthy
+      rest:
+        condition: service_started
+      realtime:
+        condition: service_started
+      meta:
+        condition: service_started
     expose:
       - "8000"
     environment:
@@ -165,12 +171,10 @@ services:
       KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
       KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: "160k"
       KONG_NGINX_PROXY_PROXY_BUFFERS: "64 160k"
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0}
-      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU}
-      DASHBOARD_USERNAME: supabase
-      DASHBOARD_PASSWORD: this_password_is_insecure_and_should_be_updated
-    volumes:
-      - ./supabase/kong.yml:/var/lib/kong/kong.yml:ro
+    configs:
+      - source: kong-yaml
+        target: /var/lib/kong/kong.yml
+        mode: 0444
 
   web:
     build:
@@ -191,9 +195,8 @@ services:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0}
       SUPABASE_INTERNAL_URL: http://kong:8000
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU}
-      # libpq variables avoid URI parsing failures when the DB password has
-      # reserved URL characters. The entrypoint also uses these to repair
-      # Supabase role passwords on already-created persistent volumes.
+      # Web runs its migrations as `postgres`, which the Supabase Postgres
+      # image always creates with POSTGRES_PASSWORD — safe on any volume.
       PGHOST: db
       PGPORT: "5432"
       PGDATABASE: postgres
@@ -213,14 +216,155 @@ services:
     expose:
       - "3000"
     healthcheck:
-      # Do not probe `/`: it renders through Supabase middleware and can fail
-      # even while the Next.js process itself is ready to receive traffic.
+      # Probe /api/health (a plain JSON route). The middleware skips /api/*
+      # and Next serves the file route before applying the /api → kong
+      # rewrite, so this bypasses both middleware and Supabase entirely.
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 180s
 
+configs:
+  supabase-roles-sql:
+    content: |
+      -- Set the reserved Supabase role passwords to POSTGRES_PASSWORD.
+      -- Runs only on a fresh PGDATA directory.
+      \set pgpass `echo "$POSTGRES_PASSWORD"`
+      alter user authenticator with password :'pgpass';
+      alter user pgbouncer with password :'pgpass';
+      alter user supabase_auth_admin with password :'pgpass';
+      alter user supabase_functions_admin with password :'pgpass';
+      alter user supabase_storage_admin with password :'pgpass';
+
+  supabase-jwt-sql:
+    content: |
+      -- Publish JWT settings so PostgREST can validate tokens.
+      \set jwt_secret `echo "$JWT_SECRET"`
+      \set jwt_exp `echo "$JWT_EXP"`
+      alter database postgres set "app.settings.jwt_secret" to :'jwt_secret';
+      alter database postgres set "app.settings.jwt_exp" to :'jwt_exp';
+
+  supabase-realtime-sql:
+    content: |
+      -- Realtime's Ecto migrations run in the `_realtime` schema; create it
+      -- ahead of time and hand it to supabase_admin (whom Realtime connects as).
+      create schema if not exists _realtime;
+      alter schema _realtime owner to supabase_admin;
+
+  kong-yaml:
+    content: |
+      _format_version: "1.1"
+
+      consumers:
+        - username: anon
+          keyauth_credentials:
+            - key: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0}
+          acls:
+            - group: anon
+        - username: service_role
+          keyauth_credentials:
+            - key: ${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU}
+          acls:
+            - group: admin
+
+      acls:
+        - consumer: anon
+          group: anon
+        - consumer: service_role
+          group: admin
+
+      services:
+        - name: auth-v1-open
+          url: http://auth:9999/verify
+          routes:
+            - name: auth-v1-open
+              strip_path: true
+              paths: [/auth/v1/verify]
+          plugins:
+            - name: cors
+
+        - name: auth-v1-open-callback
+          url: http://auth:9999/callback
+          routes:
+            - name: auth-v1-open-callback
+              strip_path: true
+              paths: [/auth/v1/callback]
+          plugins:
+            - name: cors
+
+        - name: auth-v1-open-authorize
+          url: http://auth:9999/authorize
+          routes:
+            - name: auth-v1-open-authorize
+              strip_path: true
+              paths: [/auth/v1/authorize]
+          plugins:
+            - name: cors
+
+        - name: auth-v1
+          url: http://auth:9999/
+          routes:
+            - name: auth-v1-all
+              strip_path: true
+              paths: [/auth/v1/]
+          plugins:
+            - name: cors
+            - name: key-auth
+              config:
+                hide_credentials: false
+            - name: acl
+              config:
+                hide_groups_header: true
+                allow: [admin, anon]
+
+        - name: rest-v1
+          url: http://rest:3000/
+          routes:
+            - name: rest-v1-all
+              strip_path: true
+              paths: [/rest/v1/]
+          plugins:
+            - name: cors
+            - name: key-auth
+              config:
+                hide_credentials: true
+            - name: acl
+              config:
+                hide_groups_header: true
+                allow: [admin, anon]
+
+        - name: realtime-v1-ws
+          url: http://realtime:4000/socket
+          protocol: http
+          routes:
+            - name: realtime-v1-ws
+              strip_path: true
+              paths: [/realtime/v1/]
+          plugins:
+            - name: cors
+            - name: key-auth
+              config:
+                hide_credentials: false
+            - name: acl
+              config:
+                hide_groups_header: true
+                allow: [admin, anon]
+
+        - name: meta
+          url: http://meta:8080/
+          routes:
+            - name: meta-all
+              strip_path: true
+              paths: [/pg/]
+          plugins:
+            - name: key-auth
+              config:
+                hide_credentials: false
+            - name: acl
+              config:
+                hide_groups_header: true
+                allow: [admin]
+
 volumes:
   agrotik-db:
-  agrotik-db-config:

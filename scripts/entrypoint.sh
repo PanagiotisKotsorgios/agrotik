@@ -35,15 +35,15 @@ if [ -n "${PGHOST:-}" ] || [ -n "${SUPABASE_DB_URL:-}" ]; then
     exit 1
   fi
 
-  # The official Supabase self-hosted compose runs roles.sql, jwt.sql and
-  # realtime.sql only while initializing a brand-new PGDATA directory. Run the
-  # equivalent idempotent repair here too so a previously-created Coolify
-  # volume is fixed on its next deployment instead of needing to be deleted.
+  # Best-effort repair for Supabase reserved roles on an already-created
+  # volume. On a fresh volume this is a confirming no-op (the init scripts
+  # in docker-entrypoint-initdb.d already set the right passwords). On a
+  # broken older volume (roles with no password) this cannot authenticate
+  # as supabase_admin, so we swallow the error and let the operator know
+  # that the volume needs to be deleted from Coolify UI to recover.
   if [ -n "${POSTGRES_PASSWORD:-}" ] && [ -n "${PGHOST:-}" ]; then
-    echo "→ Configuring Supabase database roles…"
-    # Reserved Supabase roles can only be altered by the image's
-    # supabase_admin superuser; application migrations remain on `postgres`.
-    PGPASSWORD="${PGPASSWORD:-$POSTGRES_PASSWORD}" psql \
+    echo "→ Verifying Supabase database roles…"
+    if ! PGPASSWORD="${PGPASSWORD:-$POSTGRES_PASSWORD}" psql \
       -h "$PGHOST" \
       -p "${PGPORT:-5432}" \
       -d "${PGDATABASE:-postgres}" \
@@ -51,7 +51,7 @@ if [ -n "${PGHOST:-}" ] || [ -n "${SUPABASE_DB_URL:-}" ]; then
       -v ON_ERROR_STOP=1 \
       -v "pgpass=${POSTGRES_PASSWORD}" \
       -v "jwt_secret=${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}" \
-      -v "jwt_exp=${JWT_EXP:-3600}" <<'SQL' > /dev/null
+      -v "jwt_exp=${JWT_EXP:-3600}" <<'SQL' > /dev/null 2>&1
 select format('alter role %I with password %L', rolname, :'pgpass')
 from pg_roles
 where rolname in (
@@ -68,6 +68,12 @@ alter schema _realtime owner to supabase_admin;
 alter database postgres set "app.settings.jwt_secret" to :'jwt_secret';
 alter database postgres set "app.settings.jwt_exp" to :'jwt_exp';
 SQL
+    then
+      echo "   ⚠  supabase_admin login failed — reserved role passwords are" >&2
+      echo "      probably NULL because this volume was created before the" >&2
+      echo "      init scripts were in place. DELETE the agrotik-db volume" >&2
+      echo "      in Coolify (Persistent Storage) and redeploy." >&2
+    fi
   fi
 
   echo "→ Ensuring migration ledger…"
