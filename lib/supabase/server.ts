@@ -7,8 +7,12 @@ import { cookies } from "next/headers";
  */
 export async function createSupabaseServer() {
   const cookieStore = await cookies();
+  // Server calls prefer the internal URL (avoid round-tripping through
+  // the public origin) but fall back to the public one.
+  const url =
+    process.env.SUPABASE_INTERNAL_URL || process.env.NEXT_PUBLIC_SUPABASE_URL!;
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    url,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
