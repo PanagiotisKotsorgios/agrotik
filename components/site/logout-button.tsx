@@ -10,9 +10,9 @@ export function LogoutButton() {
       type="button"
       onClick={() => start(() => logout())}
       disabled={pending}
-      className="w-full inline-flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-brand-muted hover:bg-red-50 hover:text-red-700"
+      className="w-full inline-flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg text-[15px] font-semibold bg-[#7A1A1A] text-white hover:bg-[#902828] transition-colors disabled:opacity-60"
     >
-      <Icon name="logout" className="w-4 text-center" />
+      <Icon name="logout" />
       {pending ? "Αποσύνδεση…" : "Αποσύνδεση"}
     </button>
   );

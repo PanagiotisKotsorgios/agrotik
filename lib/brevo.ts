@@ -1,23 +1,32 @@
 import { createSupabaseService } from "@/lib/supabase/service";
 
+export interface EmailTemplate {
+  subject: string;
+  heading: string;
+  body_html: string;
+}
+
 export interface BrevoSettings {
   enabled: boolean;
   api_key: string;
   sender_email: string;
   sender_name: string;
   templates: Record<string, boolean>;
+  welcome_template?: EmailTemplate;
+  price_changed_template?: EmailTemplate;
+  new_message_template?: EmailTemplate;
 }
 
 const DEFAULT: BrevoSettings = {
   enabled: false,
   api_key: "",
-  sender_email: "no-reply@agrotik.local",
+  sender_email: "info@agrotik.gr",
   sender_name: "AGROTIK",
   templates: {
     price_changed: true,
     new_better_price: true,
     new_message: true,
-    welcome: false,
+    welcome: true,
   },
 };
 

@@ -83,7 +83,9 @@ export function MobileNav({ authed, isAdmin, isFarmer, displayName }: Props) {
             <MobileLink href="/dashboard/listings" icon={isFarmer ? "wheat" : "tag"}>
               {isFarmer ? "Παραγωγή" : "Τιμοκατάλογος"}
             </MobileLink>
-            {isFarmer && <MobileLink href="/dashboard/favorites" icon="heart">Αγαπημένα</MobileLink>}
+            {isFarmer && <MobileLink href="/dashboard/network" icon="heart">Οι έμποροί μου</MobileLink>}
+            {!isFarmer && <MobileLink href="/dashboard/network" icon="users">Οι παραγωγοί μου</MobileLink>}
+            {!isFarmer && <MobileLink href="/dashboard/purchases" icon="box">Αγορές & σεζόν</MobileLink>}
             <MobileLink href="/dashboard/messages" icon="chat">Μηνύματα</MobileLink>
             <MobileLink href="/dashboard/notifications" icon="bell">Ειδοποιήσεις</MobileLink>
             {isAdmin && <MobileLink href="/admin" icon="shield">Admin panel</MobileLink>}

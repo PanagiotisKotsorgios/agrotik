@@ -1,10 +1,10 @@
 "use client";
 import { useState, useTransition } from "react";
-import { Input, Label } from "@/components/ui/input";
+import { Input, Label, Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { saveBrevoSettings, sendBrevoTest } from "@/lib/actions/admin";
-import type { BrevoSettings } from "@/lib/brevo";
+import type { BrevoSettings, EmailTemplate } from "@/lib/brevo";
 
 export function BrevoSettingsForm({ initial }: { initial: BrevoSettings }) {
   const [enabled, setEnabled] = useState(initial.enabled);
@@ -110,6 +110,34 @@ export function BrevoSettingsForm({ initial }: { initial: BrevoSettings }) {
         </div>
       </div>
 
+      {/* Editable welcome template */}
+      <TemplateEditor
+        title="Καλωσόρισμα νέου χρήστη"
+        initial={initial.welcome_template ?? { subject: "Καλωσόρισες στο AGROTIK", heading: "Καλωσόρισες!", body_html: "" }}
+        onSave={async (val) => {
+          const res = await saveBrevoSettings({ welcome_template: val });
+          setMsg(res.ok ? { ok: true, text: "Το template αποθηκεύτηκε" } : { ok: false, text: res.error });
+        }}
+      />
+
+      <TemplateEditor
+        title="Αλλαγή τιμής σε αγαπημένο"
+        initial={initial.price_changed_template ?? { subject: "AGROTIK · Αλλαγή τιμής", heading: "Νέα τιμή σε αγαπημένο", body_html: "" }}
+        onSave={async (val) => {
+          const res = await saveBrevoSettings({ price_changed_template: val });
+          setMsg(res.ok ? { ok: true, text: "Το template αποθηκεύτηκε" } : { ok: false, text: res.error });
+        }}
+      />
+
+      <TemplateEditor
+        title="Νέο μήνυμα"
+        initial={initial.new_message_template ?? { subject: "AGROTIK · Νέο μήνυμα", heading: "Νέο μήνυμα", body_html: "" }}
+        onSave={async (val) => {
+          const res = await saveBrevoSettings({ new_message_template: val });
+          setMsg(res.ok ? { ok: true, text: "Το template αποθηκεύτηκε" } : { ok: false, text: res.error });
+        }}
+      />
+
       {msg && (
         <p
           className={
@@ -169,5 +197,63 @@ export function BrevoSettingsForm({ initial }: { initial: BrevoSettings }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function TemplateEditor({
+  title,
+  initial,
+  onSave,
+}: {
+  title: string;
+  initial: EmailTemplate;
+  onSave: (val: EmailTemplate) => Promise<void>;
+}) {
+  const [val, setVal] = useState<EmailTemplate>(initial);
+  const [open, setOpen] = useState(false);
+  const [pending, start] = useTransition();
+
+  return (
+    <details className="border border-brand-border rounded-md group" open={open}>
+      <summary
+        className="cursor-pointer list-none flex items-center justify-between px-4 py-3 bg-brand-bg/50 hover:bg-brand-bg"
+        onClick={(e) => {
+          e.preventDefault();
+          setOpen((o) => !o);
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <Icon name="envelope" className="text-brand-dark" />
+          <span className="font-semibold text-brand-dark">Template · {title}</span>
+        </div>
+        <Icon name="plus" className={"transition-transform " + (open ? "rotate-45" : "")} />
+      </summary>
+      {open && (
+        <div className="p-4 space-y-3 border-t border-brand-border">
+          <div>
+            <Label>Θέμα (subject)</Label>
+            <Input value={val.subject} onChange={(e) => setVal({ ...val, subject: e.target.value })} />
+          </div>
+          <div>
+            <Label>Επικεφαλίδα (heading)</Label>
+            <Input value={val.heading} onChange={(e) => setVal({ ...val, heading: e.target.value })} />
+          </div>
+          <div>
+            <Label>Σώμα (HTML — επιτρέπονται &lt;p&gt;, &lt;a&gt;, &lt;strong&gt;, &lt;br/&gt;)</Label>
+            <Textarea rows={10} value={val.body_html} onChange={(e) => setVal({ ...val, body_html: e.target.value })} className="font-mono text-[13px]" />
+          </div>
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              disabled={pending}
+              icon={pending ? "spinner" : "check"}
+              onClick={() => start(() => onSave(val))}
+            >
+              {pending ? "Αποθήκευση…" : "Αποθήκευση template"}
+            </Button>
+          </div>
+        </div>
+      )}
+    </details>
   );
 }

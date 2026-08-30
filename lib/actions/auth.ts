@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseService } from "@/lib/supabase/service";
+import { sendBrevoEmail, renderEmailShell, getBrevoSettings } from "@/lib/brevo";
 import type { UserRole } from "@/lib/db/types";
 
 const roleEnum = z.enum(["farmer", "merchant", "factory"]);
@@ -60,8 +61,45 @@ export async function signup(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: `Αποτυχία δημιουργίας προφίλ: ${profileError.message}` };
   }
 
+  // Best-effort welcome email (skipped silently if Brevo is off / template disabled)
+  try {
+    const settings = await getBrevoSettings();
+    const tpl = (settings as any).welcome_template ?? {};
+    const subject = tpl.subject || "Καλωσόρισες στο AGROTIK";
+    const heading = tpl.heading || `Γεια σου ${data.display_name},`;
+    const bodyHtml = tpl.body_html || defaultWelcomeBody(data.display_name);
+    await sendBrevoEmail("welcome", {
+      to: [{ email: data.email, name: data.display_name }],
+      subject,
+      htmlContent: renderEmailShell(heading, bodyHtml),
+      tag: "welcome",
+    });
+  } catch (e) {
+    console.error("[welcome email]", e);
+  }
+
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+function defaultWelcomeBody(name: string): string {
+  return `
+    <p>Καλωσόρισες στο <strong>AGROTIK</strong>, τη νέα ελληνική αγορά που συνδέει
+    αγρότες με εμπόρους και εργοστάσια — απευθείας, χωρίς μεσάζοντες.</p>
+    <p>Ο λογαριασμός σου είναι έτοιμος. Το επόμενο βήμα είναι να συμπληρώσεις
+    τα στοιχεία του προφίλ σου και να καταχωρήσεις την πρώτη σου καταχώρηση.</p>
+    <p style="margin: 24px 0">
+      <a href="http://agrotik.gr/login" style="display:inline-block;background:#1B4D2E;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600">
+        Σύνδεση στον λογαριασμό μου
+      </a>
+    </p>
+    <p>Ελπίζουμε το AGROTIK να γίνει το εργαλείο που θα σε βοηθήσει να πετύχεις
+    καλύτερες τιμές και σχέσεις χωρίς προμήθειες.</p>
+    <p>Για οποιαδήποτε ερώτηση:<br/>
+    ☎ <a href="tel:2631028971">2631028971</a><br/>
+    ✉ <a href="mailto:info@agrotik.gr">info@agrotik.gr</a></p>
+    <p style="margin-top: 24px; color: #5A5A52">— Η ομάδα του AGROTIK</p>
+  `;
 }
 
 const loginSchema = z.object({

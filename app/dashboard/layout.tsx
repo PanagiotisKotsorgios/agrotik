@@ -35,25 +35,31 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   const isFarmer = profile.role === "farmer";
-  const isBuyer = profile.role === "merchant" || profile.role === "factory";
 
   return (
     <>
       <Header />
-      <div className="max-w-6xl mx-auto px-4 py-6 grid md:grid-cols-[240px_1fr] gap-6">
-        <aside className="space-y-0.5 md:sticky md:top-20 self-start">
-          <div className="eyebrow text-brand-muted px-3 pb-2">Το προφίλ μου</div>
-          <NavLink href="/dashboard" icon="chart">Αρχική</NavLink>
-          <NavLink href="/dashboard/profile" icon="user">Στοιχεία προφίλ</NavLink>
-          <NavLink href="/dashboard/listings" icon={isFarmer ? "wheat" : "tag"}>
-            {isFarmer ? "Παραγωγή" : "Τιμοκατάλογος"}
-          </NavLink>
-          {isFarmer && <NavLink href="/dashboard/favorites" icon="heart">Αγαπημένα</NavLink>}
-          <NavLink href="/dashboard/messages" icon="chat">Μηνύματα</NavLink>
-          <NavLink href="/dashboard/notifications" icon="bell">Ειδοποιήσεις</NavLink>
-          <div className="pt-4"><LogoutButton /></div>
-        </aside>
-        <main className="min-w-0">{children}</main>
+      <div className="min-h-[calc(100vh-76px)] bg-white">
+        <div className="max-w-6xl mx-auto px-4 py-8 grid md:grid-cols-[260px_1fr] gap-8">
+          <aside className="space-y-1 md:sticky md:top-24 self-start">
+            <div className="eyebrow text-brand-muted px-3.5 pb-3 text-[13px]">Το προφίλ μου</div>
+            <NavLink href="/dashboard" icon="chart">Αρχική</NavLink>
+            <NavLink href="/dashboard/profile" icon="user">Στοιχεία προφίλ</NavLink>
+            <NavLink href="/dashboard/listings" icon={isFarmer ? "wheat" : "tag"}>
+              {isFarmer ? "Παραγωγή" : "Τιμοκατάλογος"}
+            </NavLink>
+            {isFarmer && <NavLink href="/dashboard/network" icon="heart">Οι έμποροί μου</NavLink>}
+            {!isFarmer && <NavLink href="/dashboard/network" icon="users">Οι παραγωγοί μου</NavLink>}
+            {!isFarmer && <NavLink href="/dashboard/purchases" icon="box">Αγορές & σεζόν</NavLink>}
+            <NavLink href="/dashboard/messages" icon="chat">Μηνύματα</NavLink>
+            <NavLink href="/dashboard/notifications" icon="bell">Ειδοποιήσεις</NavLink>
+
+            <div className="pt-6 mt-4 border-t border-brand-border">
+              <LogoutButton />
+            </div>
+          </aside>
+          <main className="min-w-0">{children}</main>
+        </div>
       </div>
     </>
   );
@@ -64,9 +70,9 @@ function NavLink({ href, icon, children }: { href: string; icon: IconName; child
     <Link
       href={href}
       prefetch
-      className="flex items-center gap-3 px-3.5 py-2.5 rounded-md text-[15px] font-semibold text-brand-ink/85 hover:bg-brand-border/50 hover:text-brand-dark"
+      className="flex items-center gap-3.5 px-3.5 py-3 rounded-lg text-[16px] font-semibold text-brand-ink hover:bg-brand-bg hover:text-brand-dark transition-colors"
     >
-      <Icon name={icon} className="text-brand-muted w-5 text-center" />
+      <Icon name={icon} className="text-brand-muted w-5 text-center text-[1.05em]" />
       {children}
     </Link>
   );
