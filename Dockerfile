@@ -2,14 +2,17 @@
 FROM node:22-alpine AS base
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
+# libc6-compat needed for many prebuilt binaries (next/swc, sharp, esbuild)
+RUN apk add --no-cache libc6-compat
 
 # ─── Dependencies ──────────────────────────────────────────────────────
 FROM base AS deps
-COPY package.json package-lock.json ./
-RUN npm install --legacy-peer-deps --no-audit --no-fund --prefer-offline
+COPY package.json package-lock.json .npmrc ./
+RUN npm install --legacy-peer-deps --no-audit --no-fund
 
 # ─── Build ─────────────────────────────────────────────────────────────
 FROM base AS builder
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ARG NEXT_PUBLIC_SUPABASE_URL
