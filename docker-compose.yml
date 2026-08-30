@@ -125,12 +125,11 @@ services:
       GOTRUE_MAILER_URLPATHS_CONFIRMATION: "/auth/callback"
       GOTRUE_MAILER_URLPATHS_RECOVERY: "/auth/callback"
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: "/auth/callback"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:9999/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 120s
+    # No healthcheck: the gotrue image is a minimal scratch-ish container
+    # without wget/curl/nc, so any HTTP probe returns exit 127 immediately
+    # and compose marks the container unhealthy before start_period even
+    # applies. Kong tolerates upstream not-yet-ready (returns 502 until
+    # gotrue answers), so `depends_on: service_started` is enough.
 
   realtime:
     image: supabase/realtime:v2.30.34
@@ -161,7 +160,7 @@ services:
     restart: unless-stopped
     depends_on:
       auth:
-        condition: service_healthy
+        condition: service_started
       rest:
         condition: service_started
       realtime:
