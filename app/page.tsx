@@ -9,6 +9,7 @@ import { Card, Eyebrow, CardTitle } from "@/components/ui/card";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Ticker, type TickerItem } from "@/components/site/ticker";
 import { ProfilesCarousel, type CarouselProfile } from "@/components/site/profiles-carousel";
+import { GlobalLiveSearch } from "@/components/site/global-live-search";
 import { createSupabaseService } from "@/lib/supabase/service";
 import { bestVariant } from "@/lib/domain/variants";
 
@@ -142,6 +143,11 @@ export default async function LandingPage() {
       </section>
 
       <Ticker items={ticker} />
+
+      {/* Landing-wide live search — τα αποτελέσματα πέφτουν κάτω από το input */}
+      <div className="pt-10">
+        <GlobalLiveSearch />
+      </div>
 
       {carousel.length > 0 && <ProfilesCarousel profiles={carousel} />}
 

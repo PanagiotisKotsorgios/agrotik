@@ -135,7 +135,7 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
           maskImage: "linear-gradient(to right, transparent, black 3%, black 97%, transparent)",
           WebkitMaskImage: "linear-gradient(to right, transparent, black 3%, black 97%, transparent)",
         }}
-        className="flex gap-4 overflow-x-auto snap-x pb-2 -mx-4 px-4 cursor-grab select-none scroll-smooth"
+        className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-[9%] sm:px-4 cursor-grab select-none scroll-smooth"
       >
         {profiles.map((p) => (
           <Link
@@ -143,7 +143,7 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
             href={`/profile/${p.id}`}
             prefetch
             draggable={false}
-            className="shrink-0 w-[280px] snap-start bg-brand-surface border border-brand-border rounded-card p-5 shadow-card hover:border-brand-dark/40 hover:shadow-elev transition-all"
+            className="shrink-0 w-[82%] sm:w-[280px] snap-center sm:snap-start bg-brand-surface border border-brand-border rounded-card p-5 shadow-card hover:border-brand-dark/40 hover:shadow-elev transition-all"
           >
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-brand-dark text-white flex items-center justify-center font-semibold display shrink-0">

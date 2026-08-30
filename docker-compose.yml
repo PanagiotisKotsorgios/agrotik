@@ -31,7 +31,7 @@ x-postgres-env: &pg-env
 
 services:
   db:
-    image: supabase/postgres:15.6.1.139
+    image: supabase/postgres:15.1.1.78
     restart: unless-stopped
     volumes:
       - agrotik-db:/var/lib/postgresql/data
@@ -50,7 +50,7 @@ services:
       start_period: 30s
 
   meta:
-    image: supabase/postgres-meta:v0.84.2
+    image: supabase/postgres-meta:v0.83.2
     restart: unless-stopped
     depends_on:
       db:
@@ -79,7 +79,7 @@ services:
       PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXP:-3600}
 
   auth:
-    image: supabase/gotrue:v2.163.4
+    image: supabase/gotrue:v2.164.0
     restart: unless-stopped
     depends_on:
       db:
@@ -106,7 +106,7 @@ services:
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: "/auth/callback"
 
   realtime:
-    image: supabase/realtime:v2.34.7
+    image: supabase/realtime:v2.30.34
     restart: unless-stopped
     depends_on:
       db:

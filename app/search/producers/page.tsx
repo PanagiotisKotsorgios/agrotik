@@ -13,6 +13,7 @@ import { FilterChips } from "@/components/site/filter-chips";
 import { AttributeFilters } from "@/components/site/attribute-filters";
 import { FiltersDrawer } from "@/components/site/filters-drawer";
 import { Footer } from "@/components/site/footer";
+import { LiveSearchInput } from "@/components/site/live-search-input";
 
 export default async function ProducersSearchPage({
   searchParams,
@@ -61,6 +62,8 @@ export default async function ProducersSearchPage({
             Αγρότες με έτοιμη παραγωγή. Φιλτράρισε ανά περιοχή, προϊόν, ποιότητα, ποσότητα ή διαθεσιμότητα.
           </p>
         </div>
+
+        <LiveSearchInput placeholder="Αναζήτηση αγρότη με όνομα ή επωνυμία…" />
 
         <FiltersDrawer activeCount={countActive(params)}>
         <form className="p-5 bg-brand-surface rounded-card border border-brand-border shadow-card mb-6">

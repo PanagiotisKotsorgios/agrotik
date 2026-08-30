@@ -13,6 +13,7 @@ import { FilterChips } from "@/components/site/filter-chips";
 import { AttributeFilters } from "@/components/site/attribute-filters";
 import { FiltersDrawer } from "@/components/site/filters-drawer";
 import { Footer } from "@/components/site/footer";
+import { LiveSearchInput } from "@/components/site/live-search-input";
 
 export default async function BuyersSearchPage({
   searchParams,
@@ -50,6 +51,8 @@ export default async function BuyersSearchPage({
             Έμποροι και εργοστάσια που δηλώνουν τιμές αγοράς. Φιλτράρισε ανά προϊόν, ποιότητα, νομό, δήμο ή τιμή.
           </p>
         </div>
+
+        <LiveSearchInput placeholder="Αναζήτηση εμπόρου ή εργοστασίου…" />
 
         <FiltersDrawer activeCount={countActive(params)}>
         <form className="p-5 bg-brand-surface rounded-card border border-brand-border shadow-card mb-6">
