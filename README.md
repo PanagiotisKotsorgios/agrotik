@@ -6,34 +6,37 @@
 
 ---
 
-## One-click deploy σε Coolify
+## One-click deploy σε Coolify · self-contained stack
 
-Το repo είναι **έτοιμο για production** — δεν χρειάζεται κανένα build βήμα στο local.
+**Τίποτα δεν τρέχει έξω από τον server σου.** Postgres, Auth, REST API, Realtime, Kong και η εφαρμογή σηκώνονται όλα από το ίδιο `docker-compose.yml`. Καμία εγγραφή σε supabase.com, καμία εξωτερική υπηρεσία.
 
 1. **Coolify → New Resource → Docker Compose from GitHub**
-2. Repository: `https://github.com/PanagiotisKotsorgios/agrotik`
-3. Branch: `main` · Compose file: `docker-compose.yml` (auto-detected)
-4. Environment variables (Coolify UI):
+2. Repo: `https://github.com/PanagiotisKotsorgios/agrotik` · Branch: `main`
+3. Compose file: `docker-compose.yml` (auto-detected)
+4. Environment variables (ΠΡΟΑΙΡΕΤΙΚΑ — έχει sensible defaults που δουλεύουν άμεσα):
 
    ```
-   NEXT_PUBLIC_SUPABASE_URL=https://your-supabase.tld
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-   SUPABASE_SERVICE_ROLE_KEY=eyJ...
-   SUPABASE_DB_URL=postgresql://postgres:password@host:5432/postgres
+   POSTGRES_PASSWORD=<strong-random-string>
+   JWT_SECRET=<40+ char random string>
+   SUPABASE_ANON_KEY=<JWT signed with JWT_SECRET, role=anon>
+   SUPABASE_SERVICE_ROLE_KEY=<JWT signed with JWT_SECRET, role=service_role>
    SEED_ADMIN_EMAIL=admin@agrotik.gr
    APP_ORIGIN=https://agrotik.gr
+   NEXT_PUBLIC_SUPABASE_URL=https://api.agrotik.gr
    ```
 
-5. Domain → `agrotik.gr` (Coolify handles TLS automatically)
-6. **Deploy** — that's it.
+   > **Για γρήγορο test** — άφησε όλα κενά. Θα σηκωθεί με demo JWT keys που **πρέπει** να αντικαταστήσεις πριν δώσεις σε πραγματικούς χρήστες.
 
-Το container εκτελεί αυτόματα:
+5. **Domains** (Coolify UI): `agrotik.gr` → service `web` (port 3000) · `api.agrotik.gr` → service `kong` (port 8000)
+6. **Deploy**. Coolify αναλαμβάνει auto-TLS με Let's Encrypt.
+
+Ο stack ενεργοποιεί αυτόματα:
 - **Auto-migration**: κάθε νέο `.sql` στο `supabase/migrations/` εφαρμόζεται μία φορά (tracked σε `_agrotik_migrations`)
 - **Seed**: πρώτη φορά μόνο (74 νομοί + 12 προϊόντα)
-- **Production Next.js** (standalone output, χωρίς npm στο runtime · fast cold start)
-- **Health check** στο `/` κάθε 30s
+- **Postgres named volume** `agrotik-db` για persistence — **backup το!**
+- **Production Next.js** (standalone output — cold start ~3s, warm ~150ms)
 
-📘 Πλήρης οδηγός — από zero σε live server με SSL — στο [`COOLIFY.md`](./COOLIFY.md).
+📘 Πλήρης οδηγός με JWT generation, DNS, backups: [`COOLIFY.md`](./COOLIFY.md).
 
 ---
 
