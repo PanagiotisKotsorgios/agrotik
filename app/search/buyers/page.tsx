@@ -156,11 +156,16 @@ export default async function BuyersSearchPage({
         ) : (
           <div className="grid sm:grid-cols-2 gap-4">
             {results.map((r) => (
-              <Card key={r.profile.id} className="hover:border-brand-dark/40 transition-colors">
+              <Link
+                key={r.profile.id}
+                href={`/profile/${r.profile.id}`}
+                prefetch
+                className="group block bg-brand-surface border border-brand-border rounded-card shadow-card p-5 sm:p-6 hover:border-brand-dark/40 hover:shadow-elev transition-all"
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-brand-dark text-lg truncate">{r.profile.display_name}</h3>
+                      <h3 className="font-semibold text-brand-dark text-lg truncate group-hover:underline underline-offset-2">{r.profile.display_name}</h3>
                       <Badge tone="brand">{roleLabel(r.profile.role)}</Badge>
                     </div>
                     <div className="text-sm text-brand-muted mt-0.5 flex items-center gap-1.5">
@@ -184,15 +189,9 @@ export default async function BuyersSearchPage({
                       Ενημέρωση {formatRelative(r.updated_at)}
                     </div>
                   </div>
-                  <Link
-                    href={`/profile/${r.profile.id}`}
-                    className="text-brand-mid hover:text-brand-dark shrink-0"
-                    aria-label="Δες προφίλ"
-                  >
-                    <Icon name="arrowRight" className="text-lg" />
-                  </Link>
+                  <Icon name="arrowRight" className="text-brand-muted group-hover:text-brand-dark shrink-0 text-lg mt-1" />
                 </div>
-              </Card>
+              </Link>
             ))}
           </div>
         )}

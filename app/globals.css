@@ -95,3 +95,17 @@ input[type="checkbox"], input[type="radio"] {
 
 /* Better readable defaults for form labels */
 label { font-weight: 600; }
+
+/* Article typography for legal/info pages */
+.prose-agrotik { max-width: 65ch; color: #141412; line-height: 1.7; }
+.prose-agrotik h2 { font-family: var(--font-fraunces), serif; color: #1B4D2E; font-size: 1.6rem; margin-top: 2.2rem; margin-bottom: 0.6rem; letter-spacing: -0.01em; }
+.prose-agrotik h3 { color: #1B4D2E; font-weight: 700; font-size: 1.1rem; margin-top: 1.4rem; margin-bottom: 0.35rem; }
+.prose-agrotik p { margin: 0.7rem 0; }
+.prose-agrotik ul { margin: 0.7rem 0 0.7rem 1.2rem; list-style-type: disc; }
+.prose-agrotik ol { margin: 0.7rem 0 0.7rem 1.4rem; list-style-type: decimal; }
+.prose-agrotik li { margin: 0.35rem 0; }
+.prose-agrotik a { color: #3F8B34; text-decoration: underline; text-underline-offset: 3px; }
+.prose-agrotik a:hover { color: #1B4D2E; }
+.prose-agrotik hr { border: none; border-top: 1px solid #E3DFD1; margin: 2rem 0; }
+.prose-agrotik strong { color: #1B4D2E; }
+.prose-agrotik code { background: #F0EBD9; padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.92em; }

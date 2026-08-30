@@ -1,71 +1,127 @@
 # AGROTIK
 
-Πλατφόρμα σύνδεσης αγροτών, εμπόρων και εργοστασίων. Καμία μεσιτεία, καμία προμήθεια — απλά μια γέφυρα για να κλείσουν οι δύο πλευρές τη συμφωνία τους.
+Πλατφόρμα σύνδεσης αγροτών με εμπόρους και εργοστάσια. Πραγματικές τιμές, δημόσια προφίλ, καμία μεσιτεία — απλά μια γέφυρα για να κλείσουν οι δύο πλευρές τη συμφωνία τους.
+
+**Live επικοινωνία:** ☎ 2631028971 · ✉ info@agrotik.gr
+
+---
 
 ## Stack
 
-- Next.js 15 (App Router)
-- Tailwind CSS
-- Supabase (Postgres + Auth + Storage + Realtime) — local via Docker
-- Zod
-- TypeScript
+- **Next.js 15** (App Router + Turbopack για dev)
+- **Tailwind CSS** + custom design tokens (Fraunces display / Inter body / JetBrains Mono figures)
+- **FontAwesome 7** icons
+- **Supabase** (Postgres + Auth + Realtime + optional Storage)
+- **Brevo API** για transactional emails (ενεργοποιείται από admin panel)
+- **TypeScript** + **Zod**
 
-## Απαιτήσεις
+---
 
-- Node 22+
-- Docker Engine (μέσα σε WSL είναι μια χαρά — αυτό το repo δουλεύεται εξ ολοκλήρου offline)
-- Supabase CLI (μπαίνει ως dev dep)
+## Local development
 
-## Ξεκίνημα (τοπικά, offline)
+Χρειάζεσαι Node 22+, npm, Docker (για local Supabase).
 
 ```bash
-# 1. Εγκατάσταση dependencies
-npm install
+npm install --legacy-peer-deps
 
-# 2. Εκκίνηση local Supabase (Postgres, Auth, Studio, Realtime, Storage)
+# 1. Start local Supabase (Postgres, Auth, Realtime — Storage disabled by default)
 npm run db:start
-# ↑ Θα εκτυπώσει URL, anon key, service role key. Αντιγράψτε στο .env.local
+# copy the printed anon + service_role keys to .env.local
 
-# 3. Ρύθμιση env
-cp .env.local.example .env.local
-# Επεξεργασία με τα κλειδιά από το βήμα 2
+# 2. Copy env template και συμπλήρωσε τα κλειδιά
+cp .env.example .env.local
 
-# 4. Τρέξιμο εφαρμογής
+# 3. Run dev
 npm run dev
 ```
 
-Ανοίγετε http://localhost:3000.
+- App: http://localhost:3000
+- Supabase Studio: `npm run db:stop && npm run db:start` (studio disabled by default in this repo's config for compatibility; enable it in `supabase/config.toml`)
 
-Το Supabase Studio (DB explorer, auth admin) στο http://localhost:54323.
+**Demo data:** `node scripts/seed-demo.mjs` creates 4 demo accounts + listings.
 
-## Bootstrap admin
+**Admin bootstrap:** ο πρώτος που εγγράφεται με `SEED_ADMIN_EMAIL` γίνεται αυτόματα admin. Μετά ρυθμίζεις Brevo από `/admin/settings`.
 
-Στο `.env.local`, το `SEED_ADMIN_EMAIL` ορίζει ποιος γίνεται admin.
-Ο πρώτος που θα εγγραφεί με αυτό το email γίνεται αυτόματα admin.
+---
 
-## Σχεδίαση
+## Deployment (Coolify / any Docker host)
 
-Το πλήρες design doc: `docs/superpowers/specs/2026-08-30-agrotik-mvp-design.md`
+Ο repository είναι **Coolify-ready**:
 
-## Δομή
+1. **Δημιούργησε Supabase project** (self-hosted ή hosted). Παρέχει `URL`, `anon`, `service_role`.
+2. **Coolify → New Resource → Docker Compose from GitHub**
+   - Repo: `https://github.com/PanagiotisKotsorgios/agrotik`
+   - Compose file: `docker-compose.yml`
+3. **Environment variables** στο Coolify:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=<https://your-project.supabase.co>
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<eyJ...>
+   SUPABASE_SERVICE_ROLE_KEY=<eyJ...>
+   SEED_ADMIN_EMAIL=admin@agrotik.gr
+   ```
+4. **Migrations & seed**: μία φορά, από το local terminal σου:
+   ```bash
+   npx supabase link --project-ref <your-project-ref>
+   npx supabase db push
+   psql "$SUPABASE_DB_URL" -f supabase/seed.sql
+   ```
+5. Deploy. Coolify θα κάνει build το Dockerfile (multi-stage, standalone output) και θα σηκώσει το app στο port 3000. Πρόσθεσε custom domain + auto-TLS από το Coolify UI.
+
+**Health check:** `GET /` κάθε 30s.
+
+**Update:** κάθε push σε `main` triggers auto-rebuild (αν το ενεργοποιήσεις στο Coolify).
+
+---
+
+## Δομή project
 
 ```
-app/                    Next.js routes
-  page.tsx              Landing
+app/                  Next.js App Router
+  page.tsx              Landing (hero, live ticker, profiles carousel)
   login/, signup/       Auth
-  search/               Public search (buyers, producers)
-  profile/[id]/         Public profile
-  dashboard/            User private area
-  admin/                Admin dashboard
+  search/               Public search (buyers/producers) με πολλά φίλτρα
+  profile/[id]/         Δημόσιο προφίλ με cover, avatar, gallery
+  dashboard/            User private (profile, listings, messages, notifications, ...)
+  admin/                Admin (users, products, reports, settings, exports)
+  contact/, faq/, ...   Ενημερωτικές σελίδες
+  legal/                Terms, Privacy, Cookies, Imprint
 lib/
-  actions/              Server actions
+  actions/              Server actions (auth, profiles, listings, messages, contact, admin, ...)
   db/                   Types, queries
-  domain/               Pure helpers
-  supabase/             Client factories
+  domain/               Pure helpers (variant diff, image resize, search-params parser)
+  supabase/             Client factories (server/browser/service/middleware)
+  brevo.ts              Brevo transactional email wrapper
 components/
-  ui/                   Design primitives
-  site/                 Site-wide (header, logo)
+  ui/                   Icon, Button, Input, Card
+  site/                 Header, Footer, Logo, ticker, carousel, filter drawer, mobile nav
 supabase/
-  migrations/           Schema
-  seed.sql              Regions & starter products
+  config.toml, migrations/, seed.sql
+docs/
+  superpowers/specs/    MVP design document
+scripts/
+  seed-demo.mjs         Populates local DB with demo users & listings
 ```
+
+---
+
+## Features
+
+- **3 ρόλοι**: αγρότης / έμπορος / εργοστάσιο (+ admin)
+- **Public search** αγοραστών & παραγωγών με φίλτρα ανά νομό, δήμο, κατηγορία, προϊόν, ποιότητα (attributes), εύρος τιμής/ποσότητας, ημερομηνία διαθεσιμότητας, όνομα
+- **Mobile filter drawer** — full-screen sheet με count badge
+- **In-app chat** με Supabase Realtime
+- **Notifications**: αλλαγή τιμής σε αγαπημένο, νέος αγοραστής με καλύτερη τιμή, νέο μήνυμα
+- **Ειδοποιήσεις email** μέσω Brevo (ρυθμίζεται από admin — API key, sender, active templates)
+- **Δημόσιο προφίλ** με cover, avatar, gallery (client-side resize σε JPEG), extra fields (year founded, employees, certifications, specialties, hours, address)
+- **Admin dashboard**: χρήστες (suspend/promote), προϊόντα (approve/reject), αναφορές, ρυθμίσεις Brevo, CSV exports
+- **Reports/flagging** από κάθε προφίλ
+- **Deal-mark** για analytics (χωρίς ποσά)
+- **74 Νομοί/Π.Ε.** seeded + 12 βασικά προϊόντα με parametric attributes
+- **Ευανάγνωστο UI** για μεγαλύτερες ηλικίες (44px min touch targets, 17px base font, καθαρή τυπογραφία)
+- **Ελληνικά μόνο** UI (i18n post-launch)
+
+---
+
+## License
+
+Proprietary — © AGROTIK. Contact info@agrotik.gr for licensing.

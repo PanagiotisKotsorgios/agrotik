@@ -1,6 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/site/header";
+import { Footer } from "@/components/site/footer";
 import { Card, Badge, Eyebrow, CardTitle } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { getProfileById, getProfileListings } from "@/lib/db/queries";
@@ -33,42 +35,71 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   }
   const viewerIsFarmer = viewerRole === "farmer";
   const canMessage = !!user && user.id !== id;
+  const gallery: { url: string; alt?: string }[] = Array.isArray(profile.gallery) ? profile.gallery : [];
 
   return (
     <>
       <Header />
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+
+      {/* Cover */}
+      <div className="relative w-full h-56 sm:h-72 bg-brand-dark overflow-hidden">
+        {profile.cover_url ? (
+          <Image src={profile.cover_url} alt="" fill className="object-cover opacity-95" unoptimized />
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(135deg, #1B4D2E 0%, #3F8B34 55%, #6B7F3F 100%)",
+            }}
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/80 via-brand-dark/20 to-transparent" />
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 -mt-20 relative z-10 pb-10 space-y-6">
         {/* Identity card */}
-        <Card>
+        <Card className="!pt-6">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <Avatar name={profile.display_name} />
-              <div>
+            <div className="flex items-start gap-4 min-w-0">
+              <Avatar url={profile.avatar_url} name={profile.display_name} />
+              <div className="min-w-0">
                 <Eyebrow>{roleLabel(profile.role)}</Eyebrow>
-                <h1 className="display text-3xl text-brand-dark leading-tight mt-1">
+                <h1 className="display text-3xl sm:text-4xl text-brand-dark leading-tight mt-1">
                   {profile.display_name}
                 </h1>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-brand-muted">
-                  <Icon name="location" className="text-brand-earth" />
-                  <span>{profile.regions?.name_el ?? profile.region_code}</span>
-                  {profile.municipality && (
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-brand-muted">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Icon name="location" className="text-brand-earth" />
+                    {profile.regions?.name_el ?? profile.region_code}
+                    {profile.municipality && ` · ${profile.municipality}`}
+                  </span>
+                  {profile.year_founded && (
                     <>
                       <span className="text-brand-border">·</span>
-                      <span>{profile.municipality}</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Icon name="calendar" /> Από το {profile.year_founded}
+                      </span>
+                    </>
+                  )}
+                  {profile.employees_range && (
+                    <>
+                      <span className="text-brand-border">·</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Icon name="users" /> {profile.employees_range}
+                      </span>
                     </>
                   )}
                 </div>
                 {profile.bio && (
-                  <p className="mt-4 text-brand-ink/85 leading-relaxed max-w-prose">
-                    {profile.bio}
-                  </p>
+                  <p className="mt-4 text-brand-ink/90 leading-relaxed max-w-prose">{profile.bio}</p>
                 )}
                 {profile.website && (
                   <a
                     href={profile.website}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-3 inline-flex items-center gap-1.5 text-brand-mid hover:text-brand-dark text-sm"
+                    className="mt-3 inline-flex items-center gap-1.5 text-brand-mid hover:text-brand-dark text-sm font-semibold"
                   >
                     <Icon name="globe" /> {profile.website.replace(/^https?:\/\//, "")}
                   </a>
@@ -80,14 +111,14 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
               {user ? (
                 <a
                   href={`tel:${profile.phone}`}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-brand-dark text-white text-sm font-medium hover:bg-brand-mid"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-brand-dark text-white text-[15px] font-semibold hover:bg-brand-mid"
                 >
                   <Icon name="phone" /> {profile.phone}
                 </a>
               ) : (
                 <Link
                   href={`/login?next=/profile/${id}`}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-brand-dark text-white text-sm font-medium hover:bg-brand-mid"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-brand-dark text-white text-[15px] font-semibold hover:bg-brand-mid"
                 >
                   <Icon name="lock" /> Σύνδεση για επικοινωνία
                 </Link>
@@ -96,7 +127,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
               {canMessage && (
                 <Link
                   href={`/dashboard/messages/${id}`}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-brand-border text-brand-dark text-sm font-medium hover:border-brand-dark hover:bg-brand-dark/5"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md border border-brand-border text-brand-dark text-[15px] font-semibold hover:border-brand-dark hover:bg-brand-dark/5"
                 >
                   <Icon name="chat" /> Στείλε μήνυμα
                 </Link>
@@ -118,20 +149,32 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           </div>
 
           {user && (
-            <div className="mt-6 pt-4 border-t border-brand-border text-sm space-y-1.5">
-              <div className="flex items-center gap-2 text-brand-ink/80">
-                <Icon name="phone" className="text-brand-muted w-4" />
-                <a className="hover:underline" href={`tel:${profile.phone}`}>{profile.phone}</a>
-              </div>
-              {profile.vat_number && (
-                <div className="flex items-center gap-2 text-brand-ink/80">
-                  <Icon name="tag" className="text-brand-muted w-4" />
-                  <span>ΑΦΜ {profile.vat_number}</span>
-                </div>
-              )}
+            <div className="mt-6 pt-4 border-t border-brand-border grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+              <InfoRow icon="phone" label="Τηλέφωνο"><a className="hover:underline" href={`tel:${profile.phone}`}>{profile.phone}</a></InfoRow>
+              {profile.vat_number && <InfoRow icon="tag" label="ΑΦΜ">{profile.vat_number}</InfoRow>}
+              {profile.address_line && <InfoRow icon="mapLocation" label="Διεύθυνση">{profile.address_line}</InfoRow>}
+              {profile.opening_hours && <InfoRow icon="calendar" label="Ώρες">{profile.opening_hours}</InfoRow>}
+              {profile.certifications && <InfoRow icon="shield" label="Πιστοποιήσεις">{profile.certifications}</InfoRow>}
+              {profile.specialties && <InfoRow icon="wheat" label="Ειδικότητες">{profile.specialties}</InfoRow>}
             </div>
           )}
         </Card>
+
+        {/* Gallery */}
+        {gallery.length > 0 && (
+          <div>
+            <div className="flex items-baseline justify-between mb-3">
+              <Eyebrow>Φωτογραφίες</Eyebrow>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {gallery.map((g, i) => (
+                <div key={i} className="relative aspect-square rounded-md overflow-hidden bg-brand-bg border border-brand-border">
+                  <Image src={g.url} alt={g.alt ?? ""} fill className="object-cover hover:scale-105 transition-transform duration-500" unoptimized sizes="(max-width: 640px) 50vw, 25vw" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Listings */}
         <div>
@@ -228,19 +271,39 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           )}
         </div>
       </div>
+      <Footer />
     </>
   );
 }
 
-function Avatar({ name }: { name: string }) {
+function Avatar({ url, name }: { url: string | null; name: string }) {
+  if (url) {
+    return (
+      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden shrink-0 border-4 border-white shadow-elev -mt-14 sm:-mt-16 bg-white">
+        <Image src={url} alt={name} width={112} height={112} className="object-cover w-full h-full" unoptimized />
+      </div>
+    );
+  }
   const initials = name
     .split(/\s+/)
     .slice(0, 2)
     .map((s) => s[0]?.toUpperCase() ?? "")
-    .join("");
+    .join("") || "·";
   return (
-    <div className="w-14 h-14 rounded-full bg-brand-dark text-white flex items-center justify-center font-semibold display shrink-0">
-      {initials || "·"}
+    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-brand-dark text-white text-2xl flex items-center justify-center font-semibold display shrink-0 border-4 border-white shadow-elev -mt-14 sm:-mt-16">
+      {initials}
+    </div>
+  );
+}
+
+function InfoRow({ icon, label, children }: { icon: any; label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-3">
+      <Icon name={icon} className="text-brand-muted mt-1 w-4 shrink-0" />
+      <div className="min-w-0">
+        <div className="eyebrow text-brand-muted">{label}</div>
+        <div className="text-brand-ink">{children}</div>
+      </div>
     </div>
   );
 }

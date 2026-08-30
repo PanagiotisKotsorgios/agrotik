@@ -17,16 +17,31 @@ export function Footer() {
               Άμεση σύνδεση αγροτών, εμπόρων και εργοστασίων. Πραγματικές τιμές
               στη γη · καμία μεσιτεία · καμία προμήθεια.
             </p>
+            <div className="mt-5 space-y-1.5 text-[14px]">
+              <a
+                href="tel:2631028971"
+                className="inline-flex items-center gap-2 text-brand-bg/90 hover:text-brand-light"
+              >
+                <Icon name="phone" className="text-brand-bg/50 w-4" /> <span className="figures">2631028971</span>
+              </a>
+              <br />
+              <a
+                href="mailto:info@agrotik.gr"
+                className="inline-flex items-center gap-2 text-brand-bg/90 hover:text-brand-light break-all"
+              >
+                <Icon name="envelope" className="text-brand-bg/50 w-4" /> info@agrotik.gr
+              </a>
+            </div>
             <div className="mt-5 flex items-center gap-2">
               <a
-                href="mailto:hello@agrotik.gr"
+                href="mailto:info@agrotik.gr"
                 aria-label="Email"
                 className="w-9 h-9 rounded-md bg-white/5 hover:bg-white/10 inline-flex items-center justify-center"
               >
                 <Icon name="envelope" />
               </a>
               <a
-                href="tel:+302100000000"
+                href="tel:2631028971"
                 aria-label="Τηλέφωνο"
                 className="w-9 h-9 rounded-md bg-white/5 hover:bg-white/10 inline-flex items-center justify-center"
               >
@@ -44,7 +59,6 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Explore */}
           <FooterColumn title="Εξερεύνηση">
             <FooterLink href="/search/buyers" icon="store">Αγοραστές</FooterLink>
             <FooterLink href="/search/producers" icon="seedling">Παραγωγοί</FooterLink>
@@ -52,15 +66,13 @@ export function Footer() {
             <FooterLink href="/login" icon="unlock">Σύνδεση</FooterLink>
           </FooterColumn>
 
-          {/* Product */}
           <FooterColumn title="Πλατφόρμα">
-            <FooterLink href="/#how" icon="listCheck">Πώς λειτουργεί</FooterLink>
-            <FooterLink href="/#faq" icon="info">Συχνές ερωτήσεις</FooterLink>
-            <FooterLink href="/#pricing" icon="tag">Κόστος</FooterLink>
-            <FooterLink href="mailto:support@agrotik.gr" icon="envelope">Υποστήριξη</FooterLink>
+            <FooterLink href="/how-it-works" icon="listCheck">Πώς λειτουργεί</FooterLink>
+            <FooterLink href="/faq" icon="info">Συχνές ερωτήσεις</FooterLink>
+            <FooterLink href="/pricing" icon="tag">Κόστος</FooterLink>
+            <FooterLink href="/contact" icon="envelope">Επικοινωνία</FooterLink>
           </FooterColumn>
 
-          {/* Legal */}
           <FooterColumn title="Νομικά">
             <FooterLink href="/legal/terms" icon="shield">Όροι χρήσης</FooterLink>
             <FooterLink href="/legal/privacy" icon="lock">Απόρρητο</FooterLink>
@@ -69,19 +81,9 @@ export function Footer() {
           </FooterColumn>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-[13px] text-brand-bg/60">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span>© {year} AGROTIK. Όλα τα δικαιώματα διατηρούνται.</span>
-            <span className="hidden sm:inline text-brand-bg/30">·</span>
-            <span>Made with <span className="text-brand-light">◉</span> in Ελλάδα</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="eyebrow text-brand-bg/50">status</span>
-            <span className="inline-flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span>Όλα λειτουργούν</span>
-            </span>
-          </div>
+        <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-[13px] text-brand-bg/60">
+          <span>© {year} AGROTIK. Όλα τα δικαιώματα διατηρούνται.</span>
+          <span className="eyebrow text-brand-bg/40">v0.1</span>
         </div>
       </div>
     </footer>

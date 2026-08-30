@@ -8,6 +8,11 @@ export type UserRole = "farmer" | "merchant" | "factory" | "admin";
 export type ProductStatus = "active" | "pending" | "rejected";
 export type NotificationKind = "price_changed";
 
+export interface GalleryItem {
+  url: string;
+  alt?: string;
+}
+
 export interface Profile {
   id: string;
   role: UserRole;
@@ -16,9 +21,19 @@ export interface Profile {
   region_code: string;
   municipality: string | null;
   avatar_path: string | null;
+  avatar_url: string | null;
+  cover_url: string | null;
+  gallery: GalleryItem[];
+  extras: Record<string, string | number | boolean>;
   bio: string | null;
   website: string | null;
   vat_number: string | null;
+  year_founded: number | null;
+  employees_range: string | null;
+  certifications: string | null;
+  specialties: string | null;
+  opening_hours: string | null;
+  address_line: string | null;
   is_public: boolean;
   is_active: boolean;
   deleted_at: string | null;

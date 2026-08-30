@@ -3,6 +3,7 @@ import { Logo } from "./logo";
 import { Icon } from "@/components/ui/icon";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { NotificationBell } from "./notification-bell";
+import { MobileNav } from "./mobile-nav";
 
 export async function Header() {
   const supabase = await createSupabaseServer();
@@ -35,18 +36,27 @@ export async function Header() {
   return (
     <header className="bg-brand-surface/95 backdrop-blur border-b border-brand-border sticky top-0 z-30">
       <div className="max-w-6xl mx-auto px-4 h-[76px] flex items-center justify-between gap-4">
-        <Link
-          href="/"
-          prefetch
-          className="flex items-center shrink-0"
-          aria-label="AGROTIK — Αρχική"
-        >
-          <Logo size={56} />
-        </Link>
+        <div className="flex items-center gap-2">
+          <MobileNav
+            authed={!!profile}
+            isAdmin={profile?.role === "admin"}
+            isFarmer={profile?.role === "farmer"}
+            displayName={profile?.display_name}
+          />
+          <Link
+            href="/"
+            prefetch
+            className="flex items-center shrink-0"
+            aria-label="AGROTIK — Αρχική"
+          >
+            <Logo size={56} />
+          </Link>
+        </div>
 
         <nav className="hidden md:flex items-center gap-1">
           <NavItem href="/search/buyers" icon="store" label="Αγοραστές" />
           <NavItem href="/search/producers" icon="seedling" label="Παραγωγοί" />
+          <NavItem href="/contact" icon="envelope" label="Επικοινωνία" />
         </nav>
 
         <div className="flex items-center gap-2">
@@ -73,7 +83,6 @@ export async function Header() {
               >
                 <Icon name="user" />
                 <span className="hidden sm:inline">{profile.display_name.split(" ")[0]}</span>
-                <span className="sm:hidden">Λογαριασμός</span>
               </Link>
             </>
           ) : (
@@ -81,14 +90,14 @@ export async function Header() {
               <Link
                 href="/login"
                 prefetch
-                className="text-[15px] font-semibold px-4 py-2.5 rounded-md text-brand-dark border-2 border-brand-mid hover:bg-brand-mid hover:text-white transition-colors"
+                className="hidden sm:inline-flex items-center text-[15px] font-semibold px-4 py-2.5 rounded-md text-brand-dark border-2 border-brand-mid hover:bg-brand-mid hover:text-white transition-colors"
               >
                 Σύνδεση
               </Link>
               <Link
                 href="/signup"
                 prefetch
-                className="text-[15px] font-semibold px-4 py-2.5 rounded-md bg-brand-dark text-white hover:bg-brand-mid"
+                className="hidden sm:inline-flex items-center text-[15px] font-semibold px-4 py-2.5 rounded-md bg-brand-dark text-white hover:bg-brand-mid"
               >
                 Δωρεάν εγγραφή
               </Link>

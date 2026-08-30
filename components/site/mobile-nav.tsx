@@ -1,0 +1,145 @@
+"use client";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Icon, type IconName } from "@/components/ui/icon";
+
+interface Props {
+  authed: boolean;
+  isAdmin: boolean;
+  isFarmer: boolean;
+  displayName?: string;
+}
+
+export function MobileNav({ authed, isAdmin, isFarmer, displayName }: Props) {
+  const [open, setOpen] = useState(false);
+  const path = usePathname();
+
+  // Auto-close on navigation
+  useEffect(() => {
+    setOpen(false);
+  }, [path]);
+
+  // Scroll lock
+  useEffect(() => {
+    if (open) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [open]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Μενού"
+        className="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-md text-brand-dark hover:bg-brand-border/40"
+      >
+        <Icon name="menu" className="text-xl" />
+      </button>
+
+      {open && (
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col bg-brand-bg">
+          <div className="flex items-center justify-between h-[68px] px-4 border-b border-brand-border bg-brand-surface">
+            <div className="font-bold text-brand-dark text-lg">Μενού</div>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Κλείσιμο"
+              className="w-11 h-11 rounded-md text-brand-ink hover:bg-brand-border/40 inline-flex items-center justify-center"
+            >
+              <Icon name="close" className="text-xl" />
+            </button>
+          </div>
+          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+            <MobileGroup title="Αναζήτηση">
+              <MobileLink href="/search/buyers" icon="store">Βρες Αγοραστή</MobileLink>
+              <MobileLink href="/search/producers" icon="seedling">Βρες Παραγωγό</MobileLink>
+            </MobileGroup>
+
+            <MobileGroup title="Πληροφορίες">
+              <MobileLink href="/how-it-works" icon="listCheck">Πώς λειτουργεί</MobileLink>
+              <MobileLink href="/pricing" icon="tag">Κόστος</MobileLink>
+              <MobileLink href="/faq" icon="info">Συχνές ερωτήσεις</MobileLink>
+              <MobileLink href="/contact" icon="envelope">Επικοινωνία</MobileLink>
+            </MobileGroup>
+
+            {authed && (
+              <MobileGroup title={displayName ? `Λογαριασμός · ${displayName}` : "Λογαριασμός"}>
+                <MobileLink href="/dashboard" icon="chart">Αρχική</MobileLink>
+                <MobileLink href="/dashboard/profile" icon="user">Στοιχεία προφίλ</MobileLink>
+                <MobileLink href="/dashboard/listings" icon={isFarmer ? "wheat" : "tag"}>
+                  {isFarmer ? "Παραγωγή" : "Τιμοκατάλογος"}
+                </MobileLink>
+                {isFarmer && <MobileLink href="/dashboard/favorites" icon="heart">Αγαπημένα</MobileLink>}
+                <MobileLink href="/dashboard/messages" icon="chat">Μηνύματα</MobileLink>
+                <MobileLink href="/dashboard/notifications" icon="bell">Ειδοποιήσεις</MobileLink>
+                {isAdmin && <MobileLink href="/admin" icon="shield">Admin panel</MobileLink>}
+              </MobileGroup>
+            )}
+          </nav>
+
+          <div className="border-t border-brand-border bg-brand-surface p-4">
+            {authed ? (
+              <MobileLink href="/dashboard" icon="user" primary>Στον λογαριασμό μου</MobileLink>
+            ) : (
+              <div className="flex gap-2">
+                <Link
+                  href="/login"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-md border-2 border-brand-mid text-brand-dark font-semibold text-[16px] hover:bg-brand-mid hover:text-white"
+                >
+                  Σύνδεση
+                </Link>
+                <Link
+                  href="/signup"
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-md bg-brand-dark text-white font-semibold text-[16px] hover:bg-brand-mid"
+                >
+                  Εγγραφή
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function MobileGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="pt-3">
+      <div className="eyebrow text-brand-muted px-3 pb-2">{title}</div>
+      <div className="space-y-0.5">{children}</div>
+    </div>
+  );
+}
+
+function MobileLink({
+  href,
+  icon,
+  children,
+  primary = false,
+}: {
+  href: string;
+  icon: IconName;
+  children: React.ReactNode;
+  primary?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={
+        primary
+          ? "flex items-center gap-3 px-4 py-3 rounded-md bg-brand-dark text-white font-semibold text-[16px] hover:bg-brand-mid"
+          : "flex items-center gap-3 px-3 py-3 rounded-md text-[16px] font-semibold text-brand-ink hover:bg-brand-border/40 hover:text-brand-dark"
+      }
+    >
+      <Icon name={icon} className={primary ? "" : "text-brand-muted w-5 text-center"} />
+      {children}
+    </Link>
+  );
+}
