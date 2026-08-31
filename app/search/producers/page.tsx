@@ -15,6 +15,9 @@ import { FiltersDrawer } from "@/components/site/filters-drawer";
 import { Footer } from "@/components/site/footer";
 import { LiveSearchInput } from "@/components/site/live-search-input";
 import { LiveFilterForm } from "@/components/site/live-filter-form";
+import { SearchPagination } from "@/components/site/search-pagination";
+
+const PAGE_SIZE = 12;
 
 export default async function ProducersSearchPage({
   searchParams,
@@ -36,6 +39,11 @@ export default async function ProducersSearchPage({
   const filteredProducts = filters.product_category
     ? products.filter((p) => p.category === filters.product_category)
     : products;
+  const requestedPage = parsePage(params.page);
+  const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const pageResults = results.slice(pageStart, pageStart + PAGE_SIZE);
 
   return (
     <>
@@ -159,6 +167,9 @@ export default async function ProducersSearchPage({
 
         <div id="search-results" className="text-sm text-brand-muted mb-3 flex items-center gap-2">
           <Icon name="listCheck" /> <span className="figures">{results.length}</span> αποτελέσματα
+          {results.length > PAGE_SIZE && (
+            <span className="figures">· {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, results.length)}</span>
+          )}
         </div>
 
         {results.length === 0 ? (
@@ -169,7 +180,7 @@ export default async function ProducersSearchPage({
           </Card>
         ) : (
           <div className="grid sm:grid-cols-2 gap-4">
-            {results.map((r) => (
+            {pageResults.map((r) => (
               <Link
                 key={r.profile.id}
                 href={`/profile/${r.profile.id}`}
@@ -233,6 +244,14 @@ export default async function ProducersSearchPage({
             ))}
           </div>
         )}
+
+        <SearchPagination
+          basePath="/search/producers"
+          params={params}
+          currentPage={currentPage}
+          totalItems={results.length}
+          pageSize={PAGE_SIZE}
+        />
       </div>
       <Footer />
     </>
@@ -244,8 +263,14 @@ function countActive(params: Record<string, string | string[] | undefined>): num
   for (const [k, v] of Object.entries(params)) {
     if (!v) continue;
     if (Array.isArray(v) && v.length === 0) continue;
-    if (k === "sort") continue;
+    if (k === "sort" || k === "page") continue;
     n++;
   }
   return n;
+}
+
+function parsePage(value: string | string[] | undefined): number {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const page = Number.parseInt(raw ?? "1", 10);
+  return Number.isFinite(page) && page > 0 ? page : 1;
 }

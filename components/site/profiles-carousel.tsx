@@ -16,9 +16,8 @@ export interface CarouselProfile {
 }
 
 /**
- * Auto-advancing horizontal carousel that also supports free manual scroll
- * (mouse drag on desktop, touch on mobile). Pauses while the pointer is over
- * the strip, while the user is dragging, or when it goes off-screen.
+ * Auto-advancing horizontal carousel with mouse drag on desktop and a
+ * controlled, one-card-per-gesture swipe on mobile.
  */
 export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -30,6 +29,8 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
     startScroll: 0,
     dragging: false,
   });
+  const touchRef = useRef<{ startX: number; startY: number; index: number } | null>(null);
+  const suppressClickUntilRef = useRef(0);
 
   // Native touch momentum and requestAnimationFrame scrolling fight each
   // other on phones. Auto-advance only on desktop/fine-pointer devices.
@@ -99,6 +100,58 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
     trackRef.current?.scrollBy({ left: dx, behavior: "smooth" });
   };
 
+  const closestCardIndex = () => {
+    const el = trackRef.current;
+    if (!el) return 0;
+    const cards = Array.from(el.querySelectorAll<HTMLElement>("[data-carousel-card]"));
+    const viewportCenter = el.scrollLeft + el.clientWidth / 2;
+    let closest = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+    cards.forEach((card, index) => {
+      const distance = Math.abs(card.offsetLeft + card.offsetWidth / 2 - viewportCenter);
+      if (distance < closestDistance) {
+        closest = index;
+        closestDistance = distance;
+      }
+    });
+    return closest;
+  };
+
+  const scrollToCard = (index: number) => {
+    const el = trackRef.current;
+    if (!el) return;
+    const cards = Array.from(el.querySelectorAll<HTMLElement>("[data-carousel-card]"));
+    const card = cards[Math.max(0, Math.min(index, cards.length - 1))];
+    if (!card) return;
+    const left = card.offsetLeft - (el.clientWidth - card.offsetWidth) / 2;
+    el.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+  };
+
+  const onTouchStart = (event: React.TouchEvent) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    touchRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      index: closestCardIndex(),
+    };
+  };
+
+  const onTouchEnd = (event: React.TouchEvent) => {
+    const start = touchRef.current;
+    const touch = event.changedTouches[0];
+    touchRef.current = null;
+    if (!start || !touch) return;
+
+    const deltaX = touch.clientX - start.startX;
+    const deltaY = touch.clientY - start.startY;
+    const isHorizontalSwipe = Math.abs(deltaX) >= 18 && Math.abs(deltaX) > Math.abs(deltaY);
+    if (!isHorizontalSwipe) return;
+
+    suppressClickUntilRef.current = Date.now() + 400;
+    scrollToCard(start.index + (deltaX < 0 ? 1 : -1));
+  };
+
   if (profiles.length === 0) return null;
 
   return (
@@ -140,11 +193,21 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={endDrag}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={() => {
+          touchRef.current = null;
+        }}
+        onClickCapture={(event) => {
+          if (Date.now() < suppressClickUntilRef.current) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }}
         style={{
           scrollbarWidth: "none",
-          WebkitOverflowScrolling: "touch",
         }}
-        className="flex gap-3 sm:gap-4 overflow-x-auto overscroll-x-contain touch-pan-x snap-x snap-mandatory pb-2 -mx-4 px-[9%] sm:px-4 cursor-grab select-none"
+        className="flex gap-3 sm:gap-4 overflow-x-hidden sm:overflow-x-auto overscroll-x-contain touch-pan-y sm:touch-pan-x sm:snap-x sm:snap-mandatory pb-2 -mx-4 px-[9%] sm:px-4 cursor-grab select-none"
       >
         {profiles.map((p) => (
           <Link
@@ -152,7 +215,8 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
             href={`/profile/${p.id}`}
             prefetch
             draggable={false}
-            className="shrink-0 w-[82%] sm:w-[280px] snap-center sm:snap-start [scroll-snap-stop:always] bg-brand-surface border border-brand-border rounded-card p-5 shadow-card hover:border-brand-dark/40 hover:shadow-elev transition-all flex flex-col"
+            data-carousel-card
+            className="shrink-0 w-[82%] sm:w-[280px] sm:snap-start sm:[scroll-snap-stop:always] bg-brand-surface border border-brand-border rounded-card p-5 shadow-card hover:border-brand-dark/40 hover:shadow-elev transition-all flex flex-col"
           >
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-brand-dark text-white flex items-center justify-center font-semibold display shrink-0 overflow-hidden">

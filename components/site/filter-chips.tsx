@@ -22,6 +22,7 @@ export function FilterChips({
   const active = Object.entries(params).filter(([k, v]) => {
     if (!v) return false;
     if (Array.isArray(v) && v.length === 0) return false;
+    if (k === "page") return false;
     if (k === "sort") return v !== "price_asc" && v !== "updated"; // default value
     return true;
   });
@@ -31,7 +32,7 @@ export function FilterChips({
   const buildLink = (removeKey: string) => {
     const q = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
-      if (k === removeKey) continue;
+      if (k === removeKey || k === "page") continue;
       const val = Array.isArray(v) ? v[0] : v;
       if (val) q.set(k, val);
     }

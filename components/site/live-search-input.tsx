@@ -23,6 +23,7 @@ export function LiveSearchInput({
       const q = new URLSearchParams(params.toString());
       const trimmed = value.trim();
       if (trimmed === (params.get("name") ?? "")) return;
+      q.delete("page");
       if (trimmed) q.set("name", trimmed);
       else q.delete("name");
       start(() => router.replace(`${pathname}${q.toString() ? "?" + q : ""}`, { scroll: false }));
