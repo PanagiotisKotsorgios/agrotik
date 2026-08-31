@@ -6,7 +6,7 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
     <input
       ref={ref}
       className={cn(
-        "w-full px-3.5 py-2.5 rounded-lg border border-brand-border bg-brand-surface text-brand-ink text-[16px] placeholder:text-brand-muted/70",
+        "w-full px-3.5 py-2.5 rounded-lg border-2 border-brand-dark/40 bg-white text-brand-ink text-[16px] placeholder:text-brand-muted/70 shadow-sm",
         "focus:outline-none focus:ring-2 focus:ring-brand-mid focus:border-brand-mid",
         "disabled:bg-brand-bg disabled:cursor-not-allowed",
         className,
@@ -22,7 +22,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
     <textarea
       ref={ref}
       className={cn(
-        "w-full px-3.5 py-2.5 rounded-lg border border-brand-border bg-brand-surface text-brand-ink text-[16px] placeholder:text-brand-muted/70",
+        "w-full px-3.5 py-2.5 rounded-lg border-2 border-brand-dark/40 bg-white text-brand-ink text-[16px] placeholder:text-brand-muted/70 shadow-sm",
         "focus:outline-none focus:ring-2 focus:ring-brand-mid focus:border-brand-mid",
         className,
       )}
@@ -37,7 +37,7 @@ export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttrib
     <select
       ref={ref}
       className={cn(
-        "w-full px-3.5 py-2.5 rounded-lg border border-brand-border bg-brand-surface text-brand-ink text-[16px]",
+        "w-full px-3.5 py-2.5 rounded-lg border-2 border-brand-dark/40 bg-white text-brand-ink text-[16px] shadow-sm",
         "focus:outline-none focus:ring-2 focus:ring-brand-mid focus:border-brand-mid",
         className,
       )}
