@@ -59,7 +59,7 @@ export default async function ProducersSearchPage({
           <Eyebrow>Αναζήτηση</Eyebrow>
           <h1 className="display text-[38px] leading-tight text-brand-dark mt-1 field-underline">Βρες Παραγωγό</h1>
           <p className="mt-3 text-brand-muted text-lg leading-relaxed">
-            Αγρότες με έτοιμη παραγωγή. Φιλτράρισε ανά περιοχή, προϊόν, ποιότητα, ποσότητα ή διαθεσιμότητα.
+            Όλοι οι ενεργοί αγρότες, με ή χωρίς δηλωμένη παραγωγή. Φιλτράρισε ανά περιοχή, προϊόν, ποιότητα, ποσότητα ή διαθεσιμότητα.
           </p>
         </div>
 
@@ -167,9 +167,9 @@ export default async function ProducersSearchPage({
           </Card>
         ) : (
           <div className="grid sm:grid-cols-2 gap-4">
-            {results.map((r, i) => (
+            {results.map((r) => (
               <Link
-                key={`${r.profile.id}-${i}`}
+                key={r.profile.id}
                 href={`/profile/${r.profile.id}`}
                 prefetch
                 className="group block bg-brand-surface border border-brand-border rounded-card shadow-card p-5 sm:p-6 hover:border-brand-dark/40 hover:shadow-elev transition-all"
@@ -184,24 +184,33 @@ export default async function ProducersSearchPage({
                       <Icon name="location" /> {r.region_name}
                       {r.municipality && ` · ${r.municipality}`}
                     </div>
-                    <div className="mt-4">
-                      <div className="text-sm text-brand-muted">{r.product.name_el}</div>
-                      <div className="mt-1 flex items-baseline gap-2">
-                        <span className="figures text-3xl font-semibold text-brand-dark">{r.quantity}</span>
-                        <span className="text-brand-muted text-base">{r.unit}</span>
+                    {r.has_listing && r.product ? (
+                      <div className="mt-4">
+                        <div className="text-sm text-brand-muted">{r.product.name_el}</div>
+                        <div className="mt-1 flex items-baseline gap-2">
+                          <span className="figures text-3xl font-semibold text-brand-dark">{r.quantity ?? "—"}</span>
+                          <span className="text-brand-muted text-base">{r.unit}</span>
+                        </div>
+                        {Object.keys(r.attributes).length > 0 && (
+                          <div className="text-sm text-brand-muted mt-1">
+                            {Object.entries(r.attributes).map(([k, v]) => `${k}: ${v}`).join(" · ")}
+                          </div>
+                        )}
+                        {(r.available_from || r.available_until) && (
+                          <div className="text-sm text-brand-muted mt-2 inline-flex items-center gap-1.5">
+                            <Icon name="calendar" />
+                            {r.available_from ?? "τώρα"} → {r.available_until ?? "ανοιχτό"}
+                          </div>
+                        )}
                       </div>
-                      {Object.keys(r.attributes).length > 0 && (
-                        <div className="text-sm text-brand-muted mt-1">
-                          {Object.entries(r.attributes).map(([k, v]) => `${k}: ${v}`).join(" · ")}
-                        </div>
-                      )}
-                      {(r.available_from || r.available_until) && (
-                        <div className="text-sm text-brand-muted mt-2 inline-flex items-center gap-1.5">
-                          <Icon name="calendar" />
-                          {r.available_from ?? "τώρα"} → {r.available_until ?? "ανοιχτό"}
-                        </div>
-                      )}
-                    </div>
+                    ) : (
+                      <div className="mt-4">
+                        <Badge tone="muted">Χωρίς δηλωμένη παραγωγή</Badge>
+                        <p className="text-sm text-brand-muted mt-2 line-clamp-2">
+                          {r.profile.bio || "Ο παραγωγός δεν έχει καταχωρίσει διαθέσιμη παραγωγή ακόμη."}
+                        </p>
+                      </div>
+                    )}
                     <div className="eyebrow text-brand-muted mt-3">Ενημέρωση {formatRelative(r.updated_at)}</div>
                   </div>
                   <Icon name="arrowRight" className="text-brand-muted group-hover:text-brand-dark shrink-0 text-lg mt-1" />

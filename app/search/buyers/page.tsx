@@ -48,7 +48,7 @@ export default async function BuyersSearchPage({
           <Eyebrow>Αναζήτηση</Eyebrow>
           <h1 className="display text-[38px] leading-tight text-brand-dark mt-1 field-underline">Βρες Αγοραστή</h1>
           <p className="mt-3 text-brand-muted text-lg leading-relaxed">
-            Έμποροι και εργοστάσια που δηλώνουν τιμές αγοράς. Φιλτράρισε ανά προϊόν, ποιότητα, νομό, δήμο ή τιμή.
+            Όλοι οι ενεργοί έμποροι και τα εργοστάσια, με ή χωρίς τιμοκατάλογο. Φιλτράρισε ανά προϊόν, ποιότητα, νομό, δήμο ή τιμή.
           </p>
         </div>
 
@@ -177,19 +177,28 @@ export default async function BuyersSearchPage({
                       <Icon name="location" /> {r.region_name}
                       {r.municipality && ` · ${r.municipality}`}
                     </div>
-                    <div className="mt-4">
-                      <div className="text-sm text-brand-muted">{r.product.name_el}</div>
-                      <div className="figures text-3xl font-semibold mt-1 text-brand-dark">
-                        {r.best_price != null ? `από ${priceFormat(r.best_price, r.product.unit)}` : "—"}
-                      </div>
-                      {r.best_attributes && (
-                        <div className="text-sm text-brand-muted mt-1">
-                          {Object.entries(r.best_attributes)
-                            .map(([k, v]) => `${k}: ${v}`)
-                            .join(" · ")}
+                    {r.has_listing && r.product ? (
+                      <div className="mt-4">
+                        <div className="text-sm text-brand-muted">{r.product.name_el}</div>
+                        <div className="figures text-3xl font-semibold mt-1 text-brand-dark">
+                          {r.best_price != null ? `από ${priceFormat(r.best_price, r.product.unit)}` : "—"}
                         </div>
-                      )}
-                    </div>
+                        {r.best_attributes && (
+                          <div className="text-sm text-brand-muted mt-1">
+                            {Object.entries(r.best_attributes)
+                              .map(([k, v]) => `${k}: ${v}`)
+                              .join(" · ")}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="mt-4">
+                        <Badge tone="muted">Χωρίς καταχωρισμένο τιμοκατάλογο</Badge>
+                        <p className="text-sm text-brand-muted mt-2 line-clamp-2">
+                          {r.profile.bio || "Ο αγοραστής δεν έχει καταχωρίσει τιμές αγοράς ακόμη."}
+                        </p>
+                      </div>
+                    )}
                     <div className="eyebrow text-brand-muted mt-3">
                       Ενημέρωση {formatRelative(r.updated_at)}
                     </div>

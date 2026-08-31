@@ -9,26 +9,30 @@ import type {
 } from "@/lib/db/types";
 
 export interface BuyerCard {
-  profile: Pick<Profile, "id" | "display_name" | "region_code" | "role" | "avatar_url">;
+  profile: Pick<Profile, "id" | "display_name" | "region_code" | "role" | "avatar_url" | "bio">;
   region_name: string;
   municipality?: string | null;
-  product: Pick<Product, "id" | "name_el" | "unit" | "category">;
+  // Nullable when this profile has no active price listing yet
+  product: Pick<Product, "id" | "name_el" | "unit" | "category"> | null;
   best_price: number | null;
   best_attributes: Record<string, string | number> | null;
   updated_at: string;
+  has_listing: boolean;
 }
 
 export interface ProducerCard {
-  profile: Pick<Profile, "id" | "display_name" | "region_code" | "role" | "avatar_url">;
+  profile: Pick<Profile, "id" | "display_name" | "region_code" | "role" | "avatar_url" | "bio">;
   region_name: string;
   municipality?: string | null;
-  product: Pick<Product, "id" | "name_el" | "unit" | "category">;
-  quantity: number;
-  unit: string;
+  // Nullable when this farmer has no production listing yet
+  product: Pick<Product, "id" | "name_el" | "unit" | "category"> | null;
+  quantity: number | null;
+  unit: string | null;
   attributes: Record<string, string | number>;
   available_from: string | null;
   available_until: string | null;
   updated_at: string;
+  has_listing: boolean;
 }
 
 export interface BuyerFilters {
@@ -87,40 +91,64 @@ function attributesMatch(
 export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> {
   const supabase = await createSupabaseServer();
 
-  let query = supabase
-    .from("price_listings")
+  const roles = filters.buyer_type ?? ["merchant", "factory"];
+  const hasListingFilter =
+    filters.product_id !== undefined ||
+    filters.product_category !== undefined ||
+    filters.price_min !== undefined ||
+    filters.price_max !== undefined ||
+    (filters.attributes && Object.keys(filters.attributes).length > 0) ||
+    (filters.number_attrs && Object.keys(filters.number_attrs).length > 0);
+
+  // 1. Base: fetch matching profiles (all merchants/factories with filters).
+  let profQ = supabase
+    .from("profiles")
     .select(
-      `id, owner_id, product_id, kind, variants, region_code, updated_at,
-       products!inner(id, name_el, unit, category, status),
-       profiles!inner(id, display_name, region_code, role, avatar_url, municipality, is_active, is_public, deleted_at),
-       regions(name_el)`,
+      "id, display_name, region_code, role, avatar_url, bio, municipality, is_active, is_public, updated_at, regions(name_el)",
     )
     .eq("is_active", true)
-    .eq("products.status", "active")
-    .eq("profiles.is_active", true)
-    .in("profiles.role", filters.buyer_type ?? ["merchant", "factory"])
-    .eq("kind", "buy_from_producer")
+    .neq("role", "admin")
+    .in("role", roles)
+    .is("deleted_at", null)
     .limit(500);
 
-  if (filters.product_id) query = query.eq("product_id", filters.product_id);
-  if (filters.product_category) query = query.eq("products.category", filters.product_category);
-  if (filters.region_code) query = query.eq("region_code", filters.region_code);
-  if (filters.municipality) {
-    query = query.ilike("profiles.municipality", `%${filters.municipality}%`);
-  }
-  if (filters.name) {
-    query = query.ilike("profiles.display_name", `%${filters.name}%`);
-  }
+  if (filters.region_code) profQ = profQ.eq("region_code", filters.region_code);
+  if (filters.municipality) profQ = profQ.ilike("municipality", `%${filters.municipality}%`);
+  if (filters.name) profQ = profQ.ilike("display_name", `%${filters.name}%`);
 
-  const { data, error } = await query;
-  if (error) {
-    console.error("[searchBuyers]", error);
+  const { data: profs, error: profErr } = await profQ;
+  if (profErr) {
+    console.error("[searchBuyers profiles]", profErr);
     return [];
   }
 
-  const byOwner = new Map<string, BuyerCard>();
-  for (const row of (data ?? []) as any[]) {
-    // Filter variants by all attribute / number filters and price range
+  // 2. Fetch matching listings for these profiles' owners.
+  const ownerIds = (profs ?? []).map((p: any) => p.id);
+  let listings: any[] = [];
+  if (ownerIds.length > 0) {
+    let lstQ = supabase
+      .from("price_listings")
+      .select(
+        `owner_id, product_id, kind, variants, updated_at,
+         products!inner(id, name_el, unit, category, status)`,
+      )
+      .in("owner_id", ownerIds)
+      .eq("is_active", true)
+      .eq("kind", "buy_from_producer")
+      .eq("products.status", "active")
+      .limit(2000);
+    if (filters.product_id) lstQ = lstQ.eq("product_id", filters.product_id);
+    if (filters.product_category) lstQ = lstQ.eq("products.category", filters.product_category);
+    const { data: lst } = await lstQ;
+    listings = (lst ?? []) as any[];
+  }
+
+  // 3. Bucket listings by owner and pick the best matching variant.
+  const bestByOwner = new Map<
+    string,
+    { product: any; best_price: number; best_attributes: any; updated_at: string }
+  >();
+  for (const row of listings) {
     const candidates = (row.variants ?? []).filter((v: any) => {
       if (!attributesMatch(v.attributes ?? {}, filters.attributes, filters.number_attrs)) return false;
       const p = Number(v.price);
@@ -130,13 +158,12 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
       return true;
     });
     if (candidates.length === 0) continue;
-    const best = candidates.reduce((a: any, b: any) => (Number(a.price) <= Number(b.price) ? a : b));
-    const existing = byOwner.get(row.owner_id);
-    if (!existing || (existing.best_price ?? Infinity) > Number(best.price)) {
-      byOwner.set(row.owner_id, {
-        profile: row.profiles,
-        region_name: row.regions?.name_el ?? row.region_code,
-        municipality: row.profiles?.municipality ?? null,
+    const best = candidates.reduce((a: any, b: any) =>
+      Number(a.price) <= Number(b.price) ? a : b,
+    );
+    const existing = bestByOwner.get(row.owner_id);
+    if (!existing || existing.best_price > Number(best.price)) {
+      bestByOwner.set(row.owner_id, {
         product: row.products,
         best_price: Number(best.price),
         best_attributes: best.attributes,
@@ -145,7 +172,32 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
     }
   }
 
-  const cards = [...byOwner.values()];
+  // 4. Build one card per profile. If a listing-derived filter is active,
+  //    drop profiles that have no matching listing; otherwise keep them
+  //    all and show 'χωρίς καταχώρηση' in the card.
+  const cards: BuyerCard[] = [];
+  for (const p of (profs ?? []) as any[]) {
+    const match = bestByOwner.get(p.id);
+    if (hasListingFilter && !match) continue;
+    cards.push({
+      profile: {
+        id: p.id,
+        display_name: p.display_name,
+        region_code: p.region_code,
+        role: p.role,
+        avatar_url: p.avatar_url,
+        bio: p.bio,
+      },
+      region_name: p.regions?.name_el ?? p.region_code,
+      municipality: p.municipality ?? null,
+      product: match?.product ?? null,
+      best_price: match?.best_price ?? null,
+      best_attributes: match?.best_attributes ?? null,
+      updated_at: match?.updated_at ?? p.updated_at,
+      has_listing: Boolean(match),
+    });
+  }
+
   switch (filters.sort) {
     case "price_desc":
       cards.sort((a, b) => (b.best_price ?? -Infinity) - (a.best_price ?? -Infinity));
@@ -155,7 +207,11 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
       break;
     case "price_asc":
     default:
-      cards.sort((a, b) => (a.best_price ?? Infinity) - (b.best_price ?? Infinity));
+      cards.sort((a, b) => {
+        // Prioritize profiles WITH listings when sorting by price ascending
+        if (a.has_listing !== b.has_listing) return a.has_listing ? -1 : 1;
+        return (a.best_price ?? Infinity) - (b.best_price ?? Infinity);
+      });
   }
   return cards;
 }
@@ -163,68 +219,114 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
 export async function searchProducers(filters: ProducerFilters): Promise<ProducerCard[]> {
   const supabase = await createSupabaseServer();
 
-  let query = supabase
-    .from("production_listings")
+  const hasListingFilter =
+    filters.product_id !== undefined ||
+    filters.product_category !== undefined ||
+    filters.quantity_min !== undefined ||
+    filters.quantity_max !== undefined ||
+    filters.date !== undefined ||
+    (filters.attributes && Object.keys(filters.attributes).length > 0) ||
+    (filters.number_attrs && Object.keys(filters.number_attrs).length > 0);
+
+  // 1. Fetch all farmer profiles (public + active) matching profile filters.
+  let profQ = supabase
+    .from("profiles")
     .select(
-      `id, owner_id, product_id, attributes, quantity, unit, region_code,
-       available_from, available_until, updated_at,
-       products!inner(id, name_el, unit, category, status),
-       profiles!inner(id, display_name, region_code, role, avatar_url, municipality, is_active, is_public, deleted_at),
-       regions(name_el)`,
+      "id, display_name, region_code, role, avatar_url, bio, municipality, is_active, is_public, updated_at, regions(name_el)",
     )
     .eq("is_active", true)
-    .eq("products.status", "active")
-    .eq("profiles.is_active", true)
-    .eq("profiles.is_public", true)
-    .eq("profiles.role", "farmer")
+    .eq("is_public", true)
+    .eq("role", "farmer")
+    .is("deleted_at", null)
     .limit(500);
 
-  if (filters.product_id) query = query.eq("product_id", filters.product_id);
-  if (filters.product_category) query = query.eq("products.category", filters.product_category);
-  if (filters.region_code) query = query.eq("region_code", filters.region_code);
-  if (filters.municipality) query = query.ilike("profiles.municipality", `%${filters.municipality}%`);
-  if (filters.name) query = query.ilike("profiles.display_name", `%${filters.name}%`);
-  if (filters.quantity_min) query = query.gte("quantity", filters.quantity_min);
-  if (filters.quantity_max) query = query.lte("quantity", filters.quantity_max);
-  if (filters.date) {
-    query = query
-      .or(`available_from.is.null,available_from.lte.${filters.date}`)
-      .or(`available_until.is.null,available_until.gte.${filters.date}`);
-  }
+  if (filters.region_code) profQ = profQ.eq("region_code", filters.region_code);
+  if (filters.municipality) profQ = profQ.ilike("municipality", `%${filters.municipality}%`);
+  if (filters.name) profQ = profQ.ilike("display_name", `%${filters.name}%`);
 
-  const { data, error } = await query;
-  if (error) {
-    console.error("[searchProducers]", error);
+  const { data: profs, error: profErr } = await profQ;
+  if (profErr) {
+    console.error("[searchProducers profiles]", profErr);
     return [];
   }
 
-  const rows = ((data ?? []) as any[]).filter((row) =>
-    attributesMatch(row.attributes ?? {}, filters.attributes, filters.number_attrs),
-  );
+  // 2. Fetch matching production listings.
+  const ownerIds = (profs ?? []).map((p: any) => p.id);
+  let listings: any[] = [];
+  if (ownerIds.length > 0) {
+    let lstQ = supabase
+      .from("production_listings")
+      .select(
+        `owner_id, product_id, attributes, quantity, unit, available_from, available_until, updated_at,
+         products!inner(id, name_el, unit, category, status)`,
+      )
+      .in("owner_id", ownerIds)
+      .eq("is_active", true)
+      .eq("products.status", "active")
+      .limit(2000);
+    if (filters.product_id) lstQ = lstQ.eq("product_id", filters.product_id);
+    if (filters.product_category) lstQ = lstQ.eq("products.category", filters.product_category);
+    if (filters.quantity_min) lstQ = lstQ.gte("quantity", filters.quantity_min);
+    if (filters.quantity_max) lstQ = lstQ.lte("quantity", filters.quantity_max);
+    if (filters.date) {
+      lstQ = lstQ
+        .or(`available_from.is.null,available_from.lte.${filters.date}`)
+        .or(`available_until.is.null,available_until.gte.${filters.date}`);
+    }
+    const { data: lst } = await lstQ;
+    listings = ((lst ?? []) as any[]).filter((row) =>
+      attributesMatch(row.attributes ?? {}, filters.attributes, filters.number_attrs),
+    );
+  }
 
-  const cards = rows.map((row) => ({
-    profile: row.profiles,
-    region_name: row.regions?.name_el ?? row.region_code,
-    municipality: row.profiles?.municipality ?? null,
-    product: row.products,
-    quantity: Number(row.quantity),
-    unit: row.unit ?? row.products.unit,
-    attributes: row.attributes ?? {},
-    available_from: row.available_from,
-    available_until: row.available_until,
-    updated_at: row.updated_at,
-  }));
+  // 3. Pick the most recent matching listing per owner.
+  const bestByOwner = new Map<string, any>();
+  for (const row of listings) {
+    const cur = bestByOwner.get(row.owner_id);
+    if (!cur || row.updated_at > cur.updated_at) bestByOwner.set(row.owner_id, row);
+  }
+
+  // 4. Build a card per profile; drop those without a matching listing if
+  //    a listing-derived filter is active.
+  const cards: ProducerCard[] = [];
+  for (const p of (profs ?? []) as any[]) {
+    const row = bestByOwner.get(p.id);
+    if (hasListingFilter && !row) continue;
+    cards.push({
+      profile: {
+        id: p.id,
+        display_name: p.display_name,
+        region_code: p.region_code,
+        role: p.role,
+        avatar_url: p.avatar_url,
+        bio: p.bio,
+      },
+      region_name: p.regions?.name_el ?? p.region_code,
+      municipality: p.municipality ?? null,
+      product: row?.products ?? null,
+      quantity: row ? Number(row.quantity) : null,
+      unit: row ? row.unit ?? row.products.unit : null,
+      attributes: row?.attributes ?? {},
+      available_from: row?.available_from ?? null,
+      available_until: row?.available_until ?? null,
+      updated_at: row?.updated_at ?? p.updated_at,
+      has_listing: Boolean(row),
+    });
+  }
 
   switch (filters.sort) {
     case "quantity_desc":
-      cards.sort((a, b) => b.quantity - a.quantity);
+      cards.sort((a, b) => (b.quantity ?? -Infinity) - (a.quantity ?? -Infinity));
       break;
     case "quantity_asc":
-      cards.sort((a, b) => a.quantity - b.quantity);
+      cards.sort((a, b) => (a.quantity ?? Infinity) - (b.quantity ?? Infinity));
       break;
     case "updated":
     default:
-      cards.sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+      cards.sort((a, b) => {
+        if (a.has_listing !== b.has_listing) return a.has_listing ? -1 : 1;
+        return b.updated_at.localeCompare(a.updated_at);
+      });
   }
   return cards;
 }
