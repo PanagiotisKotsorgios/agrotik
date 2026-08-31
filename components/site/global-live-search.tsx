@@ -48,7 +48,9 @@ export function GlobalLiveSearch() {
         .from("profiles")
         .select("id, display_name, role, region_code, municipality, bio, avatar_url, regions(name_el)")
         .eq("is_active", true)
-        .eq("is_public", true)
+        .neq("role", "admin")
+        .or("role.in.(merchant,factory),and(role.eq.farmer,is_public.eq.true)")
+        .is("deleted_at", null)
         .limit(24);
       const arr = ((data as any as Hit[]) ?? [])
         .slice()
@@ -72,7 +74,9 @@ export function GlobalLiveSearch() {
         .current!.from("profiles")
         .select("id, display_name, role, region_code, municipality, bio, avatar_url, regions(name_el)")
         .eq("is_active", true)
-        .eq("is_public", true);
+        .neq("role", "admin")
+        .or("role.in.(merchant,factory),and(role.eq.farmer,is_public.eq.true)")
+        .is("deleted_at", null);
 
       const activeFilter = ROLE_FILTERS.find((f) => f.key === roleFilter);
       if (activeFilter?.role) {
