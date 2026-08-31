@@ -31,7 +31,7 @@ async function safeFetchLandingData() {
         .limit(12),
       svc
         .from("profiles")
-        .select("id, display_name, role, region_code, municipality, bio, is_active, is_public, deleted_at, regions(name_el)")
+        .select("id, display_name, role, region_code, municipality, bio, avatar_url, is_active, is_public, deleted_at, regions(name_el)")
         .eq("is_active", true)
         .neq("role", "admin")
         .or("role.in.(merchant,factory),and(role.eq.farmer,is_public.eq.true)")
@@ -70,6 +70,7 @@ export default async function LandingPage() {
     region_name: p.regions?.name_el ?? p.region_code,
     municipality: p.municipality,
     bio: p.bio,
+    avatar_url: p.avatar_url,
   }));
 
   return (

@@ -9,7 +9,7 @@ import type {
 } from "@/lib/db/types";
 
 export interface BuyerCard {
-  profile: Pick<Profile, "id" | "display_name" | "region_code" | "role" | "avatar_path">;
+  profile: Pick<Profile, "id" | "display_name" | "region_code" | "role" | "avatar_url">;
   region_name: string;
   municipality?: string | null;
   product: Pick<Product, "id" | "name_el" | "unit" | "category">;
@@ -19,7 +19,7 @@ export interface BuyerCard {
 }
 
 export interface ProducerCard {
-  profile: Pick<Profile, "id" | "display_name" | "region_code" | "role" | "avatar_path">;
+  profile: Pick<Profile, "id" | "display_name" | "region_code" | "role" | "avatar_url">;
   region_name: string;
   municipality?: string | null;
   product: Pick<Product, "id" | "name_el" | "unit" | "category">;
@@ -92,7 +92,7 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
     .select(
       `id, owner_id, product_id, kind, variants, region_code, updated_at,
        products!inner(id, name_el, unit, category, status),
-       profiles!inner(id, display_name, region_code, role, avatar_path, municipality, is_active, is_public, deleted_at),
+       profiles!inner(id, display_name, region_code, role, avatar_url, municipality, is_active, is_public, deleted_at),
        regions(name_el)`,
     )
     .eq("is_active", true)
@@ -169,7 +169,7 @@ export async function searchProducers(filters: ProducerFilters): Promise<Produce
       `id, owner_id, product_id, attributes, quantity, unit, region_code,
        available_from, available_until, updated_at,
        products!inner(id, name_el, unit, category, status),
-       profiles!inner(id, display_name, region_code, role, avatar_path, municipality, is_active, is_public, deleted_at),
+       profiles!inner(id, display_name, region_code, role, avatar_url, municipality, is_active, is_public, deleted_at),
        regions(name_el)`,
     )
     .eq("is_active", true)

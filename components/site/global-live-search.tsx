@@ -13,6 +13,7 @@ interface Hit {
   region_code: string;
   municipality: string | null;
   bio: string | null;
+  avatar_url: string | null;
   regions?: { name_el: string } | null;
 }
 
@@ -45,7 +46,7 @@ export function GlobalLiveSearch() {
     (async () => {
       const { data } = await supabaseRef.current!
         .from("profiles")
-        .select("id, display_name, role, region_code, municipality, bio, regions(name_el)")
+        .select("id, display_name, role, region_code, municipality, bio, avatar_url, regions(name_el)")
         .eq("is_active", true)
         .eq("is_public", true)
         .limit(24);
@@ -69,7 +70,7 @@ export function GlobalLiveSearch() {
     const t = setTimeout(async () => {
       let query = supabaseRef
         .current!.from("profiles")
-        .select("id, display_name, role, region_code, municipality, bio, regions(name_el)")
+        .select("id, display_name, role, region_code, municipality, bio, avatar_url, regions(name_el)")
         .eq("is_active", true)
         .eq("is_public", true);
 
@@ -167,8 +168,17 @@ export function GlobalLiveSearch() {
                   href={`/profile/${h.id}`}
                   className="flex items-start gap-3 p-4 bg-white rounded-xl border border-brand-border hover:border-brand-dark/40 hover:shadow-card transition-all h-full"
                 >
-                  <div className="w-11 h-11 rounded-full bg-brand-dark text-white flex items-center justify-center font-semibold display shrink-0">
-                    {initials(h.display_name)}
+                  <div className="w-11 h-11 rounded-full bg-brand-dark text-white flex items-center justify-center font-semibold display shrink-0 overflow-hidden">
+                    {h.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={h.avatar_url}
+                        alt={h.display_name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      initials(h.display_name)
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">

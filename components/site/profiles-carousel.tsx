@@ -12,6 +12,7 @@ export interface CarouselProfile {
   region_name: string;
   municipality: string | null;
   bio: string | null;
+  avatar_url?: string | null;
 }
 
 /**
@@ -146,8 +147,13 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
             className="shrink-0 w-[82%] sm:w-[280px] snap-center sm:snap-start bg-brand-surface border border-brand-border rounded-card p-5 shadow-card hover:border-brand-dark/40 hover:shadow-elev transition-all"
           >
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-brand-dark text-white flex items-center justify-center font-semibold display shrink-0">
-                {initials(p.display_name)}
+              <div className="w-12 h-12 rounded-full bg-brand-dark text-white flex items-center justify-center font-semibold display shrink-0 overflow-hidden">
+                {p.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.avatar_url} alt={p.display_name} className="w-full h-full object-cover" />
+                ) : (
+                  initials(p.display_name)
+                )}
               </div>
               <div className="min-w-0">
                 <div className="font-semibold text-brand-dark truncate">{p.display_name}</div>
