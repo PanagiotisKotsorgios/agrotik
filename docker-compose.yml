@@ -224,15 +224,11 @@ services:
     # (often Coolify itself). Just expose so Traefik can reach it.
     expose:
       - "3000"
-    healthcheck:
-      # Probe /api/health (a plain JSON route). The middleware skips /api/*
-      # and Next serves the file route before applying the /api → kong
-      # rewrite, so this bypasses both middleware and Supabase entirely.
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 180s
+    # Healthcheck removed on purpose: while we debug why the container
+    # exits, no HEALTHCHECK means Docker never marks it unhealthy and
+    # Coolify has no reason to restart-loop it. The entrypoint also
+    # falls into `sleep infinity` on any failure, so the container stays
+    # up and its output remains visible in the Runtime Logs tab.
 
 configs:
   supabase-roles-sql:

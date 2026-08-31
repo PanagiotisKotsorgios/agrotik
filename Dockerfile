@@ -43,7 +43,7 @@ RUN chmod +x /entrypoint.sh
 USER nextjs
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=10s --retries=5 --start-period=180s \
-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1
+# No HEALTHCHECK: the entrypoint's `sleep infinity` fallback keeps the
+# container alive on any failure so Coolify Runtime Logs stay visible.
 
 ENTRYPOINT ["/entrypoint.sh"]
