@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { Icon } from "@/components/ui/icon";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -9,14 +12,25 @@ export function SearchPagination({
   currentPage,
   totalItems,
   pageSize,
+  placement = "bottom",
+  resultsId = "search-results",
 }: {
   basePath: string;
   params: SearchParams;
   currentPage: number;
   totalItems: number;
   pageSize: number;
+  placement?: "top" | "bottom";
+  resultsId?: string;
 }) {
   const totalPages = Math.ceil(totalItems / pageSize);
+  const previousPage = useRef(currentPage);
+
+  useEffect(() => {
+    if (previousPage.current !== currentPage) scrollToResults(resultsId);
+    previousPage.current = currentPage;
+  }, [currentPage, resultsId]);
+
   if (totalPages <= 1) return null;
 
   const pages = visiblePages(currentPage, totalPages);
@@ -27,8 +41,12 @@ export function SearchPagination({
 
   return (
     <nav
-      aria-label="Σελιδοποίηση αποτελεσμάτων"
-      className="mt-8 flex flex-col items-center gap-3 border-t border-brand-border pt-6"
+      aria-label={`${placement === "top" ? "Επάνω" : "Κάτω"} σελιδοποίηση αποτελεσμάτων`}
+      className={
+        placement === "top"
+          ? "flex flex-col items-center gap-2 sm:items-end"
+          : "mt-8 flex flex-col items-center gap-3 border-t border-brand-border pt-6"
+      }
     >
       <div className="text-sm text-brand-muted">
         Σελίδα <span className="figures font-semibold text-brand-dark">{currentPage}</span> από{" "}
@@ -37,7 +55,13 @@ export function SearchPagination({
 
       <div className="flex flex-wrap items-center justify-center gap-2">
         {currentPage > 1 ? (
-          <Link href={pageHref(basePath, params, currentPage - 1)} className={linkClass} rel="prev">
+          <Link
+            href={pageHref(basePath, params, currentPage - 1, resultsId)}
+            className={linkClass}
+            rel="prev"
+            scroll={false}
+            onClick={() => scrollToResults(resultsId)}
+          >
             <Icon name="arrowLeft" />
             <span className="hidden sm:inline">Προηγούμενη</span>
           </Link>
@@ -66,9 +90,11 @@ export function SearchPagination({
                 </span>
               ) : (
                 <Link
-                  href={pageHref(basePath, params, page)}
+                  href={pageHref(basePath, params, page, resultsId)}
                   className={`${linkClass} figures px-3`}
                   aria-label={`Σελίδα ${page}`}
+                  scroll={false}
+                  onClick={() => scrollToResults(resultsId)}
                 >
                   {page}
                 </Link>
@@ -78,7 +104,13 @@ export function SearchPagination({
         })}
 
         {currentPage < totalPages ? (
-          <Link href={pageHref(basePath, params, currentPage + 1)} className={linkClass} rel="next">
+          <Link
+            href={pageHref(basePath, params, currentPage + 1, resultsId)}
+            className={linkClass}
+            rel="next"
+            scroll={false}
+            onClick={() => scrollToResults(resultsId)}
+          >
             <span className="hidden sm:inline">Επόμενη</span>
             <Icon name="arrowRight" />
           </Link>
@@ -93,7 +125,7 @@ export function SearchPagination({
   );
 }
 
-function pageHref(basePath: string, params: SearchParams, page: number): string {
+function pageHref(basePath: string, params: SearchParams, page: number, resultsId: string): string {
   const query = new URLSearchParams();
   for (const [key, raw] of Object.entries(params)) {
     if (key === "page") continue;
@@ -103,7 +135,14 @@ function pageHref(basePath: string, params: SearchParams, page: number): string 
     }
   }
   if (page > 1) query.set("page", String(page));
-  return `${basePath}${query.size ? `?${query.toString()}` : ""}#search-results`;
+  return `${basePath}${query.size ? `?${query.toString()}` : ""}#${encodeURIComponent(resultsId)}`;
+}
+
+function scrollToResults(resultsId: string): void {
+  const results = document.getElementById(resultsId);
+  if (!results) return;
+  const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  results.scrollIntoView({ behavior, block: "start" });
 }
 
 function visiblePages(currentPage: number, totalPages: number): number[] {

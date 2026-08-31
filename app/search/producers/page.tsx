@@ -165,11 +165,24 @@ export default async function ProducersSearchPage({
           productLabels={productMap}
         />
 
-        <div id="search-results" className="text-sm text-brand-muted mb-3 flex items-center gap-2">
-          <Icon name="listCheck" /> <span className="figures">{results.length}</span> αποτελέσματα
-          {results.length > PAGE_SIZE && (
-            <span className="figures">· {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, results.length)}</span>
-          )}
+        <div
+          id="search-results"
+          className="scroll-mt-24 mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+        >
+          <div className="text-sm text-brand-muted flex items-center gap-2">
+            <Icon name="listCheck" /> <span className="figures">{results.length}</span> αποτελέσματα
+            {results.length > PAGE_SIZE && (
+              <span className="figures">· {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, results.length)}</span>
+            )}
+          </div>
+          <SearchPagination
+            basePath="/search/producers"
+            params={params}
+            currentPage={currentPage}
+            totalItems={results.length}
+            pageSize={PAGE_SIZE}
+            placement="top"
+          />
         </div>
 
         {results.length === 0 ? (
