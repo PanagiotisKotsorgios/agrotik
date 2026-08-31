@@ -2,6 +2,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { getRegions } from "@/lib/db/queries";
 import { Eyebrow } from "@/components/ui/card";
 import { ProfileEditor } from "./profile-editor";
+import { ChangePasswordForm } from "./change-password-form";
 
 import { redirect } from "next/navigation";
 export default async function DashboardProfile() {
@@ -23,6 +24,9 @@ export default async function DashboardProfile() {
         </p>
       </div>
       <ProfileEditor profile={profile!} regions={regions} />
+      <div className="mt-6">
+        <ChangePasswordForm />
+      </div>
     </>
   );
 }
