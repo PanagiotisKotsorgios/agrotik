@@ -1,0 +1,64 @@
+# AGROTIK — Coolify deployment against Supabase Cloud.
+#
+# This compose file replaces the self-hosted Supabase stack with a single
+# Next.js web container that talks to Supabase Cloud (supabase.com).
+#
+# ─── Setup on supabase.com ──────────────────────────────────────────────
+# 1. Sign up (free) → create a new project.
+# 2. Project Settings → API. Grab:
+#      Project URL           →  https://<ref>.supabase.co
+#      anon public key       →  eyJhbGci... (public, safe in browser)
+#      service_role secret   →  eyJhbGci... (server-only, do NOT expose)
+# 3. Project Settings → Database → Connection string → "URI" (pooler).
+#    Split it into PGHOST / PGPORT / PGUSER / PGPASSWORD / PGDATABASE.
+#
+# ─── Coolify env vars (Environment Variables tab) ───────────────────────
+# NEXT_PUBLIC_SUPABASE_URL       https://<ref>.supabase.co
+# NEXT_PUBLIC_SUPABASE_ANON_KEY  <anon key>
+# SUPABASE_SERVICE_ROLE_KEY      <service_role key>
+# SUPABASE_INTERNAL_URL          https://<ref>.supabase.co   (same as public)
+# PGHOST                         aws-0-<region>.pooler.supabase.com
+# PGPORT                         6543
+# PGUSER                         postgres.<ref>
+# PGPASSWORD                     <db password you set at project creation>
+# PGDATABASE                     postgres
+# APP_ORIGIN                     https://your-domain
+# SEED_ADMIN_EMAIL               admin@your-domain
+# JWT_SECRET                     <copy from Supabase → Settings → API → JWT Secret>
+# JWT_EXP                        3600
+#
+# ─── Coolify deploy ─────────────────────────────────────────────────────
+# New Resource → Docker Compose from GitHub
+#   Repo:   https://github.com/PanagiotisKotsorgios/agrotik
+#   Branch: main
+#   File:   docker-compose.cloud.yml   ← the *cloud* file, not docker-compose.yml
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    image: agrotik-web:latest
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      SUPABASE_INTERNAL_URL: ${SUPABASE_INTERNAL_URL:-${NEXT_PUBLIC_SUPABASE_URL}}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      PGHOST: ${PGHOST}
+      PGPORT: ${PGPORT:-6543}
+      PGDATABASE: ${PGDATABASE:-postgres}
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXP: ${JWT_EXP:-3600}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@agrotik.gr}
+      APP_ORIGIN: ${APP_ORIGIN}
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    expose:
+      - "3000"
