@@ -53,7 +53,7 @@ export default async function BuyersSearchPage({
           </p>
         </div>
 
-        <LiveSearchInput placeholder="Αναζήτηση εμπόρου ή εργοστασίου…" resultsId="search-results" />
+        <LiveSearchInput placeholder="Αναζήτηση εμπόρου ή εργοστασίου…" />
 
         <FiltersDrawer activeCount={countActive(params)}>
         <LiveFilterForm key={JSON.stringify(params)} resultsId="search-results" className="p-5 bg-brand-surface rounded-card border border-brand-border shadow-card mb-6">

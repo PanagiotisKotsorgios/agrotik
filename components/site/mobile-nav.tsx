@@ -65,17 +65,24 @@ export function MobileNav({ authed, isAdmin, isFarmer, displayName }: Props) {
       </div>
 
       <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
-        <MobileGroup title="Αναζήτηση">
-          <MobileLink href="/search/buyers" icon="store">Βρες Αγοραστή</MobileLink>
-          <MobileLink href="/search/producers" icon="seedling">Βρες Παραγωγό</MobileLink>
-        </MobileGroup>
-
-        <MobileGroup title="Πληροφορίες">
-          <MobileLink href="/how-it-works" icon="listCheck">Πώς λειτουργεί</MobileLink>
-          <MobileLink href="/pricing" icon="tag">Κόστος</MobileLink>
-          <MobileLink href="/faq" icon="info">Συχνές ερωτήσεις</MobileLink>
-          <MobileLink href="/contact" icon="envelope">Επικοινωνία</MobileLink>
-        </MobileGroup>
+        {authed ? (
+          <>
+            <MobileGroup title="Αναζήτηση">
+              <MobileLink href="/search/buyers" icon="store">Βρες Αγοραστή</MobileLink>
+              <MobileLink href="/search/producers" icon="seedling">Βρες Παραγωγό</MobileLink>
+            </MobileGroup>
+            <MobileGroup title="Πληροφορίες">
+              <MobileLink href="/how-it-works" icon="listCheck">Πώς λειτουργεί</MobileLink>
+              <MobileLink href="/pricing" icon="tag">Κόστος</MobileLink>
+              <MobileLink href="/faq" icon="info">Συχνές ερωτήσεις</MobileLink>
+              <MobileLink href="/contact" icon="envelope">Επικοινωνία</MobileLink>
+            </MobileGroup>
+          </>
+        ) : (
+          <MobileGroup title="Αναζήτηση">
+            <MobileLink href="/search/producers" icon="seedling">Βρες Παραγωγό</MobileLink>
+          </MobileGroup>
+        )}
 
         {authed && isAdmin && (
           <MobileGroup title={displayName ? `Admin · ${displayName}` : "Admin"}>

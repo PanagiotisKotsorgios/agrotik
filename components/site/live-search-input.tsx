@@ -2,7 +2,6 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
-import { scrollToResultsPreview } from "@/components/site/live-filter-form";
 
 /**
  * Debounced live search input που ενημερώνει το URL param `name` και
@@ -10,10 +9,8 @@ import { scrollToResultsPreview } from "@/components/site/live-filter-form";
  */
 export function LiveSearchInput({
   placeholder = "Αναζήτηση με όνομα ή επωνυμία…",
-  resultsId = "search-results",
 }: {
   placeholder?: string;
-  resultsId?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -29,11 +26,10 @@ export function LiveSearchInput({
       if (trimmed) q.set("name", trimmed);
       else q.delete("name");
       start(() => router.replace(`${pathname}${q.toString() ? "?" + q : ""}`, { scroll: false }));
-      window.setTimeout(() => scrollToResultsPreview(resultsId), 80);
     }, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, resultsId]);
+  }, [value]);
 
   return (
     <label className="relative block mb-4">

@@ -64,7 +64,7 @@ export default async function ProducersSearchPage({
           </p>
         </div>
 
-        <LiveSearchInput placeholder="Αναζήτηση αγρότη με όνομα ή επωνυμία…" resultsId="search-results" />
+        <LiveSearchInput placeholder="Αναζήτηση αγρότη με όνομα ή επωνυμία…" />
 
         <FiltersDrawer activeCount={countActive(params)}>
         <LiveFilterForm key={JSON.stringify(params)} resultsId="search-results" className="p-5 bg-brand-surface rounded-card border border-brand-border shadow-card mb-6">
