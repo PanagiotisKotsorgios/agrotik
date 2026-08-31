@@ -33,13 +33,13 @@ services:
     image: supabase/postgres:15.1.1.78
     restart: unless-stopped
     volumes:
-      # Renamed from `agrotik-db` → `agrotik-db-v3` on 2026-08-31 to force
+      # Renamed from `agrotik-db` → `agrotik-db-v4` on 2026-08-31 to force
       # Coolify to create a fresh Postgres data volume. The prior volume
       # held reserved Supabase roles with NULL passwords (created before
       # the init scripts were in place) and cannot be repaired from the
       # app. The old volume becomes orphaned and can be removed later via
       # the Coolify server terminal: `docker volume rm <prefix>_agrotik-db`.
-      - agrotik-db-v3:/var/lib/postgresql/data
+      - agrotik-db-v4:/var/lib/postgresql/data
     configs:
       # Supabase's Postgres image runs everything in
       # /docker-entrypoint-initdb.d/{init-scripts,migrations}/ ONLY when
@@ -141,14 +141,14 @@ services:
       PORT: "4000"
       DB_HOST: db
       DB_PORT: "5432"
-      # Connect as `postgres` (POSTGRES_USER) instead of supabase_admin.
-      # In the supabase/postgres image, `postgres` is a superuser with the
-      # password from POSTGRES_PASSWORD — always correct. `supabase_admin`
-      # gets a random image-internal password we cannot control from here.
-      DB_USER: postgres
+      # Connect as supabase_admin (owner of _realtime). Its default
+      # search_path is set to `_realtime, public` in realtime.sql init,
+      # so Ecto's migrator connection sees the right schema too —
+      # DB_AFTER_CONNECT_QUERY is not enough because the migrator pool
+      # skips it.
+      DB_USER: supabase_admin
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       DB_NAME: postgres
-      DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
       DB_ENC_KEY: supabaserealtime
       API_JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
       APP_NAME: realtime
@@ -237,15 +237,28 @@ services:
 configs:
   supabase-roles-sql:
     content: |
-      -- Set the reserved Supabase role passwords to POSTGRES_PASSWORD.
       -- Runs only on a fresh PGDATA directory.
       \set pgpass `echo "$POSTGRES_PASSWORD"`
+
+      -- 1. Sync every reserved Supabase role's password to POSTGRES_PASSWORD.
       alter user supabase_admin with password :'pgpass';
       alter user authenticator with password :'pgpass';
       alter user pgbouncer with password :'pgpass';
       alter user supabase_auth_admin with password :'pgpass';
       alter user supabase_functions_admin with password :'pgpass';
       alter user supabase_storage_admin with password :'pgpass';
+
+      -- 2. Hand the `auth` schema and its pre-installed helper functions
+      --    over to supabase_auth_admin. The supabase/postgres image ships
+      --    with auth.uid() / auth.role() / auth.email() / auth.jwt() owned
+      --    by `postgres`; gotrue's migrations later try to `create or
+      --    replace function` them as supabase_auth_admin and fail with
+      --    "must be owner of function uid" unless ownership is transferred.
+      alter schema auth owner to supabase_auth_admin;
+      alter function auth.uid() owner to supabase_auth_admin;
+      alter function auth.role() owner to supabase_auth_admin;
+      alter function auth.email() owner to supabase_auth_admin;
+      alter function auth.jwt() owner to supabase_auth_admin;
 
   supabase-jwt-sql:
     content: |
@@ -261,6 +274,10 @@ configs:
       -- ahead of time and hand it to supabase_admin (whom Realtime connects as).
       create schema if not exists _realtime;
       alter schema _realtime owner to supabase_admin;
+      -- Make _realtime the default search_path for supabase_admin.
+      -- DB_AFTER_CONNECT_QUERY is not enough because the Ecto migrator
+      -- uses a separate pool that skips it; the role default IS applied.
+      alter role supabase_admin set search_path to _realtime, public;
 
   kong-yaml:
     content: |
@@ -377,4 +394,4 @@ configs:
                 allow: [admin]
 
 volumes:
-  agrotik-db-v3:
+  agrotik-db-v4:
