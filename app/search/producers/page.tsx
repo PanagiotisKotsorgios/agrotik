@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { searchProducers, getRegions, getActiveProducts, getProductCategories } from "@/lib/db/queries";
 import { parseProducerFilters } from "@/lib/domain/search-params";
-import { formatRelative, roleLabel } from "@/lib/utils";
+import { formatQuantityNumber, formatRelative, pluralizeQuantityUnit, roleLabel } from "@/lib/utils";
 import { FilterChips } from "@/components/site/filter-chips";
 import { AttributeFilters } from "@/components/site/attribute-filters";
 import { FiltersDrawer } from "@/components/site/filters-drawer";
@@ -226,8 +226,12 @@ export default async function ProducersSearchPage({
                       <div className="mt-4">
                         <div className="text-sm text-brand-muted">{r.product.name_el}</div>
                         <div className="mt-1 flex items-baseline gap-2">
-                          <span className="figures text-3xl font-semibold text-brand-dark">{r.quantity ?? "—"}</span>
-                          <span className="text-brand-muted text-base">{r.unit}</span>
+                          <span className="figures text-3xl font-semibold text-brand-dark">
+                            {r.quantity == null ? "—" : formatQuantityNumber(r.quantity)}
+                          </span>
+                          <span className="text-brand-muted text-base">
+                            {r.quantity == null ? r.unit : pluralizeQuantityUnit(r.unit, r.quantity)}
+                          </span>
                         </div>
                         {Object.keys(r.attributes).length > 0 && (
                           <div className="text-sm text-brand-muted mt-1">

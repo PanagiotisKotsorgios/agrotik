@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { savePurchase, deletePurchase } from "@/lib/actions/purchases";
 import type { Product } from "@/lib/db/types";
+import { formatQuantity } from "@/lib/utils";
 
 interface Farmer {
   id: string;
@@ -164,7 +165,7 @@ export function PurchasesManager({
                   <td className="py-2.5 pr-3 font-medium text-brand-dark">{r.profiles.display_name}</td>
                   <td className="py-2.5 pr-3">{r.products.name_el}</td>
                   <td className="py-2.5 pr-3 text-right figures">
-                    {r.quantity} {r.unit}
+                    {formatQuantity(r.quantity, r.unit)}
                   </td>
                   <td className="py-2.5 pr-3 text-right figures">
                     {r.price_per_unit != null ? `${Number(r.price_per_unit).toFixed(2)} €` : "—"}

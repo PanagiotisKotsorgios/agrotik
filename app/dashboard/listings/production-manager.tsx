@@ -6,6 +6,7 @@ import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { saveProductionListing, deleteProductionListing } from "@/lib/actions/listings";
 import type { Product, Region, AttributesSchema } from "@/lib/db/types";
 import { Icon } from "@/components/ui/icon";
+import { formatQuantity } from "@/lib/utils";
 
 interface Row {
   id: string;
@@ -68,7 +69,7 @@ export function ProductionListingsManager({
                 <div>
                   <h3 className="font-semibold text-brand-dark">{l.products.name_el}</h3>
                   <div className="text-lg font-bold text-brand-earth mt-1">
-                    {l.quantity} {l.unit ?? l.products.unit}
+                    {formatQuantity(l.quantity, l.unit ?? l.products.unit)}
                   </div>
                   {Object.keys(l.attributes ?? {}).length > 0 && (
                     <div className="text-xs text-brand-text/60 mt-1">

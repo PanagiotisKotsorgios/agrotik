@@ -9,7 +9,7 @@ import { Card, Badge, Eyebrow, CardTitle } from "@/components/ui/card";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { getProfileById, getProfileListings } from "@/lib/db/queries";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { roleLabel, formatRelative, priceFormat } from "@/lib/utils";
+import { formatQuantityNumber, formatRelative, pluralizeQuantityUnit, priceFormat, roleLabel } from "@/lib/utils";
 import { FavoriteButton } from "./favorite-button";
 
 export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -271,9 +271,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                         )}
                         <div className="mt-2 flex items-baseline gap-2">
                           <span className="figures text-2xl font-semibold text-brand-dark">
-                            {l.quantity}
+                            {formatQuantityNumber(l.quantity)}
                           </span>
-                          <span className="text-brand-muted">{l.unit ?? l.products.unit}</span>
+                          <span className="text-brand-muted">
+                            {pluralizeQuantityUnit(l.unit ?? l.products.unit, l.quantity)}
+                          </span>
                         </div>
                         {Object.keys(l.attributes ?? {}).length > 0 && (
                           <div className="text-xs text-brand-muted mt-1">

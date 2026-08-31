@@ -5,7 +5,7 @@ import { getActiveProducts } from "@/lib/db/queries";
 import { Card, Eyebrow, Badge } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { PurchasesManager } from "./manager";
-import { formatRelative, priceFormat } from "@/lib/utils";
+import { formatQuantity, formatRelative, priceFormat } from "@/lib/utils";
 
 export default async function PurchasesPage({
   searchParams,
@@ -146,7 +146,7 @@ export default async function PurchasesPage({
                       <li key={i} className="flex justify-between text-brand-ink/85">
                         <span>{it.productName}</span>
                         <span className="figures">
-                          {it.qty} {it.unit}
+                          {formatQuantity(it.qty, it.unit)}
                           {it.totalValue > 0 && (
                             <span className="text-brand-muted ml-2">· {it.totalValue.toFixed(2)} €</span>
                           )}
@@ -174,7 +174,7 @@ export default async function PurchasesPage({
                 <li key={i} className="flex justify-between border-b border-brand-border last:border-0 pb-2 last:pb-0">
                   <span className="font-medium text-brand-ink">{p.productName}</span>
                   <span className="figures">
-                    {p.qty} {p.unit}
+                    {formatQuantity(p.qty, p.unit)}
                     {p.totalValue > 0 && <span className="text-brand-muted ml-2">· {p.totalValue.toFixed(2)} €</span>}
                   </span>
                 </li>
