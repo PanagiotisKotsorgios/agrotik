@@ -80,6 +80,7 @@ export function MobileNav({ authed, isAdmin, isFarmer, displayName }: Props) {
           </>
         ) : (
           <MobileGroup title="Αναζήτηση">
+            <MobileLink href="/search/buyers" icon="store">Βρες Αγοραστή</MobileLink>
             <MobileLink href="/search/producers" icon="seedling">Βρες Παραγωγό</MobileLink>
           </MobileGroup>
         )}
