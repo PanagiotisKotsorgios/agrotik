@@ -91,7 +91,7 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
   if (profiles.length === 0) return null;
 
   return (
-    <section className="max-w-6xl mx-auto px-4 py-14">
+    <section className="max-w-6xl mx-auto px-4 pt-8 pb-14">
       <div className="flex items-end justify-between mb-6 gap-4">
         <div>
           <div className="eyebrow">Νέα προφίλ</div>
@@ -144,7 +144,7 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
             href={`/profile/${p.id}`}
             prefetch
             draggable={false}
-            className="shrink-0 w-[82%] sm:w-[280px] snap-center sm:snap-start bg-brand-surface border border-brand-border rounded-card p-5 shadow-card hover:border-brand-dark/40 hover:shadow-elev transition-all"
+            className="shrink-0 w-[82%] sm:w-[280px] snap-center sm:snap-start bg-brand-surface border border-brand-border rounded-card p-5 shadow-card hover:border-brand-dark/40 hover:shadow-elev transition-all flex flex-col"
           >
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-brand-dark text-white flex items-center justify-center font-semibold display shrink-0 overflow-hidden">
@@ -160,9 +160,9 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
                 <Badge tone="brand">{roleLabel(p.role)}</Badge>
               </div>
             </div>
-            <div className="mt-3 text-[13px] text-brand-muted inline-flex items-center gap-1.5">
-              <Icon name="location" />
-              <span className="truncate">
+            <div className="mt-3 text-[13px] text-brand-muted flex items-start gap-1.5 min-w-0">
+              <Icon name="location" className="shrink-0 mt-0.5" />
+              <span className="line-clamp-2 leading-snug break-words min-w-0">
                 {p.region_name}
                 {p.municipality ? ` · ${p.municipality}` : ""}
               </span>
@@ -170,7 +170,7 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
             {p.bio && (
               <p className="mt-3 text-sm text-brand-ink/85 line-clamp-2 leading-snug">{p.bio}</p>
             )}
-            <div className="mt-4 text-sm text-brand-mid font-semibold inline-flex items-center gap-1">
+            <div className="mt-auto pt-4 text-sm text-brand-mid font-semibold inline-flex items-center gap-1">
               Δες προφίλ <Icon name="arrowRight" className="text-[0.85em]" />
             </div>
           </Link>

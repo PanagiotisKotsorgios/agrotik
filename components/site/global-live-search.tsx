@@ -166,39 +166,44 @@ export function GlobalLiveSearch() {
               <li key={h.id}>
                 <Link
                   href={`/profile/${h.id}`}
-                  className="flex items-start gap-3 p-4 bg-white rounded-xl border border-brand-border hover:border-brand-dark/40 hover:shadow-card transition-all h-full"
+                  className="flex flex-col p-4 bg-white rounded-xl border border-brand-border hover:border-brand-dark/40 hover:shadow-card transition-all h-full"
                 >
-                  <div className="w-11 h-11 rounded-full bg-brand-dark text-white flex items-center justify-center font-semibold display shrink-0 overflow-hidden">
-                    {h.avatar_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={h.avatar_url}
-                        alt={h.display_name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      initials(h.display_name)
-                    )}
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-11 h-11 rounded-full bg-brand-dark text-white flex items-center justify-center font-semibold display shrink-0 overflow-hidden">
+                      {h.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={h.avatar_url}
+                          alt={h.display_name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        initials(h.display_name)
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-brand-dark line-clamp-1">
+                          {h.display_name}
+                        </span>
+                        <Badge tone="brand">{roleLabel(h.role)}</Badge>
+                      </div>
+                      <div className="text-[13px] text-brand-muted flex items-start gap-1.5 mt-1 min-w-0">
+                        <Icon name="location" className="shrink-0 mt-0.5" />
+                        <span className="line-clamp-2 leading-snug break-words min-w-0">
+                          {h.regions?.name_el ?? h.region_code}
+                          {h.municipality ? ` · ${h.municipality}` : ""}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-brand-dark truncate">
-                        {h.display_name}
-                      </span>
-                      <Badge tone="brand">{roleLabel(h.role)}</Badge>
-                    </div>
-                    <div className="text-[13px] text-brand-muted inline-flex items-center gap-1.5 mt-0.5">
-                      <Icon name="location" />
-                      <span className="truncate">
-                        {h.regions?.name_el ?? h.region_code}
-                        {h.municipality ? ` · ${h.municipality}` : ""}
-                      </span>
-                    </div>
-                    {h.bio && (
-                      <p className="mt-1.5 text-sm text-brand-ink/85 line-clamp-2">
-                        {h.bio}
-                      </p>
-                    )}
+                  {h.bio && (
+                    <p className="mt-3 text-sm text-brand-ink/85 line-clamp-2 leading-snug">
+                      {h.bio}
+                    </p>
+                  )}
+                  <div className="mt-auto pt-3 text-sm text-brand-mid font-semibold inline-flex items-center gap-1">
+                    Δες προφίλ <Icon name="arrowRight" className="text-[0.85em]" />
                   </div>
                 </Link>
               </li>

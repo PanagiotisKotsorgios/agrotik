@@ -14,6 +14,7 @@ import { AttributeFilters } from "@/components/site/attribute-filters";
 import { FiltersDrawer } from "@/components/site/filters-drawer";
 import { Footer } from "@/components/site/footer";
 import { LiveSearchInput } from "@/components/site/live-search-input";
+import { LiveFilterForm } from "@/components/site/live-filter-form";
 
 export default async function BuyersSearchPage({
   searchParams,
@@ -52,10 +53,10 @@ export default async function BuyersSearchPage({
           </p>
         </div>
 
-        <LiveSearchInput placeholder="Αναζήτηση εμπόρου ή εργοστασίου…" />
+        <LiveSearchInput placeholder="Αναζήτηση εμπόρου ή εργοστασίου…" resultsId="search-results" />
 
         <FiltersDrawer activeCount={countActive(params)}>
-        <form className="p-5 bg-brand-surface rounded-card border border-brand-border shadow-card mb-6">
+        <LiveFilterForm key={JSON.stringify(params)} resultsId="search-results" className="p-5 bg-brand-surface rounded-card border border-brand-border shadow-card mb-6">
           <div className="grid sm:grid-cols-4 gap-4">
             <div>
               <Label>Νομός</Label>
@@ -131,14 +132,15 @@ export default async function BuyersSearchPage({
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
+            <span className="hidden md:inline text-xs text-brand-muted mr-auto">Τα αποτελέσματα ενημερώνονται αυτόματα</span>
             <Link href="/search/buyers" className="text-sm text-brand-muted hover:text-brand-dark underline underline-offset-2">
               Καθαρισμός
             </Link>
-            <Button type="submit" icon="search" size="lg">
+            <Button type="submit" icon="search" size="lg" className="md:hidden">
               Αναζήτηση
             </Button>
           </div>
-        </form>
+        </LiveFilterForm>
         </FiltersDrawer>
 
         <FilterChips
@@ -148,7 +150,7 @@ export default async function BuyersSearchPage({
           productLabels={productMap}
         />
 
-        <div className="text-sm text-brand-muted mb-3 flex items-center gap-2">
+        <div id="search-results" className="text-sm text-brand-muted mb-3 flex items-center gap-2">
           <Icon name="listCheck" /> <span className="figures">{results.length}</span> αποτελέσματα
         </div>
 
@@ -168,7 +170,19 @@ export default async function BuyersSearchPage({
                 className="group block bg-brand-surface border border-brand-border rounded-card shadow-card p-5 sm:p-6 hover:border-brand-dark/40 hover:shadow-elev transition-all"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden shrink-0 border-2 border-brand-border bg-brand-dark text-white flex items-center justify-center shadow-sm">
+                    {r.profile.avatar_url ? (
+                      <img
+                        src={r.profile.avatar_url}
+                        alt={`Φωτογραφία προφίλ ${r.profile.display_name}`}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Icon name="store" className="text-xl" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-brand-dark text-lg truncate group-hover:underline underline-offset-2">{r.profile.display_name}</h3>
                       <Badge tone="brand">{roleLabel(r.profile.role)}</Badge>
