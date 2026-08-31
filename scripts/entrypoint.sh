@@ -15,7 +15,22 @@ fail() {
   exec sleep infinity
 }
 
-log "PID=$$  PGHOST=${PGHOST:-<unset>}  PGUSER=${PGUSER:-<unset>}  PGDATABASE=${PGDATABASE:-<unset>}  PORT=${PORT:-3000}"
+log "PID=$$  PGHOST=${PGHOST:-<unset>}  PGUSER=${PGUSER:-<unset>}  PGDATABASE=${PGDATABASE:-<unset>}  PORT=${PORT:-3000}  SKIP_MIGRATIONS=${SKIP_MIGRATIONS:-<unset>}"
+
+# When SKIP_MIGRATIONS is truthy, assume the schema was applied out of
+# band (e.g. through the Supabase Cloud SQL Editor) and go straight to
+# starting the app. Prevents "type already exists" style crashes on
+# every boot.
+case "${SKIP_MIGRATIONS:-}" in
+  1|true|True|TRUE|yes|YES)
+    log "SKIP_MIGRATIONS is set — skipping migration step entirely."
+    log "starting Next.js on 0.0.0.0:${PORT:-3000}…"
+    node server.js
+    rc=$?
+    log "Next.js exited with code $rc — container will stay alive for inspection"
+    exec sleep infinity
+    ;;
+esac
 
 if [ -z "${PGHOST:-}" ]; then
   log "PGHOST not set — skipping migrations."
