@@ -4,6 +4,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { Card, Eyebrow, Badge } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { formatRelative } from "@/lib/utils";
+import { createSupabaseService } from "@/lib/supabase/service";
 
 export default async function InboxPage() {
   const supabase = await createSupabaseServer();
@@ -32,8 +33,9 @@ export default async function InboxPage() {
   }
 
   const peerIds = [...peers.keys()];
+  const svc = createSupabaseService();
   const { data: profs } = peerIds.length
-    ? await supabase.from("profiles").select("id, display_name, role, regions(name_el)").in("id", peerIds)
+    ? await svc.from("profiles").select("id, display_name, role, regions(name_el)").in("id", peerIds)
     : { data: [] as any[] };
   const profMap = new Map((profs as any[]).map((p) => [p.id, p]));
 

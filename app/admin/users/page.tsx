@@ -4,6 +4,7 @@ import { Icon } from "@/components/ui/icon";
 import { roleLabel } from "@/lib/utils";
 import { UserActions } from "./user-actions";
 import Link from "next/link";
+import { createSupabaseServer } from "@/lib/supabase/server";
 
 export default async function AdminUsers({
   searchParams,
@@ -12,6 +13,10 @@ export default async function AdminUsers({
 }) {
   const params = await searchParams;
   const svc = createSupabaseService();
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
 
   let query = svc
     .from("profiles")
@@ -20,7 +25,11 @@ export default async function AdminUsers({
     .limit(200);
   if (params.role) query = query.eq("role", params.role);
 
-  const { data: users } = await query;
+  const [{ data: users }, { data: authUsers }] = await Promise.all([
+    query,
+    svc.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+  ]);
+  const emailById = new Map(authUsers.users.map((user) => [user.id, user.email]));
 
   const filters = [
     { v: "", l: "Όλοι" },
@@ -56,7 +65,7 @@ export default async function AdminUsers({
       <div className="space-y-2">
         {((users as any[]) ?? []).map((u) => (
           <Card key={u.id} className="p-4">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Link href={`/profile/${u.id}`} className="font-semibold text-brand-dark hover:underline truncate">
@@ -65,14 +74,21 @@ export default async function AdminUsers({
                   <Badge tone="brand">{roleLabel(u.role)}</Badge>
                   {!u.is_active && <Badge tone="danger">Suspended</Badge>}
                 </div>
-                <div className="text-xs text-brand-muted mt-1 flex items-center gap-2">
+                <div className="text-xs text-brand-muted mt-1 flex flex-wrap items-center gap-2">
+                  {emailById.get(u.id) && <span className="inline-flex items-center gap-1"><Icon name="envelope" /> {emailById.get(u.id)}</span>}
                   <span className="inline-flex items-center gap-1"><Icon name="location" /> {u.regions?.name_el ?? u.region_code}</span>
                   <span className="text-brand-border">·</span>
                   <span className="inline-flex items-center gap-1"><Icon name="phone" /> {u.phone}</span>
                 </div>
               </div>
-              <UserActions userId={u.id} isActive={u.is_active} role={u.role} />
             </div>
+            <UserActions
+              userId={u.id}
+              displayName={u.display_name}
+              isActive={u.is_active}
+              role={u.role}
+              isSelf={currentUser?.id === u.id}
+            />
           </Card>
         ))}
       </div>

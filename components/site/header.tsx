@@ -58,6 +58,8 @@ export async function Header() {
                 initialCount={unreadNotif}
                 initialMessages={unreadMsg}
                 userId={user!.id}
+                messageHref={profile.role === "admin" ? "/admin/messages" : "/dashboard/messages"}
+                notificationHref={profile.role === "admin" ? "/admin" : "/dashboard/notifications"}
               />
               {profile.role === "admin" && (
                 <Link

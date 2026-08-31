@@ -1,15 +1,15 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { Card, Eyebrow, Badge } from "@/components/ui/card";
-import { Icon } from "@/components/ui/icon";
-import { formatRelative, roleLabel } from "@/lib/utils";
-import { markThreadRead } from "@/lib/actions/messages";
-import { MessageComposer } from "./composer";
-import { LiveThread } from "./live-thread";
 import { createSupabaseService } from "@/lib/supabase/service";
+import { Card, Badge } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
+import { roleLabel } from "@/lib/utils";
+import { markThreadRead } from "@/lib/actions/messages";
+import { MessageComposer } from "@/app/dashboard/messages/[withUserId]/composer";
+import { LiveThread } from "@/app/dashboard/messages/[withUserId]/live-thread";
 
-export default async function ThreadPage({
+export default async function AdminMessageThreadPage({
   params,
 }: {
   params: Promise<{ withUserId: string }>;
@@ -19,8 +19,7 @@ export default async function ThreadPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-  if (user.id === withUserId) return notFound();
+  if (!user || user.id === withUserId) return notFound();
 
   const svc = createSupabaseService();
   const { data: peer } = await svc
@@ -30,7 +29,7 @@ export default async function ThreadPage({
     .single();
   if (!peer) return notFound();
 
-  const { data: msgs } = await supabase
+  const { data: messages } = await supabase
     .from("messages")
     .select("*")
     .or(
@@ -39,14 +38,13 @@ export default async function ThreadPage({
     .order("created_at", { ascending: true })
     .limit(500);
 
-  // Mark unread messages from peer as read (best-effort)
   await markThreadRead(withUserId);
 
   return (
     <>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <Link href="/dashboard/messages" className="text-brand-muted hover:text-brand-dark text-sm inline-flex items-center gap-1.5">
+          <Link href="/admin/messages" className="text-brand-muted hover:text-brand-dark text-sm inline-flex items-center gap-1.5">
             <Icon name="arrowLeft" /> Όλες οι συνομιλίες
           </Link>
           <div className="mt-2 flex items-center gap-2">
@@ -57,16 +55,13 @@ export default async function ThreadPage({
             <Icon name="location" /> {(peer as any).regions?.name_el ?? ""}
           </div>
         </div>
-        <Link
-          href={`/profile/${withUserId}`}
-          className="text-sm text-brand-mid hover:text-brand-dark inline-flex items-center gap-1.5"
-        >
+        <Link href={`/profile/${withUserId}`} className="text-sm text-brand-mid hover:text-brand-dark inline-flex items-center gap-1.5">
           Δες προφίλ <Icon name="arrowRight" />
         </Link>
       </div>
 
       <Card className="p-0 overflow-hidden">
-        <LiveThread userId={user.id} peerId={withUserId} initial={(msgs as any[]) ?? []} />
+        <LiveThread userId={user.id} peerId={withUserId} initial={(messages as any[]) ?? []} />
         <div className="border-t border-brand-border p-4 bg-brand-bg">
           <MessageComposer recipientId={withUserId} />
         </div>

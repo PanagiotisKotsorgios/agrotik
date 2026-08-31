@@ -6,7 +6,12 @@
 
 export type UserRole = "farmer" | "merchant" | "factory" | "admin";
 export type ProductStatus = "active" | "pending" | "rejected";
-export type NotificationKind = "price_changed";
+export type NotificationKind =
+  | "price_changed"
+  | "new_better_price"
+  | "new_message"
+  | "report_received"
+  | "admin_notice";
 
 export interface GalleryItem {
   url: string;
@@ -131,14 +136,17 @@ export interface Notification {
   user_id: string;
   kind: NotificationKind;
   payload: {
-    listing_id: string;
-    target_profile_id: string;
-    product_id: string;
-    changed_variants: Array<{
+    listing_id?: string;
+    target_profile_id?: string;
+    product_id?: string;
+    changed_variants?: Array<{
       attributes: Record<string, string | number>;
       old_price: number;
       new_price: number;
     }>;
+    title?: string;
+    body?: string;
+    sent_by?: string;
   };
   read_at: string | null;
   created_at: string;

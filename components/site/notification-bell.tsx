@@ -8,10 +8,14 @@ export function NotificationBell({
   initialCount,
   initialMessages,
   userId,
+  messageHref = "/dashboard/messages",
+  notificationHref = "/dashboard/notifications",
 }: {
   initialCount: number;
   initialMessages: number;
   userId: string;
+  messageHref?: string;
+  notificationHref?: string;
 }) {
   const [count, setCount] = useState(initialCount);
   const [msgs, setMsgs] = useState(initialMessages);
@@ -43,7 +47,7 @@ export function NotificationBell({
   return (
     <div className="flex items-center gap-1">
       <Link
-        href="/dashboard/messages"
+        href={messageHref}
         aria-label={`Μηνύματα (${msgs} νέα)`}
         className="relative p-2 text-brand-ink/70 hover:text-brand-dark rounded-md hover:bg-brand-border/40"
       >
@@ -51,7 +55,7 @@ export function NotificationBell({
         {msgs > 0 && <Dot count={msgs} tone="olive" />}
       </Link>
       <Link
-        href="/dashboard/notifications"
+        href={notificationHref}
         aria-label={`Ειδοποιήσεις (${count} νέες)`}
         className="relative p-2 text-brand-ink/70 hover:text-brand-dark rounded-md hover:bg-brand-border/40"
       >

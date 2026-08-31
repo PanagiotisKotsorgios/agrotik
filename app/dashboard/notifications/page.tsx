@@ -58,6 +58,23 @@ export default async function NotificationsPage() {
       ) : (
         <div className="space-y-3">
           {rows.map((n) => {
+            if (n.kind === "admin_notice") {
+              return (
+                <Card key={n.id}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge tone="warn"><Icon name="shield" /> Ενημέρωση διαχειριστή</Badge>
+                        <span className="eyebrow text-brand-muted">{formatRelative(n.created_at)}</span>
+                      </div>
+                      <h2 className="font-semibold text-brand-dark mt-3">{n.payload?.title}</h2>
+                      <p className="text-sm text-brand-ink/85 mt-1 whitespace-pre-wrap break-words">{n.payload?.body}</p>
+                    </div>
+                  </div>
+                </Card>
+              );
+            }
+
             const targetName = targetMap.get(n.payload?.target_profile_id) ?? "Έμπορος";
             const product = prodMap.get(n.payload?.product_id);
             const changes = n.payload?.changed_variants ?? [];

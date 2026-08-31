@@ -21,6 +21,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const items: { href: string; icon: IconName; label: string }[] = [
     { href: "/admin", icon: "chart", label: "Στατιστικά" },
     { href: "/admin/users", icon: "users", label: "Χρήστες" },
+    { href: "/admin/messages", icon: "chat", label: "Μηνύματα" },
     { href: "/admin/products", icon: "box", label: "Προϊόντα" },
     { href: "/admin/reports", icon: "flag", label: "Αναφορές" },
     { href: "/admin/settings", icon: "gear", label: "Ρυθμίσεις" },
@@ -51,4 +52,3 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     </>
   );
 }
-

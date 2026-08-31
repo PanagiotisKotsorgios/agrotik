@@ -1,9 +1,18 @@
 "use server";
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseService } from "@/lib/supabase/service";
 import { setBrevoSettings, sendBrevoEmail, renderEmailShell, type BrevoSettings } from "@/lib/brevo";
 import type { ActionResult } from "./auth";
+
+const userIdSchema = z.string().uuid();
+const roleSchema = z.enum(["farmer", "merchant", "factory", "admin"]);
+const notificationSchema = z.object({
+  userId: z.string().uuid(),
+  title: z.string().trim().min(2, "Ο τίτλος είναι πολύ μικρός").max(120),
+  body: z.string().trim().min(1, "Γράψε το κείμενο της ειδοποίησης").max(2000),
+});
 
 async function requireAdmin() {
   const supabase = await createSupabaseServer();
@@ -17,7 +26,12 @@ async function requireAdmin() {
 }
 
 export async function setUserActive(userId: string, active: boolean): Promise<ActionResult> {
-  if (!(await requireAdmin())) return { ok: false, error: "Δεν έχεις δικαίωμα" };
+  const admin = await requireAdmin();
+  if (!admin) return { ok: false, error: "Δεν έχεις δικαίωμα" };
+  if (!userIdSchema.safeParse(userId).success) return { ok: false, error: "Μη έγκυρος χρήστης" };
+  if (admin.id === userId && !active) {
+    return { ok: false, error: "Δεν μπορείς να αναστείλεις τον δικό σου λογαριασμό" };
+  }
   const svc = createSupabaseService();
   const { error } = await svc.from("profiles").update({ is_active: active }).eq("id", userId);
   if (error) return { ok: false, error: error.message };
@@ -26,10 +40,73 @@ export async function setUserActive(userId: string, active: boolean): Promise<Ac
 }
 
 export async function promoteToAdmin(userId: string): Promise<ActionResult> {
-  if (!(await requireAdmin())) return { ok: false, error: "Δεν έχεις δικαίωμα" };
+  return setUserRole(userId, "admin");
+}
+
+export async function setUserRole(userId: string, role: string): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  if (!admin) return { ok: false, error: "Δεν έχεις δικαίωμα" };
+  const parsedUserId = userIdSchema.safeParse(userId);
+  const parsedRole = roleSchema.safeParse(role);
+  if (!parsedUserId.success || !parsedRole.success) return { ok: false, error: "Μη έγκυρα στοιχεία" };
+  if (admin.id === userId && role !== "admin") {
+    return { ok: false, error: "Δεν μπορείς να αφαιρέσεις τον δικό σου ρόλο διαχειριστή" };
+  }
   const svc = createSupabaseService();
-  const { error } = await svc.from("profiles").update({ role: "admin" }).eq("id", userId);
+  const { error } = await svc.from("profiles").update({ role: parsedRole.data }).eq("id", userId);
   if (error) return { ok: false, error: error.message };
+  revalidatePath("/admin/users");
+  return { ok: true };
+}
+
+export async function sendAdminNotification(input: unknown): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  if (!admin) return { ok: false, error: "Δεν έχεις δικαίωμα" };
+  const parsed = notificationSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Μη έγκυρα στοιχεία" };
+  }
+
+  const svc = createSupabaseService();
+  const { data: target, error: targetError } = await svc
+    .from("profiles")
+    .select("id")
+    .eq("id", parsed.data.userId)
+    .maybeSingle();
+  if (targetError || !target) return { ok: false, error: "Ο χρήστης δεν βρέθηκε" };
+
+  const { error } = await svc.from("notifications").insert({
+    user_id: parsed.data.userId,
+    kind: "admin_notice",
+    payload: {
+      title: parsed.data.title,
+      body: parsed.data.body,
+      sent_by: admin.id,
+    },
+  });
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/dashboard/notifications");
+  return { ok: true };
+}
+
+export async function deleteUserPermanently(userId: string): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  if (!admin) return { ok: false, error: "Δεν έχεις δικαίωμα" };
+  if (!userIdSchema.safeParse(userId).success) return { ok: false, error: "Μη έγκυρος χρήστης" };
+  if (admin.id === userId) {
+    return { ok: false, error: "Δεν μπορείς να διαγράψεις τον δικό σου λογαριασμό" };
+  }
+
+  const svc = createSupabaseService();
+  const { data: target, error: targetError } = await svc.auth.admin.getUserById(userId);
+  if (targetError || !target.user) return { ok: false, error: "Ο χρήστης δεν βρέθηκε" };
+
+  // false means a hard delete in Supabase Auth. Database cascades remove the
+  // profile and all dependent platform records in the same operation.
+  const { error } = await svc.auth.admin.deleteUser(userId, false);
+  if (error) return { ok: false, error: error.message };
+
   revalidatePath("/admin/users");
   return { ok: true };
 }

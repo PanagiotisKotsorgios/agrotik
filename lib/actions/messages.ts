@@ -31,19 +31,21 @@ export async function sendMessage(input: unknown): Promise<ActionResult> {
 
   // Fire off email (best-effort) via service role — look up recipient email
   const svc = createSupabaseService();
-  const [{ data: sender }, { data: recipient }] = await Promise.all([
+  const [{ data: sender }, { data: recipientProfile }, { data: recipient }] = await Promise.all([
     svc.from("profiles").select("display_name").eq("id", user.id).single(),
+    svc.from("profiles").select("role").eq("id", parsed.data.recipient_id).single(),
     svc.auth.admin.getUserById(parsed.data.recipient_id),
   ]);
   const recEmail = recipient?.user?.email;
   if (recEmail) {
+    const inboxPath = recipientProfile?.role === "admin" ? "/admin/messages" : "/dashboard/messages";
     await sendBrevoEmail("new_message", {
       to: [{ email: recEmail }],
       subject: `Νέο μήνυμα από ${sender?.display_name ?? "χρήστη"} στο AGROTIK`,
       htmlContent: renderEmailShell(
         `Νέο μήνυμα από ${sender?.display_name ?? "χρήστη"}`,
         `<p>${escapeText(parsed.data.body).slice(0, 400)}</p>
-         <p><a href="http://localhost:3000/dashboard/messages/${user.id}" style="color:#1B4D2E">Δες το μήνυμα</a></p>`,
+         <p><a href="${process.env.APP_ORIGIN || "http://localhost:3000"}${inboxPath}/${user.id}" style="color:#1B4D2E">Δες το μήνυμα</a></p>`,
       ),
       tag: "new_message",
     });
