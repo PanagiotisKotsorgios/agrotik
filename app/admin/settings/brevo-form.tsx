@@ -4,9 +4,15 @@ import { Input, Label, Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { saveBrevoSettings, sendBrevoTest } from "@/lib/actions/admin";
-import type { BrevoSettings, EmailTemplate } from "@/lib/brevo";
+import type { BrevoSettings, BrevoTemplateKey, EmailTemplate } from "@/lib/brevo";
 
-export function BrevoSettingsForm({ initial }: { initial: BrevoSettings }) {
+export function BrevoSettingsForm({
+  initial,
+  hasApiKey,
+}: {
+  initial: BrevoSettings;
+  hasApiKey: boolean;
+}) {
   const [enabled, setEnabled] = useState(initial.enabled);
   const [apiKey, setApiKey] = useState(initial.api_key);
   const [showKey, setShowKey] = useState(false);
@@ -38,7 +44,7 @@ export function BrevoSettingsForm({ initial }: { initial: BrevoSettings }) {
             type={showKey ? "text" : "password"}
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder="xkeysib-…"
+            placeholder={hasApiKey ? "Αποθηκευμένο — γράψε νέο μόνο για αντικατάσταση" : "xkeysib-…"}
             autoComplete="off"
             className="pr-11 figures"
           />
@@ -88,12 +94,15 @@ export function BrevoSettingsForm({ initial }: { initial: BrevoSettings }) {
       <div>
         <div className="eyebrow mb-2">Ενεργά templates</div>
         <div className="grid sm:grid-cols-2 gap-2">
-          {[
+          {([
             { key: "price_changed", label: "Αλλαγή τιμής σε αγαπημένο" },
             { key: "new_better_price", label: "Νέος αγοραστής με καλύτερη τιμή" },
             { key: "new_message", label: "Νέο μήνυμα από άλλον χρήστη" },
             { key: "welcome", label: "Καλωσόρισμα νέου χρήστη" },
-          ].map((t) => (
+            { key: "password_reset", label: "Επαναφορά κωδικού" },
+            { key: "contact", label: "Μηνύματα φόρμας επικοινωνίας" },
+            { key: "admin_notice", label: "Ειδοποιήσεις διαχειριστή" },
+          ] satisfies Array<{ key: BrevoTemplateKey; label: string }>).map((t) => (
             <label
               key={t.key}
               className="flex items-center gap-3 p-3 rounded-md border border-brand-border bg-brand-bg cursor-pointer"
@@ -169,7 +178,7 @@ export function BrevoSettingsForm({ initial }: { initial: BrevoSettings }) {
               setMsg(null);
               const res = await saveBrevoSettings({
                 enabled,
-                api_key: apiKey,
+                ...(apiKey.trim() ? { api_key: apiKey } : {}),
                 sender_email: senderEmail,
                 sender_name: senderName,
                 templates: tpl,
@@ -196,6 +205,17 @@ export function BrevoSettingsForm({ initial }: { initial: BrevoSettings }) {
             onClick={() =>
               startTest(async () => {
                 setMsg(null);
+                const saved = await saveBrevoSettings({
+                  enabled,
+                  ...(apiKey.trim() ? { api_key: apiKey } : {}),
+                  sender_email: senderEmail,
+                  sender_name: senderName,
+                  templates: tpl,
+                });
+                if (!saved.ok) {
+                  setMsg({ ok: false, text: saved.error });
+                  return;
+                }
                 const res = await sendBrevoTest(testEmail);
                 setMsg(res.ok ? { ok: true, text: "Test email εστάλη" } : { ok: false, text: res.error });
               })

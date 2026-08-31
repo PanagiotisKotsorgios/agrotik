@@ -22,7 +22,10 @@ export default async function AdminSettingsPage() {
           <div className="eyebrow">Transactional emails</div>
           <h2 className="display text-xl text-brand-dark mt-1">Brevo (Sendinblue)</h2>
         </div>
-        <BrevoSettingsForm initial={brevo} />
+        <BrevoSettingsForm
+          initial={{ ...brevo, api_key: "" }}
+          hasApiKey={Boolean(brevo.api_key)}
+        />
       </Card>
     </>
   );

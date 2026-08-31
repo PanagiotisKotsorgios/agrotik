@@ -201,6 +201,33 @@ async function notifyNewBetterPrice(
     },
   }));
   await svc.from("notifications").insert(rows);
+
+  const [{ data: buyer }, { data: product }] = await Promise.all([
+    svc.from("profiles").select("display_name").eq("id", ownerId).single(),
+    svc.from("products").select("name_el, unit").eq("id", productId).single(),
+  ]);
+  const buyerName = (buyer as any)?.display_name ?? "νέο αγοραστή";
+  const productName = (product as any)?.name_el ?? "αγροτικό προϊόν";
+  const unit = (product as any)?.unit ?? "";
+  const profileUrl = `${process.env.APP_ORIGIN || "http://localhost:3000"}/profile/${ownerId}`;
+
+  for (const farmer of farmers) {
+    const { data: userRow } = await svc.auth.admin.getUserById(farmer.id);
+    const email = userRow?.user?.email;
+    if (!email) continue;
+    const emailResult = await sendBrevoEmail("new_better_price", {
+      to: [{ email }],
+      subject: `AGROTIK · Νέα καλύτερη τιμή για ${productName}`,
+      htmlContent: renderEmailShell(
+        "Νέος αγοραστής με καλύτερη τιμή",
+        `<p>Ο <strong>${escapeHtml(buyerName)}</strong> καταχώρησε νέα τιμή για <strong>${escapeHtml(productName)}</strong>.</p>
+         <p>Νέα τιμή: <strong>${newMin.toFixed(2)}€/${escapeHtml(unit)}</strong></p>
+         <p><a href="${profileUrl}" style="color:#1B4D2E;font-weight:600">Δες το προφίλ του αγοραστή</a></p>`,
+      ),
+      tag: "new_better_price",
+    });
+    if (!emailResult.ok) console.error("[new better price email]", emailResult.error);
+  }
 }
 
 function escapeHtml(s: string) {

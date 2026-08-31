@@ -195,6 +195,7 @@ export default async function LandingPage() {
               { label: "Εσπεριδοειδή", cat: "Εσπεριδοειδή", icon: "seedling" as const },
               { label: "Λαχανικά", cat: "Λαχανικά", icon: "seedling" as const },
               { label: "Πυρηνόκαρπα", cat: "Πυρηνόκαρπα", icon: "seedling" as const },
+              { label: "Ορεινές καλλιέργειες", cat: "Ορεινές καλλιέργειες", icon: "seedling" as const },
             ].map((c) => (
               <Link
                 key={c.cat}

@@ -25,7 +25,11 @@ export async function requestPasswordReset(formData: FormData): Promise<ActionRe
 
   const svc = createSupabaseService();
   // Find user by email (Supabase Auth admin listUsers doesn't filter on email directly)
-  const { data } = await svc.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const { data, error: usersError } = await svc.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (usersError) {
+    console.error("[password reset user lookup]", usersError.message);
+    return { ok: true };
+  }
   const user = data?.users?.find((u) => u.email?.toLowerCase() === parsed.data.email.toLowerCase());
   if (!user) return { ok: true }; // silent success
 
@@ -42,7 +46,10 @@ export async function requestPasswordReset(formData: FormData): Promise<ActionRe
     .insert({ user_id: user.id, email: parsed.data.email, expires_at: expires })
     .select("token")
     .single();
-  if (error || !inserted) return { ok: true }; // silent
+  if (error || !inserted) {
+    console.error("[password reset token]", error?.message ?? "Token was not returned");
+    return { ok: true };
+  }
 
   const settings = await getBrevoSettings();
   const link = `${appOrigin()}/reset-password?token=${inserted.token}`;
@@ -50,15 +57,19 @@ export async function requestPasswordReset(formData: FormData): Promise<ActionRe
   const subject = tpl.subject || "AGROTIK · Επαναφορά κωδικού";
   const heading = tpl.heading || "Επαναφορά κωδικού";
   const bodyHtml =
-    (tpl.body_html as string | undefined)?.replace("{{link}}", link) ||
+    (tpl.body_html as string | undefined)?.replaceAll("{{link}}", link) ||
     defaultBody(link);
 
-  await sendBrevoEmail("welcome", {
+  const emailResult = await sendBrevoEmail("password_reset", {
     to: [{ email: parsed.data.email }],
     subject,
     htmlContent: renderEmailShell(heading, bodyHtml),
     tag: "password_reset",
   });
+  if (!emailResult.ok) console.error("[password reset email]", emailResult.error);
+  if (emailResult.skipped) {
+    console.warn("[password reset email] skipped:", emailResult.skippedReason);
+  }
   return { ok: true };
 }
 

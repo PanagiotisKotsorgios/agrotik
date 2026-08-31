@@ -20,7 +20,7 @@ export async function sendContactMessage(formData: FormData): Promise<ActionResu
     c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : c === '"' ? "&quot;" : "&#39;",
   );
 
-  const res = await sendBrevoEmail("welcome", {
+  const res = await sendBrevoEmail("contact", {
     to: [{ email: "info@agrotik.gr" }],
     subject: `AGROTIK · Contact: ${subject}`,
     htmlContent: renderEmailShell(

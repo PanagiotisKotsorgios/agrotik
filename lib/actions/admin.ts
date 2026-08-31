@@ -86,6 +86,20 @@ export async function sendAdminNotification(input: unknown): Promise<ActionResul
   });
   if (error) return { ok: false, error: error.message };
 
+  const { data: recipient } = await svc.auth.admin.getUserById(parsed.data.userId);
+  if (recipient?.user?.email) {
+    const emailResult = await sendBrevoEmail("admin_notice", {
+      to: [{ email: recipient.user.email }],
+      subject: `AGROTIK · ${parsed.data.title}`,
+      htmlContent: renderEmailShell(
+        parsed.data.title,
+        `<p>${escapeHtml(parsed.data.body).replace(/\n/g, "<br/>")}</p>`,
+      ),
+      tag: "admin_notice",
+    });
+    if (!emailResult.ok) console.error("[admin notice email]", emailResult.error);
+  }
+
   revalidatePath("/dashboard/notifications");
   return { ok: true };
 }
@@ -131,14 +145,18 @@ export async function rejectProduct(id: string): Promise<ActionResult> {
 
 export async function saveBrevoSettings(input: Partial<BrevoSettings>): Promise<ActionResult> {
   if (!(await requireAdmin())) return { ok: false, error: "Δεν έχεις δικαίωμα" };
-  await setBrevoSettings(input);
-  revalidatePath("/admin/settings");
-  return { ok: true };
+  try {
+    await setBrevoSettings(input);
+    revalidatePath("/admin/settings");
+    return { ok: true };
+  } catch (error: any) {
+    return { ok: false, error: error?.message ?? "Αποτυχία αποθήκευσης ρυθμίσεων Brevo" };
+  }
 }
 
 export async function sendBrevoTest(to: string): Promise<ActionResult> {
   if (!(await requireAdmin())) return { ok: false, error: "Δεν έχεις δικαίωμα" };
-  const res = await sendBrevoEmail("welcome", {
+  const res = await sendBrevoEmail("test", {
     to: [{ email: to }],
     subject: "AGROTIK · Δοκιμαστικό email",
     htmlContent: renderEmailShell(
@@ -148,8 +166,22 @@ export async function sendBrevoTest(to: string): Promise<ActionResult> {
     tag: "test",
   });
   if (!res.ok) return { ok: false, error: res.error ?? "Αποτυχία αποστολής" };
-  if (res.skipped) return { ok: false, error: "Το Brevo είναι απενεργοποιημένο ή το template κλειστό" };
+  if (res.skippedReason === "disabled") return { ok: false, error: "Το Brevo είναι απενεργοποιημένο" };
   return { ok: true };
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) =>
+    character === "&"
+      ? "&amp;"
+      : character === "<"
+        ? "&lt;"
+        : character === ">"
+          ? "&gt;"
+          : character === '"'
+            ? "&quot;"
+            : "&#39;",
+  );
 }
 
 export async function exportCSV(kind: "users" | "listings"): Promise<{ ok: true; csv: string } | { ok: false; error: string }> {
