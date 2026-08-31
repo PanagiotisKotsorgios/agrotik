@@ -5,6 +5,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseService } from "@/lib/supabase/service";
 import { diffVariants } from "@/lib/domain/variants";
 import { sendBrevoEmail, renderEmailShell } from "@/lib/brevo";
+import { getAppOrigin } from "@/lib/app-origin";
 import type { ActionResult } from "./auth";
 import type { PriceVariant } from "@/lib/db/types";
 
@@ -209,7 +210,7 @@ async function notifyNewBetterPrice(
   const buyerName = (buyer as any)?.display_name ?? "νέο αγοραστή";
   const productName = (product as any)?.name_el ?? "αγροτικό προϊόν";
   const unit = (product as any)?.unit ?? "";
-  const profileUrl = `${process.env.APP_ORIGIN || "http://localhost:3000"}/profile/${ownerId}`;
+  const profileUrl = `${getAppOrigin()}/profile/${ownerId}`;
 
   for (const farmer of farmers) {
     const { data: userRow } = await svc.auth.admin.getUserById(farmer.id);

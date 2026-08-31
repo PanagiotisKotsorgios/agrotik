@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { createSupabaseService } from "@/lib/supabase/service";
 import { sendBrevoEmail, renderEmailShell, getBrevoSettings } from "@/lib/brevo";
+import { getAppOrigin } from "@/lib/app-origin";
 import type { ActionResult } from "./auth";
 
 const TOKEN_TTL_MIN = 60;
@@ -52,7 +53,7 @@ export async function requestPasswordReset(formData: FormData): Promise<ActionRe
   }
 
   const settings = await getBrevoSettings();
-  const link = `${appOrigin()}/reset-password?token=${inserted.token}`;
+  const link = `${getAppOrigin()}/reset-password?token=${inserted.token}`;
   const tpl = (settings as any).password_reset_template ?? {};
   const subject = tpl.subject || "AGROTIK · Επαναφορά κωδικού";
   const heading = tpl.heading || "Επαναφορά κωδικού";
@@ -96,10 +97,6 @@ export async function applyPasswordReset(formData: FormData): Promise<ActionResu
 
   await svc.from("password_reset_tokens").update({ used_at: new Date().toISOString() }).eq("token", parsed.data.token);
   return { ok: true };
-}
-
-function appOrigin(): string {
-  return process.env.APP_ORIGIN || "http://localhost:3000";
 }
 
 function defaultBody(link: string): string {

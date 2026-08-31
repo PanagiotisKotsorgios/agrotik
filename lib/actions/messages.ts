@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseService } from "@/lib/supabase/service";
 import { sendBrevoEmail, renderEmailShell } from "@/lib/brevo";
+import { getAppOrigin } from "@/lib/app-origin";
 import type { ActionResult } from "./auth";
 
 const sendSchema = z.object({
@@ -45,7 +46,7 @@ export async function sendMessage(input: unknown): Promise<ActionResult> {
       htmlContent: renderEmailShell(
         `Νέο μήνυμα από ${sender?.display_name ?? "χρήστη"}`,
         `<p>${escapeText(parsed.data.body).slice(0, 400)}</p>
-         <p><a href="${process.env.APP_ORIGIN || "http://localhost:3000"}${inboxPath}/${user.id}" style="color:#1B4D2E">Δες το μήνυμα</a></p>`,
+         <p><a href="${getAppOrigin()}${inboxPath}/${user.id}" style="color:#1B4D2E">Δες το μήνυμα</a></p>`,
       ),
       tag: "new_message",
     });

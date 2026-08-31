@@ -56,7 +56,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXP: ${JWT_EXP:-3600}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@agrotik.gr}
-      APP_ORIGIN: ${APP_ORIGIN}
+      APP_ORIGIN: ${APP_ORIGIN:-https://agrotik.gr}
       # In Cloud mode the operator runs migrations manually via the
       # Supabase SQL Editor, so the container must NOT try to re-apply
       # them on every boot (they'd fail with "already exists" errors).

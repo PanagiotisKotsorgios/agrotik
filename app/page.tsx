@@ -38,15 +38,16 @@ async function safeFetchLandingData() {
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(8),
+      svc.from("products").select("id").eq("slug", "cherries").eq("status", "active").maybeSingle(),
     ]);
   } catch (e) {
     console.error("[landing] Supabase unavailable:", e);
-    return [{ data: [] as any[] }, { data: [] as any[] }] as const;
+    return [{ data: [] as any[] }, { data: [] as any[] }, { data: null }] as const;
   }
 }
 
 export default async function LandingPage() {
-  const [{ data: latest }, { data: newestUsers }] = await safeFetchLandingData();
+  const [{ data: latest }, { data: newestUsers }, { data: cherriesProduct }] = await safeFetchLandingData();
 
   const ticker: TickerItem[] = ((latest as any[]) ?? [])
     .map((row) => {
@@ -92,11 +93,11 @@ export default async function LandingPage() {
           className="absolute inset-0 -z-10"
           style={{
             background:
-              "linear-gradient(90deg, rgba(247, 245, 238, 0.90) 0%, rgba(247, 245, 238, 0.82) 56%, rgba(247, 245, 238, 0.56) 100%)",
+              "linear-gradient(90deg, rgba(247, 245, 238, 0.87) 0%, rgba(247, 245, 238, 0.78) 56%, rgba(247, 245, 238, 0.52) 100%)",
           }}
           aria-hidden
         />
-        <div className="absolute inset-0 -z-10 bg-brand-dark/5" aria-hidden />
+        <div className="absolute inset-0 -z-10 bg-brand-dark/[0.08]" aria-hidden />
 
         <div className="max-w-6xl mx-auto px-4 pt-20 pb-24 sm:pt-28 sm:pb-32 relative">
           <div className="max-w-3xl animate-fade-in-up">
@@ -189,17 +190,23 @@ export default async function LandingPage() {
           <div className="eyebrow mb-3">Γρήγορη επιλογή προϊόντος</div>
           <div className="flex flex-wrap gap-2">
             {[
-              { label: "Ελιές", cat: "Ελιές", icon: "seedling" as const },
-              { label: "Ελαιόλαδο", cat: "Ελαιόλαδο", icon: "wheat" as const },
-              { label: "Σιτηρά", cat: "Σιτηρά", icon: "wheat" as const },
-              { label: "Εσπεριδοειδή", cat: "Εσπεριδοειδή", icon: "seedling" as const },
-              { label: "Λαχανικά", cat: "Λαχανικά", icon: "seedling" as const },
-              { label: "Πυρηνόκαρπα", cat: "Πυρηνόκαρπα", icon: "seedling" as const },
-              { label: "Ορεινές καλλιέργειες", cat: "Ορεινές καλλιέργειες", icon: "seedling" as const },
+              { label: "Ελιές", href: "/search/buyers?product_category=Ελιές", icon: "seedling" as const },
+              { label: "Ελαιόλαδο", href: "/search/buyers?product_category=Ελαιόλαδο", icon: "wheat" as const },
+              { label: "Σιτηρά", href: "/search/buyers?product_category=Σιτηρά", icon: "wheat" as const },
+              { label: "Εσπεριδοειδή", href: "/search/buyers?product_category=Εσπεριδοειδή", icon: "seedling" as const },
+              { label: "Λαχανικά", href: "/search/buyers?product_category=Λαχανικά", icon: "seedling" as const },
+              { label: "Πυρηνόκαρπα", href: "/search/buyers?product_category=Πυρηνόκαρπα", icon: "seedling" as const },
+              {
+                label: "Κεράσια",
+                href: cherriesProduct?.id
+                  ? `/search/buyers?product_id=${encodeURIComponent(cherriesProduct.id)}`
+                  : "/search/buyers?product_category=Πυρηνόκαρπα",
+                icon: "seedling" as const,
+              },
             ].map((c) => (
               <Link
-                key={c.cat}
-                href={`/search/buyers?product_category=${encodeURIComponent(c.cat)}`}
+                key={c.label}
+                href={c.href}
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-brand-surface border border-brand-border text-[15px] font-semibold text-brand-dark hover:border-brand-dark hover:bg-brand-dark hover:text-white transition-colors"
               >
                 <Icon name={c.icon} className="opacity-80" />
