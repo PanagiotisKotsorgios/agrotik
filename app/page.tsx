@@ -238,11 +238,8 @@ export default async function LandingPage() {
             href="/signup?role=factory"
           />
         </div>
-      </section>
 
-      {/* Trust strip */}
-      <section className="border-t border-brand-border py-14 bg-brand-surface">
-        <div className="max-w-6xl mx-auto px-4 grid sm:grid-cols-3 gap-8 text-[15px]">
+        <div className="mt-6 rounded-2xl border border-brand-border bg-brand-surface p-6 sm:p-8 grid sm:grid-cols-3 gap-7 sm:gap-8 text-[15px] shadow-card">
           <Feature icon="scale" title="Καμία προμήθεια" body="Κερδίζεις εσύ, όχι ο μεσάζοντας. Ελεύθερη πρόσβαση για όλους." />
           <Feature icon="bell" title="Ενημέρωση σε αλλαγή τιμής" body="Παρακολούθησε αγοραστές· ειδοποίηση όταν αλλάζει τιμή σε αγαπημένους." />
           <Feature icon="mapLocation" title="Ελληνική γεωγραφία" body="74 νομοί / περιφερειακές ενότητες, από την Ήπειρο ως την Κρήτη." />

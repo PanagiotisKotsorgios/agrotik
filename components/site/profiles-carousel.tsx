@@ -24,11 +24,22 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
   const trackRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
   const [inView, setInView] = useState(true);
+  const [canAutoScroll, setCanAutoScroll] = useState(false);
   const dragRef = useRef<{ startX: number; startScroll: number; dragging: boolean }>({
     startX: 0,
     startScroll: 0,
     dragging: false,
   });
+
+  // Native touch momentum and requestAnimationFrame scrolling fight each
+  // other on phones. Auto-advance only on desktop/fine-pointer devices.
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 640px) and (hover: hover) and (pointer: fine)");
+    const update = () => setCanAutoScroll(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   // Pause when off-screen
   useEffect(() => {
@@ -45,7 +56,7 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
   // Auto-scroll loop
   useEffect(() => {
     const el = trackRef.current;
-    if (!el || paused || !inView || profiles.length < 3) return;
+    if (!el || !canAutoScroll || paused || !inView || profiles.length < 3) return;
     let raf = 0;
     let last = performance.now();
     const speed = 24; // px per second
@@ -63,7 +74,7 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [paused, inView, profiles.length]);
+  }, [canAutoScroll, paused, inView, profiles.length]);
 
   // Drag-to-scroll (mouse)
   const onMouseDown = (e: React.MouseEvent) => {
@@ -129,14 +140,11 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={endDrag}
-        onTouchStart={() => setPaused(true)}
-        onTouchEnd={() => setPaused(false)}
         style={{
-          scrollbarWidth: "thin",
-          maskImage: "linear-gradient(to right, transparent, black 3%, black 97%, transparent)",
-          WebkitMaskImage: "linear-gradient(to right, transparent, black 3%, black 97%, transparent)",
+          scrollbarWidth: "none",
+          WebkitOverflowScrolling: "touch",
         }}
-        className="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-[9%] sm:px-4 cursor-grab select-none scroll-smooth"
+        className="flex gap-3 sm:gap-4 overflow-x-auto overscroll-x-contain touch-pan-x snap-x snap-mandatory pb-2 -mx-4 px-[9%] sm:px-4 cursor-grab select-none"
       >
         {profiles.map((p) => (
           <Link
@@ -144,7 +152,7 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
             href={`/profile/${p.id}`}
             prefetch
             draggable={false}
-            className="shrink-0 w-[82%] sm:w-[280px] snap-center sm:snap-start bg-brand-surface border border-brand-border rounded-card p-5 shadow-card hover:border-brand-dark/40 hover:shadow-elev transition-all flex flex-col"
+            className="shrink-0 w-[82%] sm:w-[280px] snap-center sm:snap-start [scroll-snap-stop:always] bg-brand-surface border border-brand-border rounded-card p-5 shadow-card hover:border-brand-dark/40 hover:shadow-elev transition-all flex flex-col"
           >
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-brand-dark text-white flex items-center justify-center font-semibold display shrink-0 overflow-hidden">
