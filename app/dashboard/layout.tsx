@@ -37,6 +37,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     );
   }
 
+  // Admins have a dedicated workspace. Keeping them in the business dashboard
+  // makes the admin role look like a buyer account and exposes irrelevant links.
+  if (profile.role === "admin") redirect("/admin");
+
   const isFarmer = profile.role === "farmer";
   const items: { href: string; icon: IconName; label: string }[] = [
     { href: "/dashboard", icon: "chart", label: "Αρχική" },
@@ -80,4 +84,3 @@ export default async function DashboardLayout({ children }: { children: React.Re
     </>
   );
 }
-

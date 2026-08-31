@@ -77,7 +77,13 @@ export function MobileNav({ authed, isAdmin, isFarmer, displayName }: Props) {
           <MobileLink href="/contact" icon="envelope">Επικοινωνία</MobileLink>
         </MobileGroup>
 
-        {authed && (
+        {authed && isAdmin && (
+          <MobileGroup title={displayName ? `Admin · ${displayName}` : "Admin"}>
+            <MobileLink href="/admin" icon="shield">Admin panel</MobileLink>
+          </MobileGroup>
+        )}
+
+        {authed && !isAdmin && (
           <MobileGroup title={displayName ? `Λογαριασμός · ${displayName}` : "Λογαριασμός"}>
             <MobileLink href="/dashboard" icon="chart">Αρχική</MobileLink>
             <MobileLink href="/dashboard/profile" icon="user">Στοιχεία προφίλ</MobileLink>
@@ -89,7 +95,6 @@ export function MobileNav({ authed, isAdmin, isFarmer, displayName }: Props) {
             {!isFarmer && <MobileLink href="/dashboard/purchases" icon="box">Αγορές & σεζόν</MobileLink>}
             <MobileLink href="/dashboard/messages" icon="chat">Μηνύματα</MobileLink>
             <MobileLink href="/dashboard/notifications" icon="bell">Ειδοποιήσεις</MobileLink>
-            {isAdmin && <MobileLink href="/admin" icon="shield">Admin panel</MobileLink>}
           </MobileGroup>
         )}
 
@@ -114,10 +119,10 @@ export function MobileNav({ authed, isAdmin, isFarmer, displayName }: Props) {
       <div className="border-t border-brand-border bg-brand-surface p-4 shrink-0">
         {authed ? (
           <Link
-            href="/dashboard"
+            href={isAdmin ? "/admin" : "/dashboard"}
             className="flex items-center justify-center gap-2 px-4 py-3 rounded-md bg-brand-dark text-white font-semibold text-[16px] hover:bg-brand-mid"
           >
-            <Icon name="user" /> Στον λογαριασμό μου
+            <Icon name={isAdmin ? "shield" : "user"} /> {isAdmin ? "Admin panel" : "Στον λογαριασμό μου"}
           </Link>
         ) : (
           <div className="flex gap-2">

@@ -69,11 +69,11 @@ export async function Header() {
                 </Link>
               )}
               <Link
-                href="/dashboard"
+                href={profile.role === "admin" ? "/admin" : "/dashboard"}
                 prefetch
                 className="inline-flex items-center gap-2 text-[15px] font-semibold px-4 py-2.5 rounded-md bg-brand-dark text-white hover:bg-brand-mid"
               >
-                <Icon name="user" />
+                <Icon name={profile.role === "admin" ? "shield" : "user"} />
                 <span className="hidden sm:inline">{profile.display_name.split(" ")[0]}</span>
               </Link>
             </>
