@@ -27,7 +27,7 @@ export default async function SignupPage({
   return (
     <>
       <Header />
-      <div className="max-w-lg mx-auto px-4 py-10 sm:py-14">
+      <div className="max-w-xl mx-auto px-4 py-10 sm:py-14">
         <Card className="!p-7 sm:!p-8">
           <div className="mb-6 text-center">
             <Link href="/" aria-label="AGROTIK" className="inline-block mb-4">

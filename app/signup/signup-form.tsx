@@ -38,25 +38,48 @@ export function SignupForm({ regions, initialRole }: { regions: Region[]; initia
     >
       <div>
         <Label>Είμαι…</Label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           {roleCards.map((r) => (
             <button
               key={r.value}
               type="button"
               onClick={() => setRole(r.value)}
+              aria-pressed={role === r.value}
               className={cn(
-                "p-4 rounded-md border text-left transition-all",
+                "w-full min-w-0 min-h-[76px] sm:min-h-[150px] p-3.5 sm:p-4 rounded-lg border text-left transition-all",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-mid focus-visible:ring-offset-2",
                 role === r.value
                   ? "border-brand-dark bg-brand-dark text-white"
                   : "border-brand-border bg-brand-surface hover:border-brand-dark/40",
               )}
             >
-              <Icon name={r.icon} className={cn("text-lg", role === r.value ? "text-white" : "text-brand-dark")} />
-              <div className={cn("text-sm font-semibold mt-2", role === r.value ? "text-white" : "text-brand-ink")}>
-                {r.label}
-              </div>
-              <div className={cn("text-[11px] mt-0.5", role === r.value ? "text-white/70" : "text-brand-muted")}>
-                {r.desc}
+              <div className="flex items-center gap-3 sm:flex-col sm:items-start">
+                <span
+                  className={cn(
+                    "w-10 h-10 shrink-0 rounded-lg inline-flex items-center justify-center",
+                    role === r.value ? "bg-white/12 text-white" : "bg-brand-bg text-brand-dark",
+                  )}
+                >
+                  <Icon name={r.icon} className="text-lg" />
+                </span>
+                <span className="min-w-0 block">
+                  <span
+                    className={cn(
+                      "block text-[16px] leading-tight font-semibold break-words",
+                      role === r.value ? "text-white" : "text-brand-ink",
+                    )}
+                  >
+                    {r.label}
+                  </span>
+                  <span
+                    className={cn(
+                      "block text-[13px] leading-snug mt-1 break-words",
+                      role === r.value ? "text-white/75" : "text-brand-muted",
+                    )}
+                  >
+                    {r.desc}
+                  </span>
+                </span>
               </div>
             </button>
           ))}
