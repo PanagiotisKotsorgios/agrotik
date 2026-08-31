@@ -67,3 +67,12 @@ services:
       HOSTNAME: 0.0.0.0
     expose:
       - "3000"
+    healthcheck:
+      # /api/health is a trivial JSON route that bypasses middleware
+      # and the /api/* → Supabase rewrite (Next serves file routes
+      # before rewrites), so it never touches the DB or Supabase.
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

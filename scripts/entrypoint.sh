@@ -25,10 +25,11 @@ case "${SKIP_MIGRATIONS:-}" in
   1|true|True|TRUE|yes|YES)
     log "SKIP_MIGRATIONS is set — skipping migration step entirely."
     log "starting Next.js on 0.0.0.0:${PORT:-3000}…"
-    node server.js
-    rc=$?
-    log "Next.js exited with code $rc — container will stay alive for inspection"
-    exec sleep infinity
+    # exec so node becomes PID 1 and receives SIGTERM directly from
+    # docker stop, no `sleep infinity` fallback needed here — the app
+    # is stable in Cloud mode; if it crashes we want the container to
+    # exit so Coolify restart policy can bring it back.
+    exec node server.js
     ;;
 esac
 
