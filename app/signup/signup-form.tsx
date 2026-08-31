@@ -19,6 +19,7 @@ const roleCards: { value: Role; label: string; icon: IconName; desc: string }[] 
 export function SignupForm({ regions, initialRole }: { regions: Region[]; initialRole: Role }) {
   const [role, setRole] = useState<Role>(initialRole);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [pending, start] = useTransition();
   const router = useRouter();
 
@@ -69,7 +70,29 @@ export function SignupForm({ regions, initialRole }: { regions: Region[]; initia
 
       <div>
         <Label htmlFor="password">Κωδικός (min 6 χαρακτήρες)</Label>
-        <Input id="password" name="password" type="password" required minLength={6} autoComplete="new-password" />
+        <div className="relative">
+          <Input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            required
+            minLength={6}
+            autoComplete="new-password"
+            className="pr-12"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((visible) => !visible)}
+            aria-label={showPassword ? "Απόκρυψη κωδικού" : "Εμφάνιση κωδικού"}
+            aria-pressed={showPassword}
+            className={cn(
+              "absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-md inline-flex items-center justify-center",
+              "text-brand-muted hover:text-brand-dark hover:bg-brand-bg transition-colors",
+            )}
+          >
+            <Icon name={showPassword ? "eyeOff" : "eye"} />
+          </button>
+        </div>
       </div>
 
       <div>
