@@ -107,6 +107,7 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
       "id, display_name, region_code, role, avatar_url, bio, municipality, is_active, is_public, updated_at, regions(name_el)",
     )
     .eq("is_active", true)
+    .eq("is_public", true)
     .neq("role", "admin")
     .in("role", roles)
     .is("deleted_at", null)

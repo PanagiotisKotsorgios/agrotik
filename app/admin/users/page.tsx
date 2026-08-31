@@ -73,6 +73,11 @@ export default async function AdminUsers({
                   </Link>
                   <Badge tone="brand">{roleLabel(u.role)}</Badge>
                   {!u.is_active && <Badge tone="danger">Suspended</Badge>}
+                  {u.role !== "admin" && (
+                    <Badge tone={u.is_public ? "ok" : "warn"}>
+                      {u.is_public ? "Δημόσιο προφίλ" : "Κρυφό προφίλ"}
+                    </Badge>
+                  )}
                 </div>
                 <div className="text-xs text-brand-muted mt-1 flex flex-wrap items-center gap-2">
                   {emailById.get(u.id) && <span className="inline-flex items-center gap-1"><Icon name="envelope" /> {emailById.get(u.id)}</span>}
@@ -86,6 +91,7 @@ export default async function AdminUsers({
               userId={u.id}
               displayName={u.display_name}
               isActive={u.is_active}
+              isPublic={u.is_public}
               role={u.role}
               isSelf={currentUser?.id === u.id}
             />

@@ -39,6 +39,29 @@ export async function setUserActive(userId: string, active: boolean): Promise<Ac
   return { ok: true };
 }
 
+export async function setUserPublic(userId: string, isPublic: boolean): Promise<ActionResult> {
+  if (!(await requireAdmin())) return { ok: false, error: "Δεν έχεις δικαίωμα" };
+  if (!userIdSchema.safeParse(userId).success) return { ok: false, error: "Μη έγκυρος χρήστης" };
+
+  const svc = createSupabaseService();
+  const { data, error } = await svc
+    .from("profiles")
+    .update({ is_public: isPublic })
+    .eq("id", userId)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Ο χρήστης δεν βρέθηκε" };
+
+  revalidatePath("/");
+  revalidatePath("/admin/users");
+  revalidatePath("/search/buyers");
+  revalidatePath("/search/producers");
+  revalidatePath(`/profile/${userId}`);
+  return { ok: true };
+}
+
 export async function promoteToAdmin(userId: string): Promise<ActionResult> {
   return setUserRole(userId, "admin");
 }

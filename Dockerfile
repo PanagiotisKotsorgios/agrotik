@@ -28,8 +28,8 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Install psql for the auto-migration entrypoint
-RUN apk add --no-cache postgresql16-client bash
+# Install psql/pg_dump for migrations and admin database backups.
+RUN apk add --no-cache postgresql-client bash
 
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 

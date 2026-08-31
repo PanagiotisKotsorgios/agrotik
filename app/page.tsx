@@ -27,14 +27,16 @@ async function safeFetchLandingData() {
         )
         .eq("is_active", true)
         .eq("profiles.is_active", true)
+        .eq("profiles.is_public", true)
         .order("updated_at", { ascending: false })
         .limit(12),
       svc
         .from("profiles")
         .select("id, display_name, role, region_code, municipality, bio, avatar_url, is_active, is_public, deleted_at, regions(name_el)")
         .eq("is_active", true)
+        .eq("is_public", true)
         .neq("role", "admin")
-        .or("role.in.(merchant,factory),and(role.eq.farmer,is_public.eq.true)")
+        .in("role", ["farmer", "merchant", "factory"])
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(8),

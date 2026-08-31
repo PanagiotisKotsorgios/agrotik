@@ -8,6 +8,7 @@ import {
   deleteUserPermanently,
   sendAdminNotification,
   setUserActive,
+  setUserPublic,
   setUserRole,
 } from "@/lib/actions/admin";
 import { sendMessage } from "@/lib/actions/messages";
@@ -19,12 +20,14 @@ export function UserActions({
   userId,
   displayName,
   isActive,
+  isPublic,
   role,
   isSelf,
 }: {
   userId: string;
   displayName: string;
   isActive: boolean;
+  isPublic: boolean;
   role: string;
   isSelf: boolean;
 }) {
@@ -82,6 +85,25 @@ export function UserActions({
             <Button type="button" variant="secondary" size="sm" icon="shield" disabled={pending} onClick={() => toggle("role")}>
               Ρόλος
             </Button>
+            {role !== "admin" && (
+              <Button
+                type="button"
+                variant={isPublic ? "outline" : "primary"}
+                size="sm"
+                icon={isPublic ? "eyeOff" : "eye"}
+                disabled={pending}
+                onClick={() =>
+                  run(
+                    () => setUserPublic(userId, !isPublic),
+                    isPublic
+                      ? "Το προφίλ αφαιρέθηκε από τις δημόσιες σελίδες."
+                      : "Το προφίλ είναι πλέον δημόσιο και εμφανίζεται στην αναζήτηση.",
+                  )
+                }
+              >
+                {isPublic ? "Απόκρυψη προφίλ" : "Δημοσίευση προφίλ"}
+              </Button>
+            )}
             <Button
               type="button"
               variant={isActive ? "outline" : "primary"}
