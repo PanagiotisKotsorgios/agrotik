@@ -63,18 +63,18 @@ export default async function DashboardHome() {
       <div className="mt-10">
         <h2 className="display text-xl text-brand-dark mb-3">Τι θα κάνεις τώρα</h2>
         <div className="grid sm:grid-cols-2 gap-3">
-          <ActionRow icon="user" label="Ενημέρωσε το προφίλ" href="/dashboard/profile" tone="brand" />
+          <ActionRow icon="user" label="Ενημέρωσε το προφίλ" href="/dashboard/profile" tone="dark" />
           <ActionRow
             icon={isFarmer ? "wheat" : "tag"}
             label={isFarmer ? "Δήλωσε παραγωγή" : "Ενημέρωσε τιμές"}
             href="/dashboard/listings"
-            tone="olive"
+            tone="dark"
           />
-          {isFarmer && <ActionRow icon="store" label="Δες αγοραστές" href="/search/buyers" tone="earth" />}
-          {isBuyer && <ActionRow icon="seedling" label="Δες παραγωγούς" href="/search/producers" tone="earth" />}
-          <ActionRow icon="eye" label="Το δημόσιο προφίλ σου" href={`/profile/${profile?.id}`} tone="cream" />
-          {isFarmer && <ActionRow icon="heart" label="Οι έμποροί σου" href="/dashboard/network" tone="cream" />}
-          {isBuyer && <ActionRow icon="users" label="Οι πελάτες σου" href="/dashboard/network" tone="cream" />}
+          {isFarmer && <ActionRow icon="store" label="Δες αγοραστές" href="/search/buyers" tone="dark" />}
+          {isBuyer && <ActionRow icon="seedling" label="Δες παραγωγούς" href="/search/producers" tone="dark" />}
+          <ActionRow icon="eye" label="Το δημόσιο προφίλ σου" href={`/profile/${profile?.id}`} tone="dark" />
+          {isFarmer && <ActionRow icon="heart" label="Οι έμποροί σου" href="/dashboard/network" tone="dark" />}
+          {isBuyer && <ActionRow icon="users" label="Οι πελάτες σου" href="/dashboard/network" tone="dark" />}
         </div>
       </div>
     </>
