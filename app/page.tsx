@@ -92,11 +92,11 @@ export default async function LandingPage() {
           className="absolute inset-0 -z-10"
           style={{
             background:
-              "linear-gradient(90deg, rgba(247, 245, 238, 0.97) 0%, rgba(247, 245, 238, 0.91) 56%, rgba(247, 245, 238, 0.68) 100%)",
+              "linear-gradient(90deg, rgba(247, 245, 238, 0.90) 0%, rgba(247, 245, 238, 0.82) 56%, rgba(247, 245, 238, 0.56) 100%)",
           }}
           aria-hidden
         />
-        <div className="absolute inset-0 -z-10 bg-white/10" aria-hidden />
+        <div className="absolute inset-0 -z-10 bg-brand-dark/5" aria-hidden />
 
         <div className="max-w-6xl mx-auto px-4 pt-20 pb-24 sm:pt-28 sm:pb-32 relative">
           <div className="max-w-3xl animate-fade-in-up">
