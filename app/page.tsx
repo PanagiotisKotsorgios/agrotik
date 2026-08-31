@@ -87,27 +87,26 @@ export default async function LandingPage() {
           sizes="100vw"
           className="object-cover object-center -z-10"
         />
-        {/* Gradient overlay for legibility */}
+        {/* Light warm overlay: keeps the photo visible and the copy high-contrast. */}
         <div
           className="absolute inset-0 -z-10"
           style={{
             background:
-              "linear-gradient(180deg, rgba(20, 40, 25, 0.72) 0%, rgba(20, 40, 25, 0.68) 40%, rgba(15, 30, 20, 0.88) 100%)",
+              "linear-gradient(90deg, rgba(247, 245, 238, 0.97) 0%, rgba(247, 245, 238, 0.91) 56%, rgba(247, 245, 238, 0.68) 100%)",
           }}
           aria-hidden
         />
-        {/* Subtle green tint */}
-        <div className="absolute inset-0 -z-10 bg-brand-dark/20" aria-hidden />
+        <div className="absolute inset-0 -z-10 bg-white/10" aria-hidden />
 
         <div className="max-w-6xl mx-auto px-4 pt-20 pb-24 sm:pt-28 sm:pb-32 relative">
           <div className="max-w-3xl animate-fade-in-up">
-            <div className="eyebrow !text-white/90">
+            <div className="eyebrow !text-brand-dark font-semibold">
               Ελληνική αγροτική αγορά · πραγματικές τιμές
             </div>
-            <h1 className="display mt-4 text-[46px] sm:text-[68px] leading-[0.98] font-semibold text-white tracking-tight">
-              Η γη <em className="not-italic text-brand-earth" style={{ textShadow: "0 2px 12px rgba(0,0,0,0.4)" }}>συναντά</em> την αγορά.
+            <h1 className="display mt-4 text-[46px] sm:text-[68px] leading-[0.98] font-semibold text-brand-dark tracking-tight">
+              Η γη <em className="not-italic text-brand-mid">συναντά</em> την αγορά.
             </h1>
-            <p className="mt-6 text-white/85 text-[18px] sm:text-[20px] max-w-2xl leading-relaxed">
+            <p className="mt-6 text-brand-ink text-[18px] sm:text-[20px] font-medium max-w-2xl leading-relaxed">
               Το AGROTIK συνδέει αγρότες με εμπόρους και εργοστάσια — άμεσα.
               Ενημερωμένες τιμές, δημόσια προφίλ, καμία μεσιτεία. Απλά μια γέφυρα
               για να κλείσετε τη συμφωνία σας.
@@ -115,28 +114,28 @@ export default async function LandingPage() {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
                 href="/signup"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-md bg-brand-mid text-white text-[16px] font-semibold hover:bg-brand-light hover:text-brand-dark transition-colors shadow-lg shadow-black/20"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-md bg-brand-dark text-white text-[16px] font-semibold hover:bg-brand-mid transition-colors shadow-lg shadow-brand-dark/20"
               >
                 Δωρεάν εγγραφή
                 <Icon name="arrowRight" />
               </Link>
               <Link
                 href="/search/buyers"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-md bg-white/10 backdrop-blur-sm border-2 border-white/25 text-white text-[16px] font-semibold hover:bg-white hover:text-brand-dark transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-md bg-white/80 backdrop-blur-sm border-2 border-brand-dark/25 text-brand-dark text-[16px] font-semibold hover:bg-white hover:border-brand-dark transition-colors shadow-sm"
               >
                 <Icon name="search" />
                 Δες τιμές αγοραστών
               </Link>
             </div>
-            <div className="mt-8 flex items-center gap-5 text-white/70 text-[13px]">
+            <div className="mt-8 flex items-center gap-5 text-brand-dark text-[13px] font-semibold">
               <span className="inline-flex items-center gap-1.5">
-                <Icon name="check" className="text-brand-light" /> Δωρεάν
+                <Icon name="check" className="text-brand-mid" /> Δωρεάν
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Icon name="check" className="text-brand-light" /> Χωρίς προμήθεια
+                <Icon name="check" className="text-brand-mid" /> Χωρίς προμήθεια
               </span>
               <span className="inline-flex items-center gap-1.5 hidden sm:inline-flex">
-                <Icon name="check" className="text-brand-light" /> Ελληνική υποστήριξη
+                <Icon name="check" className="text-brand-mid" /> Ελληνική υποστήριξη
               </span>
             </div>
           </div>
