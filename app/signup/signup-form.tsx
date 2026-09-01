@@ -18,6 +18,47 @@ const roleCards: { value: Role; label: string; icon: IconName; desc: string }[] 
   { value: "factory", label: "Εργοστάσιο", icon: "industry", desc: "Επεξεργάζομαι" },
 ];
 
+const roleCardStyles: Record<
+  Role,
+  { idle: string; active: string; idleIcon: string; activeIcon: string; idleDescription: string }
+> = {
+  farmer: {
+    idle: "border-green-800/70 bg-green-50/70 text-green-950 hover:border-green-950 hover:bg-green-50",
+    active: "border-green-950 bg-green-900 text-white shadow-md shadow-green-950/15",
+    idleIcon: "bg-green-100 text-green-900 ring-1 ring-inset ring-green-800/20",
+    activeIcon: "bg-white/15 text-white ring-1 ring-inset ring-white/20",
+    idleDescription: "text-green-800",
+  },
+  fisher: {
+    idle: "border-sky-800/70 bg-sky-50/80 text-sky-950 hover:border-sky-950 hover:bg-sky-100/70",
+    active: "border-sky-950 bg-sky-900 text-white shadow-md shadow-sky-950/15",
+    idleIcon: "bg-sky-100 text-sky-900 ring-1 ring-inset ring-sky-800/20",
+    activeIcon: "bg-white/15 text-white ring-1 ring-inset ring-white/20",
+    idleDescription: "text-sky-800",
+  },
+  farmer_fisher: {
+    idle: "border-teal-800/70 bg-gradient-to-r from-green-50/90 to-sky-50/90 text-teal-950 hover:border-teal-950",
+    active: "border-teal-950 bg-gradient-to-r from-green-900 to-sky-900 text-white shadow-md shadow-teal-950/15",
+    idleIcon: "bg-teal-100 text-teal-900 ring-1 ring-inset ring-teal-800/20",
+    activeIcon: "bg-white/15 text-white ring-1 ring-inset ring-white/20",
+    idleDescription: "text-teal-800",
+  },
+  merchant: {
+    idle: "border-brand-dark/70 bg-green-50/50 text-brand-dark hover:border-brand-dark hover:bg-green-50",
+    active: "border-brand-dark bg-brand-dark text-white shadow-md shadow-brand-dark/15",
+    idleIcon: "bg-green-100 text-brand-dark ring-1 ring-inset ring-brand-dark/20",
+    activeIcon: "bg-white/15 text-white ring-1 ring-inset ring-white/20",
+    idleDescription: "text-green-800",
+  },
+  factory: {
+    idle: "border-brand-dark/70 bg-green-50/50 text-brand-dark hover:border-brand-dark hover:bg-green-50",
+    active: "border-brand-dark bg-brand-dark text-white shadow-md shadow-brand-dark/15",
+    idleIcon: "bg-green-100 text-brand-dark ring-1 ring-inset ring-brand-dark/20",
+    activeIcon: "bg-white/15 text-white ring-1 ring-inset ring-white/20",
+    idleDescription: "text-green-800",
+  },
+};
+
 export function SignupForm({ regions, initialRole }: { regions: Region[]; initialRole: Role }) {
   const [role, setRole] = useState<Role>(initialRole);
   const [error, setError] = useState<string | null>(null);
@@ -41,53 +82,54 @@ export function SignupForm({ regions, initialRole }: { regions: Region[]; initia
       <div>
         <Label>Είμαι…</Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {roleCards.map((r) => (
-            <button
-              key={r.value}
-              type="button"
-              onClick={() => setRole(r.value)}
-              aria-pressed={role === r.value}
-              className={cn(
-                "w-full min-w-0 min-h-[76px] sm:min-h-[150px] p-3.5 sm:p-4 rounded-lg border text-left transition-all",
-                r.value === "farmer_fisher" && "sm:col-span-2 sm:min-h-[112px]",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-mid focus-visible:ring-offset-2",
-                role === r.value
-                  ? r.value === "fisher" || r.value === "farmer_fisher"
-                    ? "border-sky-950 bg-sky-900 text-white"
-                    : "border-brand-dark bg-brand-dark text-white"
-                  : "border-brand-border bg-brand-surface hover:border-brand-dark/40",
-              )}
-            >
-              <div className="flex items-center gap-3 sm:flex-col sm:items-start">
-                <span
-                  className={cn(
-                    "w-10 h-10 shrink-0 rounded-lg inline-flex items-center justify-center",
-                    role === r.value ? "bg-white/12 text-white" : "bg-brand-bg text-brand-dark",
-                  )}
-                >
-                  <Icon name={r.icon} className="text-lg" />
-                </span>
-                <span className="min-w-0 block">
+          {roleCards.map((r) => {
+            const selected = role === r.value;
+            const styles = roleCardStyles[r.value];
+
+            return (
+              <button
+                key={r.value}
+                type="button"
+                onClick={() => setRole(r.value)}
+                aria-pressed={selected}
+                className={cn(
+                  "w-full min-w-0 min-h-[76px] sm:min-h-[150px] p-3.5 sm:p-4 rounded-lg border-2 text-left transition-all duration-200",
+                  r.value === "farmer_fisher" && "sm:col-span-2 sm:min-h-[112px]",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-mid focus-visible:ring-offset-2",
+                  selected ? styles.active : styles.idle,
+                )}
+              >
+                <div className="flex items-center gap-3 sm:flex-col sm:items-start">
                   <span
                     className={cn(
-                      "block text-[16px] leading-tight font-semibold break-words",
-                      role === r.value ? "text-white" : "text-brand-ink",
+                      "w-10 h-10 shrink-0 rounded-lg inline-flex items-center justify-center transition-colors",
+                      selected ? styles.activeIcon : styles.idleIcon,
                     )}
                   >
-                    {r.label}
+                    <Icon name={r.icon} className="text-lg" />
                   </span>
-                  <span
-                    className={cn(
-                      "block text-[13px] leading-snug mt-1 break-words",
-                      role === r.value ? "text-white/75" : "text-brand-muted",
-                    )}
-                  >
-                    {r.desc}
+                  <span className="min-w-0 block">
+                    <span
+                      className={cn(
+                        "block text-[16px] leading-tight font-bold break-words",
+                        selected ? "text-white" : "text-current",
+                      )}
+                    >
+                      {r.label}
+                    </span>
+                    <span
+                      className={cn(
+                        "block text-[13px] leading-snug mt-1 font-medium break-words",
+                        selected ? "text-white/85" : styles.idleDescription,
+                      )}
+                    >
+                      {r.desc}
+                    </span>
                   </span>
-                </span>
-              </div>
-            </button>
-          ))}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
