@@ -6,7 +6,7 @@ import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { savePriceListing, deletePriceListing } from "@/lib/actions/listings";
 import type { Product, Region, PriceVariant, AttributesSchema, PriceListKind } from "@/lib/db/types";
 import { PRICE_LIST_KIND_LABEL, PRICE_LIST_KIND_HELP } from "@/lib/db/types";
-import { priceFormat } from "@/lib/utils";
+import { attributeLabel, priceFormat } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { Badge } from "@/components/ui/card";
 
@@ -108,7 +108,7 @@ export function PriceListingsManager({
                     <tr key={i} className="border-b border-brand-border last:border-0">
                       <td className="py-1.5 text-brand-text/80">
                         {Object.entries(v.attributes)
-                          .map(([k, val]) => `${k}: ${val}`)
+                          .map(([k, val]) => `${attributeLabel(k)}: ${val}`)
                           .join(", ") || "—"}
                       </td>
                       <td className="py-1.5 text-right font-semibold text-brand-earth">

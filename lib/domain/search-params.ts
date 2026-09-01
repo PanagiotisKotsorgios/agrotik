@@ -1,4 +1,5 @@
 import type { BuyerFilters, ProducerFilters } from "@/lib/db/queries";
+import { attributeLabel } from "@/lib/utils";
 
 /** Parse Next.js searchParams into structured BuyerFilters. */
 export function parseBuyerFilters(params: Record<string, string | string[] | undefined>): BuyerFilters {
@@ -46,6 +47,9 @@ export function parseProducerFilters(params: Record<string, string | string[] | 
   }
 
   return {
+    producer_type: g("producer_type") === "farmer" || g("producer_type") === "fisher"
+      ? (g("producer_type") as "farmer" | "fisher")
+      : undefined,
     product_id: g("product_id") || undefined,
     product_category: g("product_category") || undefined,
     region_code: g("region_code") || undefined,
@@ -73,10 +77,11 @@ export function describeFilter(k: string, v: string): string {
     quantity_max: "Ποσότητα έως",
     date: "Διαθέσιμο",
     buyer_type: "Τύπος",
+    producer_type: "Τύπος παραγωγού",
     sort: "Ταξινόμηση",
   };
-  if (k.startsWith("attr_")) return k.slice(5);
-  if (k.startsWith("nmin_")) return `${k.slice(5)} από`;
-  if (k.startsWith("nmax_")) return `${k.slice(5)} έως`;
+  if (k.startsWith("attr_")) return attributeLabel(k.slice(5));
+  if (k.startsWith("nmin_")) return `${attributeLabel(k.slice(5))} από`;
+  if (k.startsWith("nmax_")) return `${attributeLabel(k.slice(5))} έως`;
   return labels[k] ?? k;
 }

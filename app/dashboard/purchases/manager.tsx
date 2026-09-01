@@ -9,7 +9,7 @@ import { savePurchase, deletePurchase } from "@/lib/actions/purchases";
 import type { Product } from "@/lib/db/types";
 import { formatQuantity } from "@/lib/utils";
 
-interface Farmer {
+interface Producer {
   id: string;
   display_name: string;
   municipality?: string | null;
@@ -32,12 +32,12 @@ interface Row {
 
 export function PurchasesManager({
   initialPurchases,
-  farmers,
+  producers,
   products,
   defaultSeason,
 }: {
   initialPurchases: Row[];
-  farmers: Farmer[];
+  producers: Producer[];
   products: Product[];
   defaultSeason: string;
 }) {
@@ -76,10 +76,10 @@ export function PurchasesManager({
           }
         >
           <div className="sm:col-span-2">
-            <Label>Παραγωγός</Label>
+            <Label>Παραγωγός / αλιέας</Label>
             <Select name="farmer_id" required defaultValue="">
-              <option value="" disabled>— Επίλεξε παραγωγό —</option>
-              {farmers.map((f) => (
+              <option value="" disabled>— Επίλεξε παραγωγό ή αλιέα —</option>
+              {producers.map((f) => (
                 <option key={f.id} value={f.id}>
                   {f.display_name}
                   {f.regions?.name_el ? ` · ${f.regions.name_el}` : ""}
@@ -150,7 +150,7 @@ export function PurchasesManager({
             <thead>
               <tr className="text-left border-b border-brand-border eyebrow text-brand-muted">
                 <th className="py-2 pr-3">Ημερομηνία</th>
-                <th className="py-2 pr-3">Παραγωγός</th>
+                <th className="py-2 pr-3">Παραγωγός / αλιέας</th>
                 <th className="py-2 pr-3">Προϊόν</th>
                 <th className="py-2 pr-3 text-right">Ποσότητα</th>
                 <th className="py-2 pr-3 text-right">Τιμή</th>

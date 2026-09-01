@@ -6,7 +6,7 @@ import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { saveProductionListing, deleteProductionListing } from "@/lib/actions/listings";
 import type { Product, Region, AttributesSchema } from "@/lib/db/types";
 import { Icon } from "@/components/ui/icon";
-import { formatQuantity } from "@/lib/utils";
+import { attributeLabel, formatQuantity } from "@/lib/utils";
 
 interface Row {
   id: string;
@@ -28,10 +28,14 @@ export function ProductionListingsManager({
   initialListings,
   products,
   regions,
+  isFisher = false,
+  isDualProducer = false,
 }: {
   initialListings: Row[];
   products: Product[];
   regions: Region[];
+  isFisher?: boolean;
+  isDualProducer?: boolean;
 }) {
   const [listings, setListings] = useState(initialListings);
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
@@ -40,7 +44,7 @@ export function ProductionListingsManager({
     <div className="space-y-4">
       {!editing && (
         <Button onClick={() => setEditing({})} className="inline-flex items-center gap-2">
-          <Icon name="plus" /> Νέα καταχώρηση παραγωγής
+          <Icon name="plus" /> {isDualProducer ? "Νέα καταχώρηση" : isFisher ? "Νέα καταχώρηση αλιεύματος" : "Νέα καταχώρηση παραγωγής"}
         </Button>
       )}
 
@@ -49,6 +53,8 @@ export function ProductionListingsManager({
           products={products}
           regions={regions}
           initial={editing}
+          isFisher={isFisher}
+          isDualProducer={isDualProducer}
           onCancel={() => setEditing(null)}
           onSaved={(row) => {
             setListings((prev) => [row, ...prev.filter((l) => l.id !== row.id)]);
@@ -59,7 +65,13 @@ export function ProductionListingsManager({
 
       {listings.length === 0 && !editing ? (
         <Card>
-          <p className="text-brand-text/70">Δεν έχεις καταχωρήσει παραγωγή ακόμα.</p>
+          <p className="text-brand-text/70">
+            {isDualProducer
+              ? "Δεν έχεις καταχωρήσει παραγωγή ή αλίευμα ακόμα."
+              : isFisher
+                ? "Δεν έχεις καταχωρήσει αλίευμα ακόμα."
+                : "Δεν έχεις καταχωρήσει παραγωγή ακόμα."}
+          </p>
         </Card>
       ) : (
         <div className="space-y-3">
@@ -74,7 +86,7 @@ export function ProductionListingsManager({
                   {Object.keys(l.attributes ?? {}).length > 0 && (
                     <div className="text-xs text-brand-text/60 mt-1">
                       {Object.entries(l.attributes)
-                        .map(([k, v]) => `${k}: ${v}`)
+                        .map(([k, v]) => `${attributeLabel(k)}: ${v}`)
                         .join(", ")}
                     </div>
                   )}
@@ -129,12 +141,16 @@ function Editor({
   products,
   regions,
   initial,
+  isFisher,
+  isDualProducer,
   onCancel,
   onSaved,
 }: {
   products: Product[];
   regions: Region[];
   initial: Partial<Row>;
+  isFisher: boolean;
+  isDualProducer: boolean;
   onCancel: () => void;
   onSaved: (row: Row) => void;
 }) {
@@ -155,12 +171,12 @@ function Editor({
   return (
     <Card>
       <h3 className="font-semibold text-brand-dark mb-4">
-        {initial.id ? "Επεξεργασία" : "Νέα"} παραγωγή
+        {initial.id ? "Επεξεργασία" : "Νέα"} {isDualProducer ? "καταχώρηση" : isFisher ? "καταχώρηση αλιεύματος" : "παραγωγή"}
       </h3>
       <div className="space-y-4">
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
-            <Label>Προϊόν</Label>
+            <Label>{isDualProducer ? "Προϊόν / αλιευτικό είδος" : isFisher ? "Αλιευτικό είδος" : "Προϊόν"}</Label>
             <Select
               value={productId}
               onChange={(e) => {

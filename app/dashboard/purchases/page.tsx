@@ -24,7 +24,7 @@ export default async function PurchasesPage({
   const params = await searchParams;
   const season = params.season || currentSeason();
 
-  const [{ data: purchases }, { data: farmers }, products] = await Promise.all([
+  const [{ data: purchases }, { data: producers }, products] = await Promise.all([
     supabase
       .from("purchases")
       .select(
@@ -36,7 +36,7 @@ export default async function PurchasesPage({
     supabase
       .from("profiles")
       .select("id, display_name, municipality, region_code, regions(name_el)")
-      .eq("role", "farmer")
+      .in("role", ["farmer", "fisher", "farmer_fisher"])
       .eq("is_active", true)
       .eq("is_public", true)
       .order("display_name")
@@ -88,7 +88,7 @@ export default async function PurchasesPage({
         <Eyebrow>Δίκτυο & δεδομένα</Eyebrow>
         <h1 className="display text-3xl sm:text-4xl text-brand-dark mt-1 field-underline">Αγορές & σεζόν</h1>
         <p className="mt-3 text-brand-muted text-[16px]">
-          Καταγράφεις τι αγόρασες από κάθε παραγωγό. Ο πίνακας ενημερώνεται αυτόματα ανά σεζόν και εμφανίζει σύνολα.
+          Καταγράφεις τι αγόρασες από κάθε παραγωγό ή αλιέα. Ο πίνακας ενημερώνεται αυτόματα ανά σεζόν και εμφανίζει σύνολα.
         </p>
       </div>
 
@@ -112,7 +112,7 @@ export default async function PurchasesPage({
       {/* Season summary */}
       <div className="grid sm:grid-cols-3 gap-4 mb-6">
         <SummaryStat icon="listCheck" label="Καταχωρήσεις" value={String(seasonRows.length)} />
-        <SummaryStat icon="users" label="Διαφορετικοί παραγωγοί" value={String(byFarmer.size)} />
+        <SummaryStat icon="users" label="Παραγωγοί & αλιείς" value={String(byFarmer.size)} />
         <SummaryStat
           icon="money"
           label={`Συνολική αξία ${season}`}
@@ -125,7 +125,7 @@ export default async function PurchasesPage({
         <Card className="mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Icon name="users" className="text-brand-dark" />
-            <h2 className="display text-xl text-brand-dark">Ανά παραγωγό — σεζόν {season}</h2>
+            <h2 className="display text-xl text-brand-dark">Ανά παραγωγό / αλιέα — σεζόν {season}</h2>
           </div>
           <div className="space-y-4">
             {[...byFarmer.entries()]
@@ -186,7 +186,7 @@ export default async function PurchasesPage({
       {/* Add + list */}
       <PurchasesManager
         initialPurchases={rows}
-        farmers={(farmers as any[]) ?? []}
+        producers={(producers as any[]) ?? []}
         products={products}
         defaultSeason={season}
       />

@@ -8,8 +8,10 @@ import { Icon } from "@/components/ui/icon";
 import { updateProfile, updateProfileMedia } from "@/lib/actions/profiles";
 import { fileToResizedDataUrl } from "@/lib/domain/image-resize";
 import type { Profile, Region, GalleryItem } from "@/lib/db/types";
+import { isProducerRole } from "@/lib/utils";
 
 export function ProfileEditor({ profile, regions }: { profile: Profile; regions: Region[] }) {
+  const isProducer = isProducerRole(profile.role);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
   const [uploading, setUploading] = useState<null | "avatar" | "cover" | "gallery">(null);
@@ -73,7 +75,7 @@ export function ProfileEditor({ profile, regions }: { profile: Profile; regions:
         <div className="grid sm:grid-cols-[160px_1fr] gap-6">
           {/* Avatar */}
           <div>
-            <Label>Avatar</Label>
+            <Label>Φωτογραφία προφίλ</Label>
             <div className="relative w-32 h-32 rounded-full overflow-hidden bg-brand-bg border-2 border-brand-border flex items-center justify-center">
               {avatar ? (
                 <Image src={avatar} alt="avatar" width={128} height={128} className="object-cover w-full h-full" unoptimized />
@@ -100,7 +102,7 @@ export function ProfileEditor({ profile, regions }: { profile: Profile; regions:
 
           {/* Cover */}
           <div>
-            <Label>Cover</Label>
+            <Label>Φωτογραφία εξωφύλλου</Label>
             <div className="relative w-full h-40 rounded-md overflow-hidden bg-brand-bg border-2 border-brand-border flex items-center justify-center">
               {cover ? (
                 <Image src={cover} alt="cover" width={1400} height={400} className="object-cover w-full h-full" unoptimized />
@@ -122,7 +124,7 @@ export function ProfileEditor({ profile, regions }: { profile: Profile; regions:
         {/* Gallery */}
         <div className="mt-6">
           <div className="flex items-center justify-between mb-2">
-            <Label className="mb-0">Gallery (μέχρι 12 φωτογραφίες)</Label>
+            <Label className="mb-0">Συλλογή (μέχρι 12 φωτογραφίες)</Label>
             <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 rounded-md bg-brand-surface border border-brand-border text-brand-dark text-sm font-semibold hover:border-brand-dark">
               <Icon name={uploading === "gallery" ? "spinner" : "plus"} />
               {uploading === "gallery" ? "Ανέβασμα…" : "Προσθήκη"}
@@ -175,9 +177,23 @@ export function ProfileEditor({ profile, regions }: { profile: Profile; regions:
             })
           }
         >
+          {isProducer && (
+            <div className="rounded-xl border border-sky-900/20 bg-sky-50 p-4">
+              <Label htmlFor="producer_role">Δραστηριότητα λογαριασμού</Label>
+              <Select id="producer_role" name="producer_role" defaultValue={profile.role}>
+                {profile.role === "farmer" && <option value="farmer">Αγρότης</option>}
+                {profile.role === "fisher" && <option value="fisher">Αλιέας</option>}
+                <option value="farmer_fisher">Αγρότης & Αλιέας</option>
+              </Select>
+              <p className="mt-2 text-xs leading-relaxed text-sky-950/75">
+                Με τη διπλή ιδιότητα χρησιμοποιείς το ίδιο email και τηλέφωνο και καταχωρίζεις τόσο αγροτική παραγωγή όσο και αλιεύματα.
+              </p>
+            </div>
+          )}
+
           <div>
             <Label htmlFor="display_name">
-              {profile.role === "farmer" ? "Ονοματεπώνυμο" : "Επωνυμία"}
+              {isProducer ? "Ονοματεπώνυμο" : "Επωνυμία"}
             </Label>
             <Input id="display_name" name="display_name" defaultValue={profile.display_name} required />
           </div>
@@ -222,7 +238,7 @@ export function ProfileEditor({ profile, regions }: { profile: Profile; regions:
             <Textarea id="specialties" name="specialties" rows={2} defaultValue={profile.specialties ?? ""} placeholder="π.χ. Ελιές Καλαμών, ελαιόλαδο έξτρα παρθένο, οργανική καλλιέργεια" />
           </div>
 
-          {profile.role !== "farmer" && (
+          {!isProducer && (
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="year_founded">Έτος ίδρυσης</Label>
@@ -253,11 +269,11 @@ export function ProfileEditor({ profile, regions }: { profile: Profile; regions:
           </div>
 
           <div>
-            <Label htmlFor="website">Website (προαιρετικό)</Label>
+            <Label htmlFor="website">Ιστότοπος (προαιρετικό)</Label>
             <Input id="website" name="website" type="url" placeholder="https://…" defaultValue={profile.website ?? ""} />
           </div>
 
-          {profile.role === "farmer" && (
+          {isProducer && (
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="is_public" defaultChecked={profile.is_public} className="w-4 h-4 accent-brand-dark" />
               <span>Εμφάνιση του προφίλ μου σε αποτελέσματα αναζήτησης</span>

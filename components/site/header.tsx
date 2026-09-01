@@ -4,6 +4,7 @@ import { Icon } from "@/components/ui/icon";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { NotificationBell } from "./notification-bell";
 import { MobileNav } from "./mobile-nav";
+import { hasFisherRole, isProducerRole } from "@/lib/utils";
 
 export async function Header() {
   const supabase = await createSupabaseServer();
@@ -47,7 +48,7 @@ export async function Header() {
 
         <nav className="hidden md:flex items-center gap-1">
           <NavItem href="/search/buyers" icon="store" label="Αγοραστές" />
-          <NavItem href="/search/producers" icon="seedling" label="Παραγωγοί" />
+          <NavItem href="/search/producers" icon="seedling" label="Παραγωγοί & Αλιείς" />
           <NavItem href="/contact" icon="envelope" label="Επικοινωνία" />
         </nav>
 
@@ -101,7 +102,9 @@ export async function Header() {
           <MobileNav
             authed={!!profile}
             isAdmin={profile?.role === "admin"}
-            isFarmer={profile?.role === "farmer"}
+            isProducer={isProducerRole(profile?.role)}
+            isFisher={hasFisherRole(profile?.role)}
+            isDualProducer={profile?.role === "farmer_fisher"}
             displayName={profile?.display_name}
           />
         </div>

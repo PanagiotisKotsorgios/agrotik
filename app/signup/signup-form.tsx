@@ -8,10 +8,12 @@ import { signup } from "@/lib/actions/auth";
 import type { Region } from "@/lib/db/types";
 import { cn } from "@/lib/utils";
 
-type Role = "farmer" | "merchant" | "factory";
+type Role = "farmer" | "fisher" | "farmer_fisher" | "merchant" | "factory";
 
 const roleCards: { value: Role; label: string; icon: IconName; desc: string }[] = [
   { value: "farmer", label: "Αγρότης", icon: "seedling", desc: "Παράγω & πουλάω" },
+  { value: "fisher", label: "Αλιέας", icon: "fish", desc: "Αλιεύω & πουλάω" },
+  { value: "farmer_fisher", label: "Αγρότης & Αλιέας", icon: "fish", desc: "Παράγω, αλιεύω & πουλάω" },
   { value: "merchant", label: "Έμπορος", icon: "store", desc: "Αγοράζω παραγωγή" },
   { value: "factory", label: "Εργοστάσιο", icon: "industry", desc: "Επεξεργάζομαι" },
 ];
@@ -38,7 +40,7 @@ export function SignupForm({ regions, initialRole }: { regions: Region[]; initia
     >
       <div>
         <Label>Είμαι…</Label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {roleCards.map((r) => (
             <button
               key={r.value}
@@ -47,9 +49,12 @@ export function SignupForm({ regions, initialRole }: { regions: Region[]; initia
               aria-pressed={role === r.value}
               className={cn(
                 "w-full min-w-0 min-h-[76px] sm:min-h-[150px] p-3.5 sm:p-4 rounded-lg border text-left transition-all",
+                r.value === "farmer_fisher" && "sm:col-span-2 sm:min-h-[112px]",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-mid focus-visible:ring-offset-2",
                 role === r.value
-                  ? "border-brand-dark bg-brand-dark text-white"
+                  ? r.value === "fisher" || r.value === "farmer_fisher"
+                    ? "border-sky-950 bg-sky-900 text-white"
+                    : "border-brand-dark bg-brand-dark text-white"
                   : "border-brand-border bg-brand-surface hover:border-brand-dark/40",
               )}
             >
@@ -120,7 +125,11 @@ export function SignupForm({ regions, initialRole }: { regions: Region[]; initia
 
       <div>
         <Label htmlFor="display_name">
-          {role === "farmer" ? "Ονοματεπώνυμο / όνομα εκμετάλλευσης" : "Επωνυμία επιχείρησης"}
+          {role === "farmer" || role === "farmer_fisher"
+            ? "Ονοματεπώνυμο / όνομα εκμετάλλευσης"
+            : role === "fisher"
+              ? "Ονοματεπώνυμο / όνομα αλιευτικής επιχείρησης"
+              : "Επωνυμία επιχείρησης"}
         </Label>
         <Input id="display_name" name="display_name" required />
       </div>
@@ -155,7 +164,7 @@ export function SignupForm({ regions, initialRole }: { regions: Region[]; initia
         </div>
       </div>
 
-      {role !== "farmer" && (
+      {role !== "farmer" && role !== "fisher" && role !== "farmer_fisher" && (
         <div>
           <Label htmlFor="bio">Σύντομη περιγραφή δραστηριότητας</Label>
           <Textarea id="bio" name="bio" rows={3} placeholder="π.χ. Εμπορία ελιάς & ελαιολάδου, Πελοπόννησος" />

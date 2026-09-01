@@ -9,7 +9,7 @@ import { Card, Badge, Eyebrow, CardTitle } from "@/components/ui/card";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { getProfileById, getProfileListings } from "@/lib/db/queries";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { formatQuantityNumber, formatRelative, pluralizeQuantityUnit, priceFormat, roleLabel } from "@/lib/utils";
+import { attributeLabel, formatQuantityNumber, formatRelative, hasFisherRole, pluralizeQuantityUnit, priceFormat, roleBadgeTone, roleLabel } from "@/lib/utils";
 import { FavoriteButton } from "./favorite-button";
 
 export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -35,7 +35,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
     isFavorited = !!fav.data;
     viewerRole = me.data?.role ?? null;
   }
-  const viewerIsFarmer = viewerRole === "farmer";
   const canMessage = !!user && user.id !== id;
   const gallery: { url: string; alt?: string }[] = Array.isArray(profile.gallery) ? profile.gallery : [];
 
@@ -44,19 +43,20 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
       <Header />
 
       {/* Cover */}
-      <div className="relative w-full h-56 sm:h-72 bg-brand-dark overflow-hidden">
+      <div className={`relative w-full h-56 sm:h-72 overflow-hidden ${hasFisherRole(profile.role) ? "bg-sky-950" : "bg-brand-dark"}`}>
         {profile.cover_url ? (
           <Image src={profile.cover_url} alt="" fill className="object-cover opacity-95" unoptimized />
         ) : (
           <div
             className="absolute inset-0"
             style={{
-              background:
-                "linear-gradient(135deg, #1B4D2E 0%, #3F8B34 55%, #6B7F3F 100%)",
+              background: hasFisherRole(profile.role)
+                ? "linear-gradient(135deg, #082F49 0%, #075985 55%, #0E7490 100%)"
+                : "linear-gradient(135deg, #1B4D2E 0%, #3F8B34 55%, #6B7F3F 100%)",
             }}
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/80 via-brand-dark/20 to-transparent" />
+        <div className={`absolute inset-0 bg-gradient-to-t to-transparent ${hasFisherRole(profile.role) ? "from-sky-950/85 via-sky-950/25" : "from-brand-dark/80 via-brand-dark/20"}`} />
       </div>
 
       <div className="max-w-5xl mx-auto px-4 -mt-20 relative z-10 pb-10 space-y-6">
@@ -66,7 +66,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             <div className="flex items-start gap-4 min-w-0">
               <Avatar url={profile.avatar_url} name={profile.display_name} />
               <div className="min-w-0">
-                <Eyebrow>{roleLabel(profile.role)}</Eyebrow>
+                <Badge tone={roleBadgeTone(profile.role)}>{roleLabel(profile.role)}</Badge>
                 <h1 className="display text-3xl sm:text-4xl text-brand-dark leading-tight mt-1">
                   {profile.display_name}
                 </h1>
@@ -206,9 +206,23 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <Eyebrow>{type === "price" ? "Τιμοκατάλογος" : "Παραγωγή"}</Eyebrow>
+              <Eyebrow>
+                {type === "price"
+                  ? "Τιμοκατάλογος"
+                  : profile.role === "farmer_fisher"
+                    ? "Παραγωγή & αλιεύματα"
+                    : profile.role === "fisher"
+                      ? "Αλιεύματα"
+                      : "Παραγωγή"}
+              </Eyebrow>
               <h2 className="display text-2xl text-brand-dark mt-1 field-underline">
-                {type === "price" ? "Τιμές που αγοράζει" : "Διαθέσιμη παραγωγή"}
+                {type === "price"
+                  ? "Τιμές που αγοράζει"
+                  : profile.role === "farmer_fisher"
+                    ? "Διαθέσιμη παραγωγή & αλιεύματα"
+                    : profile.role === "fisher"
+                      ? "Διαθέσιμα αλιεύματα"
+                      : "Διαθέσιμη παραγωγή"}
               </h2>
             </div>
             <Badge tone="muted">{listings.length} καταχωρήσεις</Badge>
@@ -220,7 +234,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                 <Icon name="info" />
                 {type === "price"
                   ? "Δεν υπάρχουν καταχωρημένες τιμές."
-                  : "Δεν υπάρχει καταχωρημένη παραγωγή."}
+                  : profile.role === "farmer_fisher"
+                    ? "Δεν υπάρχει καταχωρημένη παραγωγή ή αλίευμα."
+                    : profile.role === "fisher"
+                      ? "Δεν υπάρχουν καταχωρημένα αλιεύματα."
+                      : "Δεν υπάρχει καταχωρημένη παραγωγή."}
               </div>
             </Card>
           ) : (
@@ -245,7 +263,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                           <tr key={i} className="border-b border-brand-border last:border-0">
                             <td className="py-2.5 text-brand-ink/80">
                               {Object.entries(v.attributes)
-                                .map(([k, val]) => `${k}: ${val}`)
+                                .map(([k, val]) => `${attributeLabel(k)}: ${val}`)
                                 .join(" · ") || "—"}
                             </td>
                             <td className="py-2.5 text-right figures font-semibold text-brand-dark">
@@ -280,7 +298,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                         {Object.keys(l.attributes ?? {}).length > 0 && (
                           <div className="text-xs text-brand-muted mt-1">
                             {Object.entries(l.attributes)
-                              .map(([k, v]) => `${k}: ${v}`)
+                              .map(([k, v]) => `${attributeLabel(k)}: ${v}`)
                               .join(" · ")}
                           </div>
                         )}

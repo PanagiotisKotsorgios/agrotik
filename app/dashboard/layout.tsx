@@ -7,6 +7,7 @@ import { LogoutButton } from "@/components/site/logout-button";
 import { DashboardMobileNav } from "@/components/site/dashboard-mobile-nav";
 import { SidebarNav } from "@/components/site/sidebar-nav";
 import { Icon, type IconName } from "@/components/ui/icon";
+import { hasFisherRole, isProducerRole } from "@/lib/utils";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createSupabaseServer();
@@ -41,19 +42,27 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // makes the admin role look like a buyer account and exposes irrelevant links.
   if (profile.role === "admin") redirect("/admin");
 
-  const isFarmer = profile.role === "farmer";
+  const isProducer = isProducerRole(profile.role);
+  const isFisher = hasFisherRole(profile.role);
+  const isDualProducer = profile.role === "farmer_fisher";
   const items: { href: string; icon: IconName; label: string }[] = [
     { href: "/dashboard", icon: "chart", label: "Αρχική" },
     { href: "/dashboard/profile", icon: "user", label: "Προφίλ" },
     {
       href: "/dashboard/listings",
-      icon: isFarmer ? "wheat" : "tag",
-      label: isFarmer ? "Παραγωγή" : "Τιμοκατάλογος",
+      icon: isFisher ? "fish" : isProducer ? "wheat" : "tag",
+      label: isProducer
+        ? isDualProducer
+          ? "Παραγωγή & αλιεύματα"
+          : isFisher
+            ? "Αλιεύματα"
+            : "Παραγωγή"
+        : "Τιμοκατάλογος",
     },
-    isFarmer
-      ? { href: "/dashboard/network", icon: "heart", label: "Οι έμποροί μου" }
-      : { href: "/dashboard/network", icon: "users", label: "Οι παραγωγοί μου" },
-    ...(!isFarmer
+    isProducer
+      ? { href: "/dashboard/network", icon: "heart", label: "Οι αγοραστές μου" }
+      : { href: "/dashboard/network", icon: "users", label: "Παραγωγοί & αλιείς" },
+    ...(!isProducer
       ? [{ href: "/dashboard/purchases", icon: "box" as IconName, label: "Αγορές" }]
       : []),
     { href: "/dashboard/messages", icon: "chat", label: "Μηνύματα" },
@@ -67,7 +76,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="min-h-[calc(100vh-88px)] bg-white">
         <div className="max-w-6xl mx-auto px-4 py-6 md:py-8 md:grid md:grid-cols-[260px_1fr] md:gap-8">
           <aside className="hidden md:block">
-            <div className="sticky top-[104px] bg-brand-dark text-white rounded-2xl p-4 shadow-elev">
+            <div className={`sticky top-[104px] text-white rounded-2xl p-4 shadow-elev ${isFisher ? "bg-sky-950" : "bg-brand-dark"}`}>
               <div className="px-3 pb-3">
                 <div className="text-[11px] uppercase tracking-widest text-white/60 font-semibold">Ο λογαριασμός μου</div>
                 <div className="mt-1 text-[15px] font-semibold text-white truncate">{profile.display_name}</div>

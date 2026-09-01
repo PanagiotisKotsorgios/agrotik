@@ -7,7 +7,7 @@ import { setBrevoSettings, sendBrevoEmail, renderEmailShell, type BrevoSettings 
 import type { ActionResult } from "./auth";
 
 const userIdSchema = z.string().uuid();
-const roleSchema = z.enum(["farmer", "merchant", "factory", "admin"]);
+const roleSchema = z.enum(["farmer", "fisher", "farmer_fisher", "merchant", "factory", "admin"]);
 const notificationSchema = z.object({
   userId: z.string().uuid(),
   title: z.string().trim().min(2, "Ο τίτλος είναι πολύ μικρός").max(120),

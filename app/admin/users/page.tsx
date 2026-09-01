@@ -1,7 +1,7 @@
 import { createSupabaseService } from "@/lib/supabase/service";
 import { Card, Badge, Eyebrow } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
-import { roleLabel } from "@/lib/utils";
+import { roleBadgeTone, roleLabel } from "@/lib/utils";
 import { UserActions } from "./user-actions";
 import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -30,7 +30,9 @@ export default async function AdminUsers({
     .select("*, regions(name_el)")
     .order("created_at", { ascending: false })
     .limit(1000);
-  if (selectedRole) query = query.eq("role", selectedRole);
+  if (selectedRole === "farmer") query = query.in("role", ["farmer", "farmer_fisher"]);
+  else if (selectedRole === "fisher") query = query.in("role", ["fisher", "farmer_fisher"]);
+  else if (selectedRole) query = query.eq("role", selectedRole);
 
   const [{ data: users }, { data: authUsers }] = await Promise.all([
     query,
@@ -65,9 +67,11 @@ export default async function AdminUsers({
   const filters = [
     { v: "", l: "Όλοι" },
     { v: "farmer", l: "Αγρότες" },
+    { v: "fisher", l: "Αλιείς" },
+    { v: "farmer_fisher", l: "Αγρότες & Αλιείς" },
     { v: "merchant", l: "Έμποροι" },
     { v: "factory", l: "Εργοστάσια" },
-    { v: "admin", l: "Admins" },
+    { v: "admin", l: "Διαχειριστές" },
   ];
 
   return (
@@ -150,8 +154,8 @@ export default async function AdminUsers({
                   <Link href={`/profile/${u.id}`} className="font-semibold text-brand-dark hover:underline truncate">
                     {u.display_name}
                   </Link>
-                  <Badge tone="brand">{roleLabel(u.role)}</Badge>
-                  {!u.is_active && <Badge tone="danger">Suspended</Badge>}
+                  <Badge tone={roleBadgeTone(u.role)}>{roleLabel(u.role)}</Badge>
+                  {!u.is_active && <Badge tone="danger">Απενεργοποιημένος</Badge>}
                   {u.role !== "admin" && (
                     <Badge tone={u.is_public ? "ok" : "warn"}>
                       {u.is_public ? "Δημόσιο προφίλ" : "Κρυφό προφίλ"}

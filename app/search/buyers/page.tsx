@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { searchBuyers, getRegions, getActiveProducts, getProductCategories } from "@/lib/db/queries";
 import { parseBuyerFilters } from "@/lib/domain/search-params";
-import { formatRelative, priceFormat, roleLabel } from "@/lib/utils";
+import { attributeLabel, formatRelative, priceFormat, roleLabel } from "@/lib/utils";
 import { FilterChips } from "@/components/site/filter-chips";
 import { AttributeFilters } from "@/components/site/attribute-filters";
 import { FiltersDrawer } from "@/components/site/filters-drawer";
@@ -224,7 +224,7 @@ export default async function BuyersSearchPage({
                         {r.best_attributes && (
                           <div className="text-sm text-brand-muted mt-1">
                             {Object.entries(r.best_attributes)
-                              .map(([k, v]) => `${k}: ${v}`)
+                              .map(([k, v]) => `${attributeLabel(k)}: ${v}`)
                               .join(" · ")}
                           </div>
                         )}

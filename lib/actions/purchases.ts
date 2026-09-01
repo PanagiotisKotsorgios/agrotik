@@ -6,7 +6,7 @@ import type { ActionResult } from "./auth";
 
 const purchaseSchema = z.object({
   id: z.string().uuid().optional(),
-  farmer_id: z.string().uuid("Επίλεξε παραγωγό"),
+  farmer_id: z.string().uuid("Επίλεξε παραγωγό ή αλιέα"),
   product_id: z.string().uuid("Επίλεξε προϊόν"),
   season: z.string().min(1, "Απαιτείται σεζόν"),
   quantity: z.coerce.number().positive("Απαιτείται ποσότητα"),

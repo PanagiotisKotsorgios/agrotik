@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseService } from "@/lib/supabase/service";
 import { diffVariants } from "@/lib/domain/variants";
+import { attributeLabel, hasFarmerRole, hasFisherRole, isProducerRole } from "@/lib/utils";
 import { sendBrevoEmail, renderEmailShell } from "@/lib/brevo";
 import { getAppOrigin } from "@/lib/app-origin";
 import type { ActionResult } from "./auth";
@@ -135,7 +136,7 @@ async function notifyFavoriters(
   const rows2html = changes
     .map(
       (c) =>
-        `<li>${Object.entries(c.attributes).map(([k, v]) => `${escapeHtml(k)}: ${escapeHtml(String(v))}`).join(", ")}: <s>${c.old_price.toFixed(2)}€</s> → <b>${c.new_price.toFixed(2)}€/${escapeHtml((product as any)?.unit ?? "")}</b></li>`,
+        `<li>${Object.entries(c.attributes).map(([k, v]) => `${escapeHtml(attributeLabel(k))}: ${escapeHtml(String(v))}`).join(", ")}: <s>${c.old_price.toFixed(2)}€</s> → <b>${c.new_price.toFixed(2)}€/${escapeHtml((product as any)?.unit ?? "")}</b></li>`,
     )
     .join("");
   for (const f of favs) {
@@ -181,11 +182,20 @@ async function notifyNewBetterPrice(
     .reduce((min, p) => Math.min(min, p), Number.POSITIVE_INFINITY);
   if (!isFinite(priorMin) || newMin >= priorMin) return;
 
-  // Farmers whose favorites are already in the region but not on this new owner
+  const { data: audienceProduct } = await svc
+    .from("products")
+    .select("category")
+    .eq("id", productId)
+    .single();
+  const producerRoles = (audienceProduct as any)?.category === "Αλιευτικά είδη"
+    ? ["fisher", "farmer_fisher"]
+    : ["farmer", "farmer_fisher"];
+
+  // Notify the matching producer audience in the same region.
   const { data: farmers } = await svc
     .from("profiles")
     .select("id")
-    .eq("role", "farmer")
+    .in("role", producerRoles)
     .eq("region_code", regionCode)
     .eq("is_active", true);
 
@@ -208,7 +218,7 @@ async function notifyNewBetterPrice(
     svc.from("products").select("name_el, unit").eq("id", productId).single(),
   ]);
   const buyerName = (buyer as any)?.display_name ?? "νέο αγοραστή";
-  const productName = (product as any)?.name_el ?? "αγροτικό προϊόν";
+  const productName = (product as any)?.name_el ?? "προϊόν";
   const unit = (product as any)?.unit ?? "";
   const profileUrl = `${getAppOrigin()}/profile/${ownerId}`;
 
@@ -275,7 +285,24 @@ export async function saveProductionListing(input: unknown): Promise<ActionResul
   if (!user) return { ok: false, error: "Απαιτείται σύνδεση" };
 
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (me?.role !== "farmer") return { ok: false, error: "Μόνο αγρότες μπορούν να καταχωρήσουν παραγωγή" };
+  if (!me || !isProducerRole(me.role)) {
+    return { ok: false, error: "Μόνο αγρότες και αλιείς μπορούν να κάνουν καταχώρηση παραγωγής" };
+  }
+
+  const { data: selectedProduct } = await supabase
+    .from("products")
+    .select("category, status")
+    .eq("id", parsed.data.product_id)
+    .eq("status", "active")
+    .single();
+  if (!selectedProduct) return { ok: false, error: "Το προϊόν δεν είναι διαθέσιμο" };
+  const isSeafood = selectedProduct.category === "Αλιευτικά είδη";
+  if (!hasFarmerRole(me.role) && !isSeafood) {
+    return { ok: false, error: "Οι αλιείς μπορούν να καταχωρούν μόνο αλιευτικά είδη" };
+  }
+  if (!hasFisherRole(me.role) && isSeafood) {
+    return { ok: false, error: "Τα αλιευτικά είδη καταχωρούνται από λογαριασμό αλιέα" };
+  }
 
   const payload = {
     owner_id: user.id,

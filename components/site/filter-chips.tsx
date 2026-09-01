@@ -44,6 +44,7 @@ export function FilterChips({
     if (k === "region_code") return regionLabels?.get(v) ?? v;
     if (k === "product_id") return productLabels?.get(v) ?? v;
     if (k === "product_category") return categoryLabels?.get(v) ?? v;
+    if (k === "producer_type") return v === "fisher" ? "Αλιείς" : v === "farmer" ? "Αγρότες" : v;
     if (k === "sort") {
       const map: Record<string, string> = {
         price_asc: "Τιμή αύξουσα",

@@ -36,7 +36,7 @@ async function safeFetchLandingData() {
         .eq("is_active", true)
         .eq("is_public", true)
         .neq("role", "admin")
-        .in("role", ["farmer", "merchant", "factory"])
+        .in("role", ["farmer", "fisher", "farmer_fisher", "merchant", "factory"])
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(8),
@@ -104,15 +104,15 @@ export default async function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 pt-20 pb-24 sm:pt-28 sm:pb-32 relative">
           <div className="max-w-3xl animate-fade-in-up">
             <div className="eyebrow !text-brand-dark font-semibold">
-              Ελληνική αγροτική αγορά · πραγματικές τιμές
+              Ελληνική πρωτογενής αγορά · πραγματικές τιμές
             </div>
             <h1 className="display mt-4 text-[46px] sm:text-[68px] leading-[0.98] font-semibold text-brand-dark tracking-tight">
               Η γη <em className="not-italic text-brand-mid">συναντά</em> την αγορά.
             </h1>
             <p className="mt-6 text-brand-ink text-[18px] sm:text-[20px] font-medium max-w-2xl leading-relaxed">
-              Το AGROTIK συνδέει αγρότες με εμπόρους και εργοστάσια — άμεσα.
-              Ενημερωμένες τιμές, δημόσια προφίλ, καμία μεσιτεία. Απλά μια γέφυρα
-              για να κλείσετε τη συμφωνία σας.
+              Το AGROTIK συνδέει αγρότες και αλιείς με εμπόρους και εργοστάσια — άμεσα.
+              Ενημερωμένες τιμές, διαθέσιμη παραγωγή και αλιεύματα, δημόσια προφίλ,
+              καμία μεσιτεία. Μια δωρεάν γέφυρα για να κλείσετε τη συμφωνία σας.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
@@ -162,16 +162,16 @@ export default async function LandingPage() {
             Τι ψάχνεις σήμερα;
           </h2>
           <p className="mt-3 text-brand-muted text-[16px] max-w-2xl">
-            Δεν χρειάζεσαι λογαριασμό για να δεις τιμές και παραγωγή. Πάτησε αυτό που ταιριάζει σε εσένα.
+            Δεν χρειάζεσαι λογαριασμό για να δεις τιμές, παραγωγή και αλιεύματα. Πάτησε αυτό που ταιριάζει σε εσένα.
           </p>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
           <SearchCta
             icon="store"
-            eyebrow="Είμαι αγρότης"
+            eyebrow="Είμαι αγρότης ή αλιέας"
             title="Ψάχνω αγοραστή"
-            body="Δες τιμές που δίνουν έμποροι και εργοστάσια στην περιοχή σου. Φιλτράρισε ανά προϊόν, νομό ή δήμο."
+            body="Δες τιμές που δίνουν έμποροι και εργοστάσια στην περιοχή σου. Φιλτράρισε ανά αγροτικό προϊόν ή αλιευτικό είδος, νομό ή δήμο."
             href="/search/buyers"
             cta="Δες αγοραστές"
             tone="dark"
@@ -179,10 +179,10 @@ export default async function LandingPage() {
           <SearchCta
             icon="seedling"
             eyebrow="Είμαι έμπορος ή εργοστάσιο"
-            title="Ψάχνω παραγωγό / προμηθευτή"
-            body="Βρες αγρότες με διαθέσιμη παραγωγή. Φιλτράρισε ανά προϊόν, ποσότητα και ημερομηνία."
+            title="Ψάχνω παραγωγό, αλιέα ή προμηθευτή"
+            body="Βρες αγρότες και αλιείς με διαθέσιμα προϊόντα. Φιλτράρισε ανά είδος, ποσότητα και ημερομηνία."
             href="/search/producers"
-            cta="Δες παραγωγούς"
+            cta="Δες παραγωγούς & αλιείς"
             tone="olive"
           />
         </div>
@@ -205,6 +205,7 @@ export default async function LandingPage() {
                   : "/search/buyers?product_category=Πυρηνόκαρπα",
                 icon: "seedling" as const,
               },
+              { label: "Αλιευτικά είδη", href: "/search/buyers?product_category=Αλιευτικά%20είδη", icon: "fish" as const },
             ].map((c) => (
               <Link
                 key={c.label}
@@ -224,10 +225,10 @@ export default async function LandingPage() {
         <div className="mb-8">
           <Eyebrow>Πώς λειτουργεί</Eyebrow>
           <h2 className="display mt-2 text-3xl text-brand-dark field-underline">
-            Τρεις πλευρές. Μία πλατφόρμα.
+            Τέσσερις πλευρές. Μία πλατφόρμα.
           </h2>
         </div>
-        <div className="grid sm:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <RoleCard
             icon="seedling"
             title="Αγρότης"
@@ -235,15 +236,21 @@ export default async function LandingPage() {
             href="/signup?role=farmer"
           />
           <RoleCard
+            icon="fish"
+            title="Αλιέας"
+            body="Καταχώρησε τα αλιεύματά σου με ελεύθερο είδος, ποσότητα και προέλευση, σύγκρινε τιμές και πούλησε απευθείας στον κατάλληλο αγοραστή."
+            href="/signup?role=fisher"
+          />
+          <RoleCard
             icon="store"
             title="Έμπορος"
-            body="Ανέβασε τον τιμοκατάλογό σου, εμφανίσου σε αγρότες που ψάχνουν αγοραστή, και κλείσε τη συμφωνία απευθείας."
+            body="Ανέβασε τον τιμοκατάλογό σου για αγροτικά και αλιευτικά είδη, βρες διαθέσιμες ποσότητες και κλείσε τη συμφωνία απευθείας."
             href="/signup?role=merchant"
           />
           <RoleCard
             icon="industry"
             title="Εργοστάσιο"
-            body="Δείξε τι αγοράζεις χωρίς μεσάζοντες. Ενημέρωσε τιμές και περιοχές παραλαβής σε πραγματικό χρόνο."
+            body="Δείξε τι αγοράζεις από τη γη και τη θάλασσα χωρίς μεσάζοντες. Ενημέρωσε τιμές και περιοχές παραλαβής σε πραγματικό χρόνο."
             href="/signup?role=factory"
           />
         </div>
@@ -251,7 +258,7 @@ export default async function LandingPage() {
         <div className="mt-6 rounded-2xl border border-brand-border bg-brand-surface p-6 sm:p-8 grid sm:grid-cols-3 gap-7 sm:gap-8 text-[15px] shadow-card">
           <Feature icon="scale" title="Καμία προμήθεια" body="Κερδίζεις εσύ, όχι ο μεσάζοντας. Ελεύθερη πρόσβαση για όλους." />
           <Feature icon="bell" title="Ενημέρωση σε αλλαγή τιμής" body="Παρακολούθησε αγοραστές· ειδοποίηση όταν αλλάζει τιμή σε αγαπημένους." />
-          <Feature icon="mapLocation" title="Ελληνική γεωγραφία" body="74 νομοί / περιφερειακές ενότητες, από την Ήπειρο ως την Κρήτη." />
+          <Feature icon="mapLocation" title="Γη και θάλασσα" body="Πανελλαδική αναζήτηση παραγωγών, αλιέων, εμπόρων και εργοστασίων ανά περιοχή." />
         </div>
       </section>
 

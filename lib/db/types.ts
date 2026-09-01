@@ -4,7 +4,7 @@
  * types the app uses at the domain boundary.
  */
 
-export type UserRole = "farmer" | "merchant" | "factory" | "admin";
+export type UserRole = "farmer" | "fisher" | "farmer_fisher" | "merchant" | "factory" | "admin";
 export type ProductStatus = "active" | "pending" | "rejected";
 export type NotificationKind =
   | "price_changed"
@@ -104,7 +104,7 @@ export const PRICE_LIST_KIND_LABEL: Record<PriceListKind, string> = {
 };
 
 export const PRICE_LIST_KIND_HELP: Record<PriceListKind, string> = {
-  buy_from_producer: "Τιμές αγοράς για αγρότες. Εμφανίζεται στο «Βρες Αγοραστή».",
+  buy_from_producer: "Τιμές αγοράς για αγρότες και αλιείς. Εμφανίζεται στο «Βρες Αγοραστή».",
   buy_from_merchant: "Τιμές αγοράς για εμπόρους/μεσίτες. Εμφανίζεται σε εμπόρους.",
   sell_wholesale: "Τιμές χονδρικής πώλησης προς άλλους αγοραστές.",
   sell_retail: "Τιμές λιανικής — ορατές δημόσια σε όλους.",

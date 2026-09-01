@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { Card, Eyebrow, Badge } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
-import { formatRelative } from "@/lib/utils";
+import { attributeLabel, formatRelative } from "@/lib/utils";
 
 export default async function NotificationsPage() {
   const supabase = await createSupabaseServer();
@@ -100,7 +100,7 @@ export default async function NotificationsPage() {
                         <li key={i} className="text-brand-ink/85 flex items-center gap-2">
                           <span>
                             {Object.entries(c.attributes || {})
-                              .map(([k, v]) => `${k}: ${v}`)
+                              .map(([k, v]) => `${attributeLabel(k)}: ${v}`)
                               .join(", ") || "τιμή"}
                             :{" "}
                           </span>

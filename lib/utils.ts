@@ -18,11 +18,46 @@ export function formatRelative(iso: string): string {
 export function roleLabel(role: string): string {
   switch (role) {
     case "farmer": return "Αγρότης";
+    case "fisher": return "Αλιέας";
+    case "farmer_fisher": return "Αγρότης & Αλιέας";
     case "merchant": return "Έμπορος";
     case "factory": return "Εργοστάσιο";
     case "admin": return "Διαχειριστής";
     default: return role;
   }
+}
+
+export function isProducerRole(role: string | null | undefined): boolean {
+  return role === "farmer" || role === "fisher" || role === "farmer_fisher";
+}
+
+export function hasFarmerRole(role: string | null | undefined): boolean {
+  return role === "farmer" || role === "farmer_fisher";
+}
+
+export function hasFisherRole(role: string | null | undefined): boolean {
+  return role === "fisher" || role === "farmer_fisher";
+}
+
+export function roleBadgeTone(role: string | null | undefined): "brand" | "fisher" {
+  return hasFisherRole(role) ? "fisher" : "brand";
+}
+
+const attributeLabels: Record<string, string> = {
+  grade: "Νούμερο / καλίμπρο",
+  variety: "Ποικιλία",
+  kind: "Τύπος",
+  acidity_max: "Μέγιστη οξύτητα",
+  protein_min: "Ελάχιστη πρωτεΐνη",
+  crop: "Καλλιέργεια / ποικιλία",
+  species: "Είδος αλιεύματος",
+  condition: "Μορφή / κατάσταση",
+  size: "Μέγεθος / διαλογή",
+  origin: "Περιοχή αλίευσης / προέλευση",
+};
+
+export function attributeLabel(key: string): string {
+  return attributeLabels[key] ?? key;
 }
 
 export function priceFormat(n: number, unit: string): string {

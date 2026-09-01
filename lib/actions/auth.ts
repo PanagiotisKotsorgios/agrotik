@@ -7,7 +7,7 @@ import { createSupabaseService } from "@/lib/supabase/service";
 import { sendBrevoEmail, renderEmailShell, getBrevoSettings } from "@/lib/brevo";
 import type { UserRole } from "@/lib/db/types";
 
-const roleEnum = z.enum(["farmer", "merchant", "factory"]);
+const roleEnum = z.enum(["farmer", "fisher", "farmer_fisher", "merchant", "factory"]);
 
 const signupSchema = z.object({
   email: z.string().email("Μη έγκυρο email"),
@@ -85,7 +85,7 @@ export async function signup(formData: FormData): Promise<ActionResult> {
 function defaultWelcomeBody(name: string): string {
   return `
     <p>Καλωσόρισες στο <strong>AGROTIK</strong>, τη νέα ελληνική αγορά που συνδέει
-    αγρότες με εμπόρους και εργοστάσια — απευθείας, χωρίς μεσάζοντες.</p>
+    αγρότες και αλιείς με εμπόρους και εργοστάσια — απευθείας, χωρίς μεσάζοντες.</p>
     <p>Ο λογαριασμός σου είναι έτοιμος. Το επόμενο βήμα είναι να συμπληρώσεις
     τα στοιχεία του προφίλ σου και να καταχωρήσεις την πρώτη σου καταχώρηση.</p>
     <p style="margin: 24px 0">

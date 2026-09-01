@@ -6,9 +6,9 @@ import { Card, Badge, Eyebrow } from "@/components/ui/card";
 import { Select, Label, Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { searchProducers, getRegions, getActiveProducts, getProductCategories } from "@/lib/db/queries";
+import { searchProducers, getRegions, getActiveProducts } from "@/lib/db/queries";
 import { parseProducerFilters } from "@/lib/domain/search-params";
-import { formatQuantityNumber, formatRelative, pluralizeQuantityUnit, roleLabel } from "@/lib/utils";
+import { attributeLabel, formatQuantityNumber, formatRelative, hasFisherRole, pluralizeQuantityUnit, roleBadgeTone, roleLabel } from "@/lib/utils";
 import { FilterChips } from "@/components/site/filter-chips";
 import { AttributeFilters } from "@/components/site/attribute-filters";
 import { FiltersDrawer } from "@/components/site/filters-drawer";
@@ -26,19 +26,26 @@ export default async function ProducersSearchPage({
 }) {
   const params = await searchParams;
   const filters = parseProducerFilters(params);
-  const [regions, products, categories, results] = await Promise.all([
+  const [regions, products, results] = await Promise.all([
     getRegions(),
     getActiveProducts(),
-    getProductCategories(),
     searchProducers(filters),
   ]);
 
+  const producerProducts = products.filter((product) => {
+    if (filters.producer_type === "fisher") return product.category === "Αλιευτικά είδη";
+    if (filters.producer_type === "farmer") return product.category !== "Αλιευτικά είδη";
+    return true;
+  });
+  const categories = [...new Set(producerProducts.map((product) => product.category))].sort((a, b) =>
+    a.localeCompare(b, "el"),
+  );
   const regionMap = new Map(regions.map((r) => [r.code, r.name_el]));
   const productMap = new Map(products.map((p) => [p.id, p.name_el]));
-  const selectedProduct = products.find((p) => p.id === filters.product_id);
+  const selectedProduct = producerProducts.find((p) => p.id === filters.product_id);
   const filteredProducts = filters.product_category
-    ? products.filter((p) => p.category === filters.product_category)
-    : products;
+    ? producerProducts.filter((p) => p.category === filters.product_category)
+    : producerProducts;
   const requestedPage = parsePage(params.page);
   const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const currentPage = Math.min(requestedPage, totalPages);
@@ -60,23 +67,31 @@ export default async function ProducersSearchPage({
             href="/search/producers"
             className="inline-flex items-center gap-2 px-5 py-3 border-b-2 border-brand-dark font-semibold text-brand-dark text-lg -mb-px"
           >
-            <Icon name="seedling" /> Βρες Παραγωγό
+            <Icon name="seedling" /> Βρες Παραγωγό ή Αλιέα
           </Link>
         </div>
 
         <div className="mt-6 mb-6">
           <Eyebrow>Αναζήτηση</Eyebrow>
-          <h1 className="display text-[38px] leading-tight text-brand-dark mt-1 field-underline">Βρες Παραγωγό</h1>
+          <h1 className="display text-[38px] leading-tight text-brand-dark mt-1 field-underline">Βρες Παραγωγό ή Αλιέα</h1>
           <p className="mt-3 text-brand-muted text-lg leading-relaxed">
-            Όλοι οι ενεργοί αγρότες, με ή χωρίς δηλωμένη παραγωγή. Φιλτράρισε ανά περιοχή, προϊόν, ποιότητα, ποσότητα ή διαθεσιμότητα.
+            Όλοι οι ενεργοί αγρότες και αλιείς, με ή χωρίς δηλωμένη παραγωγή ή αλίευμα. Φιλτράρισε ανά τύπο, περιοχή, προϊόν, είδος αλιεύματος, ποσότητα ή διαθεσιμότητα.
           </p>
         </div>
 
-        <LiveSearchInput placeholder="Αναζήτηση αγρότη με όνομα ή επωνυμία…" />
+        <LiveSearchInput placeholder="Αναζήτηση αγρότη ή αλιέα με όνομα ή επωνυμία…" />
 
         <FiltersDrawer activeCount={countActive(params)}>
         <LiveFilterForm key={JSON.stringify(params)} resultsId="search-results" className="p-5 bg-brand-surface rounded-card border border-brand-border shadow-card mb-6">
           <div className="grid sm:grid-cols-4 gap-4">
+            <div>
+              <Label>Τύπος παραγωγού</Label>
+              <Select name="producer_type" defaultValue={filters.producer_type ?? ""}>
+                <option value="">Αγρότες + Αλιείς</option>
+                <option value="farmer">Μόνο Αγρότες</option>
+                <option value="fisher">Μόνο Αλιείς</option>
+              </Select>
+            </div>
             <div>
               <Label>Νομός</Label>
               <Select name="region_code" defaultValue={filters.region_code ?? ""}>
@@ -132,7 +147,7 @@ export default async function ProducersSearchPage({
             </div>
 
             <div>
-              <Label>Όνομα παραγωγού</Label>
+              <Label>Όνομα παραγωγού / αλιέα</Label>
               <Input name="name" placeholder="Αναζήτηση…" defaultValue={filters.name ?? ""} />
             </div>
 
@@ -188,7 +203,7 @@ export default async function ProducersSearchPage({
         {results.length === 0 ? (
           <Card>
             <div className="text-brand-ink text-lg flex items-center gap-3">
-              <Icon name="info" className="text-brand-muted" /> Δε βρέθηκαν παραγωγοί με αυτά τα κριτήρια. Δοκίμασε να χαλαρώσεις κάποιο φίλτρο.
+              <Icon name="info" className="text-brand-muted" /> Δε βρέθηκαν παραγωγοί ή αλιείς με αυτά τα κριτήρια. Δοκίμασε να χαλαρώσεις κάποιο φίλτρο.
             </div>
           </Card>
         ) : (
@@ -210,13 +225,13 @@ export default async function ProducersSearchPage({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <Icon name="seedling" className="text-xl" />
+                      <Icon name={hasFisherRole(r.profile.role) ? "fish" : "seedling"} className="text-xl" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-brand-dark text-lg truncate group-hover:underline underline-offset-2">{r.profile.display_name}</h3>
-                      <Badge tone="brand">{roleLabel(r.profile.role)}</Badge>
+                      <Badge tone={roleBadgeTone(r.profile.role)}>{roleLabel(r.profile.role)}</Badge>
                     </div>
                     <div className="text-sm text-brand-muted mt-0.5 flex items-center gap-1.5">
                       <Icon name="location" /> {r.region_name}
@@ -235,7 +250,7 @@ export default async function ProducersSearchPage({
                         </div>
                         {Object.keys(r.attributes).length > 0 && (
                           <div className="text-sm text-brand-muted mt-1">
-                            {Object.entries(r.attributes).map(([k, v]) => `${k}: ${v}`).join(" · ")}
+                            {Object.entries(r.attributes).map(([k, v]) => `${attributeLabel(k)}: ${v}`).join(" · ")}
                           </div>
                         )}
                         {(r.available_from || r.available_until) && (
@@ -247,9 +262,19 @@ export default async function ProducersSearchPage({
                       </div>
                     ) : (
                       <div className="mt-4">
-                        <Badge tone="muted">Χωρίς δηλωμένη παραγωγή</Badge>
+                        <Badge tone="muted">
+                          {r.profile.role === "farmer_fisher"
+                            ? "Χωρίς δηλωμένη παραγωγή ή αλίευμα"
+                            : r.profile.role === "fisher"
+                              ? "Χωρίς δηλωμένο αλίευμα"
+                              : "Χωρίς δηλωμένη παραγωγή"}
+                        </Badge>
                         <p className="text-sm text-brand-muted mt-2 line-clamp-2">
-                          {r.profile.bio || "Ο παραγωγός δεν έχει καταχωρίσει διαθέσιμη παραγωγή ακόμη."}
+                          {r.profile.bio || (r.profile.role === "farmer_fisher"
+                            ? "Ο παραγωγός και αλιέας δεν έχει καταχωρίσει διαθέσιμη παραγωγή ή αλίευμα ακόμη."
+                            : r.profile.role === "fisher"
+                              ? "Ο αλιέας δεν έχει καταχωρίσει διαθέσιμο αλίευμα ακόμη."
+                              : "Ο παραγωγός δεν έχει καταχωρίσει διαθέσιμη παραγωγή ακόμη.")}
                         </p>
                       </div>
                     )}

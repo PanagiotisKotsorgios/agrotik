@@ -14,8 +14,8 @@ export function Footer() {
               <Logo size={40} />
             </div>
             <p className="mt-4 text-brand-bg/75 text-[15px] leading-relaxed max-w-sm">
-              Άμεση σύνδεση αγροτών, εμπόρων και εργοστασίων. Πραγματικές τιμές
-              στη γη · καμία μεσιτεία · καμία προμήθεια.
+              Άμεση σύνδεση αγροτών, αλιέων, εμπόρων και εργοστασίων. Πραγματικές τιμές
+              από τη γη και τη θάλασσα · καμία μεσιτεία · καμία προμήθεια.
             </p>
             <div className="mt-5 space-y-1.5 text-[14px]">
               <a
@@ -61,7 +61,7 @@ export function Footer() {
 
           <FooterColumn title="Εξερεύνηση">
             <FooterLink href="/search/buyers" icon="store">Αγοραστές</FooterLink>
-            <FooterLink href="/search/producers" icon="seedling">Παραγωγοί</FooterLink>
+            <FooterLink href="/search/producers" icon="seedling">Παραγωγοί & Αλιείς</FooterLink>
             <FooterLink href="/signup" icon="user">Εγγραφή</FooterLink>
             <FooterLink href="/login" icon="unlock">Σύνδεση</FooterLink>
           </FooterColumn>

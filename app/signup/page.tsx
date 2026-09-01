@@ -20,14 +20,14 @@ export default async function SignupPage({
 
   const { data: regions } = await supabase.from("regions").select("code, name_el").order("name_el");
   const params = await searchParams;
-  const initialRole = ["farmer", "merchant", "factory"].includes(params.role ?? "")
-    ? (params.role as "farmer" | "merchant" | "factory")
+  const initialRole = ["farmer", "fisher", "farmer_fisher", "merchant", "factory"].includes(params.role ?? "")
+    ? (params.role as "farmer" | "fisher" | "farmer_fisher" | "merchant" | "factory")
     : "farmer";
 
   return (
     <>
       <Header />
-      <div className="max-w-xl mx-auto px-4 py-10 sm:py-14">
+      <div className="max-w-2xl mx-auto px-4 py-10 sm:py-14">
         <Card className="!p-7 sm:!p-8">
           <div className="mb-6 text-center">
             <Link href="/" aria-label="AGROTIK" className="inline-block mb-4">

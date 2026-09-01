@@ -8,11 +8,13 @@ import { Icon, type IconName } from "@/components/ui/icon";
 interface Props {
   authed: boolean;
   isAdmin: boolean;
-  isFarmer: boolean;
+  isProducer: boolean;
+  isFisher: boolean;
+  isDualProducer: boolean;
   displayName?: string;
 }
 
-export function MobileNav({ authed, isAdmin, isFarmer, displayName }: Props) {
+export function MobileNav({ authed, isAdmin, isProducer, isFisher, isDualProducer, displayName }: Props) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const path = usePathname();
@@ -95,12 +97,18 @@ export function MobileNav({ authed, isAdmin, isFarmer, displayName }: Props) {
           <MobileGroup title={displayName ? `Λογαριασμός · ${displayName}` : "Λογαριασμός"}>
             <MobileLink href="/dashboard" icon="chart">Αρχική</MobileLink>
             <MobileLink href="/dashboard/profile" icon="user">Στοιχεία προφίλ</MobileLink>
-            <MobileLink href="/dashboard/listings" icon={isFarmer ? "wheat" : "tag"}>
-              {isFarmer ? "Παραγωγή" : "Τιμοκατάλογος"}
+            <MobileLink href="/dashboard/listings" icon={isFisher ? "fish" : isProducer ? "wheat" : "tag"}>
+              {isProducer
+                ? isDualProducer
+                  ? "Παραγωγή & αλιεύματα"
+                  : isFisher
+                    ? "Αλιεύματα"
+                    : "Παραγωγή"
+                : "Τιμοκατάλογος"}
             </MobileLink>
-            {isFarmer && <MobileLink href="/dashboard/network" icon="heart">Οι έμποροί μου</MobileLink>}
-            {!isFarmer && <MobileLink href="/dashboard/network" icon="users">Οι παραγωγοί μου</MobileLink>}
-            {!isFarmer && <MobileLink href="/dashboard/purchases" icon="box">Αγορές & σεζόν</MobileLink>}
+            {isProducer && <MobileLink href="/dashboard/network" icon="heart">Οι αγοραστές μου</MobileLink>}
+            {!isProducer && <MobileLink href="/dashboard/network" icon="users">Παραγωγοί & αλιείς</MobileLink>}
+            {!isProducer && <MobileLink href="/dashboard/purchases" icon="box">Αγορές & σεζόν</MobileLink>}
             <MobileLink href="/dashboard/messages" icon="chat">Μηνύματα</MobileLink>
             <MobileLink href="/dashboard/notifications" icon="bell">Ειδοποιήσεις</MobileLink>
           </MobileGroup>

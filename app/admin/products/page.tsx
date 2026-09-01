@@ -3,6 +3,7 @@ import { Card, Badge, Eyebrow } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { ProductActions } from "./product-actions";
 import Link from "next/link";
+import { attributeLabel } from "@/lib/utils";
 
 export default async function AdminProducts({
   searchParams,
@@ -63,7 +64,7 @@ export default async function AdminProducts({
                 </div>
                 {p.attributes_schema && Object.keys(p.attributes_schema).length > 0 && (
                   <div className="text-xs text-brand-muted mt-1">
-                    Χαρακτηριστικά: {Object.keys(p.attributes_schema).join(", ")}
+                    Χαρακτηριστικά: {Object.keys(p.attributes_schema).map(attributeLabel).join(", ")}
                   </div>
                 )}
               </div>

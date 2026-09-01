@@ -61,9 +61,13 @@ export function LiveFilterForm({
         const field = event.target as HTMLInputElement | HTMLSelectElement;
         const form = event.currentTarget;
 
-        if (field.name === "product_category") {
+        if (field.name === "product_category" || field.name === "producer_type") {
           const product = form.elements.namedItem("product_id");
           if (product instanceof HTMLSelectElement) product.value = "";
+          if (field.name === "producer_type") {
+            const category = form.elements.namedItem("product_category");
+            if (category instanceof HTMLSelectElement) category.value = "";
+          }
         }
 
         const immediate =

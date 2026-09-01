@@ -1,4 +1,5 @@
 import type { PriceVariant } from "@/lib/db/types";
+import { attributeLabel } from "@/lib/utils";
 
 /**
  * Two variants match if their `attributes` are deep-equal after stable
@@ -43,7 +44,7 @@ export function diffVariants(prev: PriceVariant[], next: PriceVariant[]): PriceC
 
 export function formatVariant(v: PriceVariant, unit: string): string {
   const attrs = Object.entries(v.attributes)
-    .map(([k, val]) => `${k}: ${val}`)
+    .map(([k, val]) => `${attributeLabel(k)}: ${val}`)
     .join(", ");
   return `${attrs} — ${v.price.toFixed(2)} €/${unit}`;
 }

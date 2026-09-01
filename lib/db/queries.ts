@@ -50,6 +50,7 @@ export interface BuyerFilters {
 }
 
 export interface ProducerFilters {
+  producer_type?: "farmer" | "fisher";
   product_id?: string;
   product_category?: string;
   region_code?: string;
@@ -71,7 +72,9 @@ function attributesMatch(
   if (filter) {
     for (const [k, v] of Object.entries(filter)) {
       if (!v) continue;
-      if (String(target[k] ?? "") !== v) return false;
+      const targetValue = String(target[k] ?? "").trim().toLocaleLowerCase("el-GR");
+      const filterValue = v.trim().toLocaleLowerCase("el-GR");
+      if (!targetValue.includes(filterValue)) return false;
     }
   }
   if (numberFilter) {
@@ -219,6 +222,11 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
 
 export async function searchProducers(filters: ProducerFilters): Promise<ProducerCard[]> {
   const supabase = await createSupabaseServer();
+  const roles = filters.producer_type === "farmer"
+    ? ["farmer", "farmer_fisher"]
+    : filters.producer_type === "fisher"
+      ? ["fisher", "farmer_fisher"]
+      : ["farmer", "fisher", "farmer_fisher"];
 
   const hasListingFilter =
     filters.product_id !== undefined ||
@@ -229,7 +237,7 @@ export async function searchProducers(filters: ProducerFilters): Promise<Produce
     (filters.attributes && Object.keys(filters.attributes).length > 0) ||
     (filters.number_attrs && Object.keys(filters.number_attrs).length > 0);
 
-  // 1. Fetch all farmer profiles (public + active) matching profile filters.
+  // 1. Fetch all producer profiles (farmers/fishers, public + active).
   let profQ = supabase
     .from("profiles")
     .select(
@@ -237,7 +245,7 @@ export async function searchProducers(filters: ProducerFilters): Promise<Produce
     )
     .eq("is_active", true)
     .eq("is_public", true)
-    .eq("role", "farmer")
+    .in("role", roles)
     .is("deleted_at", null)
     .limit(500);
 
@@ -267,6 +275,8 @@ export async function searchProducers(filters: ProducerFilters): Promise<Produce
       .limit(2000);
     if (filters.product_id) lstQ = lstQ.eq("product_id", filters.product_id);
     if (filters.product_category) lstQ = lstQ.eq("products.category", filters.product_category);
+    if (filters.producer_type === "fisher") lstQ = lstQ.eq("products.category", "Αλιευτικά είδη");
+    if (filters.producer_type === "farmer") lstQ = lstQ.neq("products.category", "Αλιευτικά είδη");
     if (filters.quantity_min) lstQ = lstQ.gte("quantity", filters.quantity_min);
     if (filters.quantity_max) lstQ = lstQ.lte("quantity", filters.quantity_max);
     if (filters.date) {

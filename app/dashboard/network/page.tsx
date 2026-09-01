@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { Card, Eyebrow, Badge } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
-import { roleLabel, formatRelative } from "@/lib/utils";
+import { formatRelative, hasFisherRole, isProducerRole, roleBadgeTone, roleLabel } from "@/lib/utils";
 
 export default async function NetworkPage({
   searchParams,
@@ -20,18 +20,24 @@ export default async function NetworkPage({
 
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   const role = me?.role ?? "farmer";
-  const isFarmer = role === "farmer";
+  const isFarmer = isProducerRole(role);
+  const isFisher = hasFisherRole(role);
+  const isDualProducer = role === "farmer_fisher";
   const isFactory = role === "factory";
   const title = isFarmer
-    ? "Οι έμποροί μου"
+    ? "Οι αγοραστές μου"
     : isFactory
     ? "Οι συνεργάτες μου"
     : "Οι πελάτες μου";
   const description = isFarmer
-    ? "Αγοραστές που παρακολουθείς και αυτοί με τους οποίους έχεις κλείσει συμφωνία."
+    ? isDualProducer
+      ? "Αγοραστές παραγωγής και αλιευμάτων που παρακολουθείς και αυτοί με τους οποίους έχεις κλείσει συμφωνία."
+      : isFisher
+      ? "Αγοραστές αλιευμάτων που παρακολουθείς και αυτοί με τους οποίους έχεις κλείσει συμφωνία."
+      : "Αγοραστές που παρακολουθείς και αυτοί με τους οποίους έχεις κλείσει συμφωνία."
     : isFactory
     ? "Παραγωγοί που προμηθεύεσαι, έμποροι-μεσίτες συνεργάτες, και αγαπημένα προφίλ."
-    : "Παραγωγοί με τους οποίους έχεις κλείσει συμφωνία μέσω της πλατφόρμας.";
+    : "Παραγωγοί και αλιείς με τους οποίους έχεις κλείσει συμφωνία μέσω της πλατφόρμας.";
 
   const [favResp, dealResp] = await Promise.all([
     supabase
@@ -68,7 +74,7 @@ export default async function NetworkPage({
         { key: "deals", label: "Πούλησα σε…", count: deals.length, icon: "check" },
       ]
     : [
-        { key: "deals", label: isFactory ? "Παραγωγοί" : "Πελάτες", count: deals.length, icon: "check" },
+        { key: "deals", label: isFactory ? "Παραγωγοί & αλιείς" : "Πελάτες", count: deals.length, icon: "check" },
         { key: "favorites", label: "Αγαπημένοι", count: favorites.length, icon: "heart" },
       ];
 
@@ -204,7 +210,7 @@ function PersonCard({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-brand-dark truncate text-[16px] group-hover:underline">{name}</span>
-          <Badge tone="brand">{roleLabel(role)}</Badge>
+          <Badge tone={roleBadgeTone(role)}>{roleLabel(role)}</Badge>
         </div>
         <div className="text-[13px] text-brand-muted mt-1 inline-flex items-center gap-1.5">
           <Icon name="location" />

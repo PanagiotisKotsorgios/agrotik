@@ -207,6 +207,8 @@ export function UserActions({
           <div className="flex flex-col sm:flex-row gap-2">
             <Select id={`role-${userId}`} value={selectedRole} onChange={(event) => setSelectedRole(event.target.value)}>
               <option value="farmer">Αγρότης</option>
+              <option value="fisher">Αλιέας</option>
+              <option value="farmer_fisher">Αγρότης & Αλιέας</option>
               <option value="merchant">Έμπορος</option>
               <option value="factory">Εργοστάσιο</option>
               <option value="admin">Διαχειριστής</option>

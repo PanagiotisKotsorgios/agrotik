@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase/browser";
 import { Icon } from "@/components/ui/icon";
 import { Badge } from "@/components/ui/card";
-import { roleLabel } from "@/lib/utils";
+import { roleBadgeTone, roleLabel } from "@/lib/utils";
 
 interface Hit {
   id: string;
@@ -20,6 +20,7 @@ interface Hit {
 const ROLE_FILTERS = [
   { key: "all", label: "Όλοι", role: null as string | null },
   { key: "farmer", label: "Αγρότες", role: "farmer" },
+  { key: "fisher", label: "Αλιείς", role: "fisher" },
   { key: "merchant", label: "Έμποροι", role: "merchant" },
   { key: "factory", label: "Εργοστάσια", role: "factory" },
 ];
@@ -50,7 +51,7 @@ export function GlobalLiveSearch() {
         .eq("is_active", true)
         .eq("is_public", true)
         .neq("role", "admin")
-        .in("role", ["farmer", "merchant", "factory"])
+        .in("role", ["farmer", "fisher", "farmer_fisher", "merchant", "factory"])
         .is("deleted_at", null)
         .limit(24);
       const arr = ((data as any as Hit[]) ?? [])
@@ -77,12 +78,16 @@ export function GlobalLiveSearch() {
         .eq("is_active", true)
         .eq("is_public", true)
         .neq("role", "admin")
-        .in("role", ["farmer", "merchant", "factory"])
+        .in("role", ["farmer", "fisher", "farmer_fisher", "merchant", "factory"])
         .is("deleted_at", null);
 
       const activeFilter = ROLE_FILTERS.find((f) => f.key === roleFilter);
       if (activeFilter?.role) {
-        query = query.eq("role", activeFilter.role);
+        query = activeFilter.role === "farmer"
+          ? query.in("role", ["farmer", "farmer_fisher"])
+          : activeFilter.role === "fisher"
+            ? query.in("role", ["fisher", "farmer_fisher"])
+            : query.eq("role", activeFilter.role);
       }
 
       const term = q.trim();
@@ -192,7 +197,7 @@ export function GlobalLiveSearch() {
                         <span className="font-semibold text-brand-dark line-clamp-1">
                           {h.display_name}
                         </span>
-                        <Badge tone="brand">{roleLabel(h.role)}</Badge>
+                        <Badge tone={roleBadgeTone(h.role)}>{roleLabel(h.role)}</Badge>
                       </div>
                       <div className="text-[13px] text-brand-muted flex items-start gap-1.5 mt-1 min-w-0">
                         <Icon name="location" className="shrink-0 mt-0.5" />

@@ -4,7 +4,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseService } from "@/lib/supabase/service";
 import { Card, Badge } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
-import { roleLabel } from "@/lib/utils";
+import { roleBadgeTone, roleLabel } from "@/lib/utils";
 import { markThreadRead } from "@/lib/actions/messages";
 import { MessageComposer } from "@/app/dashboard/messages/[withUserId]/composer";
 import { LiveThread } from "@/app/dashboard/messages/[withUserId]/live-thread";
@@ -49,7 +49,7 @@ export default async function AdminMessageThreadPage({
           </Link>
           <div className="mt-2 flex items-center gap-2">
             <h1 className="display text-2xl text-brand-dark">{(peer as any).display_name}</h1>
-            <Badge tone="brand">{roleLabel((peer as any).role)}</Badge>
+            <Badge tone={roleBadgeTone((peer as any).role)}>{roleLabel((peer as any).role)}</Badge>
           </div>
           <div className="text-sm text-brand-muted mt-0.5 inline-flex items-center gap-1.5">
             <Icon name="location" /> {(peer as any).regions?.name_el ?? ""}

@@ -19,6 +19,7 @@ const updateSchema = z.object({
   specialties: z.string().optional(),
   opening_hours: z.string().optional(),
   is_public: z.coerce.boolean().optional(),
+  producer_role: z.enum(["farmer", "fisher", "farmer_fisher"]).optional(),
 });
 
 export async function updateProfile(formData: FormData): Promise<ActionResult> {
@@ -37,6 +38,23 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
   if (!user) return { ok: false, error: "Απαιτείται σύνδεση" };
 
   const d = parsed.data;
+  let nextProducerRole: "farmer" | "fisher" | "farmer_fisher" | undefined;
+  if (d.producer_role) {
+    const { data: currentProfile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    const allowedTransitions: Record<string, Array<typeof d.producer_role>> = {
+      farmer: ["farmer", "farmer_fisher"],
+      fisher: ["fisher", "farmer_fisher"],
+      farmer_fisher: ["farmer_fisher"],
+    };
+    if (!currentProfile || !allowedTransitions[currentProfile.role]?.includes(d.producer_role)) {
+      return { ok: false, error: "Η αλλαγή δραστηριότητας δεν επιτρέπεται" };
+    }
+    nextProducerRole = d.producer_role;
+  }
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -54,6 +72,7 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
       specialties: d.specialties || null,
       opening_hours: d.opening_hours || null,
       is_public: d.is_public ?? true,
+      ...(nextProducerRole ? { role: nextProducerRole } : {}),
     })
     .eq("id", user.id);
 

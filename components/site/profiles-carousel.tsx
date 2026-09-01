@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/icon";
-import { roleLabel } from "@/lib/utils";
+import { roleBadgeTone, roleLabel } from "@/lib/utils";
 import { Badge } from "@/components/ui/card";
 
 export interface CarouselProfile {
@@ -229,7 +229,7 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
               </div>
               <div className="min-w-0">
                 <div className="font-semibold text-brand-dark truncate">{p.display_name}</div>
-                <Badge tone="brand">{roleLabel(p.role)}</Badge>
+                <Badge tone={roleBadgeTone(p.role)}>{roleLabel(p.role)}</Badge>
               </div>
             </div>
             <div className="mt-3 text-[13px] text-brand-muted flex items-start gap-1.5 min-w-0">

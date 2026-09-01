@@ -22,7 +22,7 @@ export function Eyebrow({ className, ...props }: React.HTMLAttributes<HTMLSpanEl
   return <span className={cn("eyebrow", className)} {...props} />;
 }
 
-type BadgeTone = "default" | "brand" | "olive" | "warn" | "danger" | "muted" | "ok";
+type BadgeTone = "default" | "brand" | "fisher" | "olive" | "warn" | "danger" | "muted" | "ok";
 
 export function Badge({
   children,
@@ -36,6 +36,7 @@ export function Badge({
   const tones: Record<BadgeTone, string> = {
     default: "bg-brand-bg text-brand-ink border-brand-border",
     brand: "bg-brand-dark/8 text-brand-dark border-brand-dark/15",
+    fisher: "bg-sky-900 text-white border-sky-950",
     olive: "bg-brand-olive/12 text-brand-olive border-brand-olive/25",
     warn: "bg-amber-50 text-amber-900 border-amber-200",
     danger: "bg-red-50 text-red-900 border-red-200",
