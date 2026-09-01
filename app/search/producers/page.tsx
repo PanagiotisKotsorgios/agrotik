@@ -216,7 +216,13 @@ export default async function ProducersSearchPage({
                 className="group block bg-brand-surface border border-brand-border rounded-card shadow-card p-5 sm:p-6 hover:border-brand-dark/40 hover:shadow-elev transition-all"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden shrink-0 border-2 border-brand-border bg-brand-dark text-white flex items-center justify-center shadow-sm">
+                  <div
+                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden shrink-0 border-2 text-white flex items-center justify-center shadow-sm ${
+                      !r.profile.avatar_url && hasFisherRole(r.profile.role)
+                        ? "border-sky-950 bg-sky-900"
+                        : "border-brand-border bg-brand-dark"
+                    }`}
+                  >
                     {r.profile.avatar_url ? (
                       <img
                         src={r.profile.avatar_url}
