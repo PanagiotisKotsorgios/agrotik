@@ -107,7 +107,7 @@ export default async function LandingPage() {
               Ελληνική πρωτογενής αγορά · πραγματικές τιμές
             </div>
             <h1 className="display mt-4 text-[46px] sm:text-[68px] leading-[0.98] font-semibold text-brand-dark tracking-tight">
-              Η γη <em className="not-italic text-brand-mid">συναντά</em> την αγορά.
+              Η γη και η θάλασσα <em className="not-italic text-brand-mid">συναντούν</em> την αγορά.
             </h1>
             <p className="mt-6 text-brand-ink text-[18px] sm:text-[20px] font-medium max-w-2xl leading-relaxed">
               Το AGROTIK συνδέει αγρότες και αλιείς με εμπόρους και εργοστάσια — άμεσα.
