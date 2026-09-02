@@ -2,6 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase/browser";
 import { formatRelative } from "@/lib/utils";
+import Link from "next/link";
+import { Icon } from "@/components/ui/icon";
+import { markThreadRead } from "@/lib/actions/messages";
 
 interface Msg {
   id: string;
@@ -24,6 +27,12 @@ export function LiveThread({
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Run only after the user actually opens the conversation. Doing this in
+    // the Server Component allowed link prefetches to mark threads as read.
+    void markThreadRead(peerId);
+  }, [peerId]);
+
+  useEffect(() => {
     const supabase = createSupabaseBrowser();
     const ch = supabase
       .channel(`thread:${userId}:${peerId}`)
@@ -37,12 +46,23 @@ export function LiveThread({
             (m.sender_id === peerId && m.recipient_id === userId);
           if (!relevant) return;
           setMessages((prev) => (prev.some((p) => p.id === m.id) ? prev : [...prev, m]));
+          if (m.recipient_id === userId) void markThreadRead(peerId);
         },
       )
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
     };
+  }, [userId, peerId]);
+
+  useEffect(() => {
+    const onSent = (event: Event) => {
+      const message = (event as CustomEvent<Msg>).detail;
+      if (!message || message.sender_id !== userId || message.recipient_id !== peerId) return;
+      setMessages((current) => current.some((item) => item.id === message.id) ? current : [...current, message]);
+    };
+    window.addEventListener("agrotik:message-sent", onSent);
+    return () => window.removeEventListener("agrotik:message-sent", onSent);
   }, [userId, peerId]);
 
   useEffect(() => {
@@ -69,10 +89,20 @@ export function LiveThread({
                 <div className="whitespace-pre-wrap break-words">{m.body}</div>
                 <div
                   className={
-                    "eyebrow mt-1 " + (mine ? "text-white/60" : "text-brand-muted")
+                    "eyebrow mt-1 flex items-center gap-2 " + (mine ? "text-white/60" : "text-brand-muted")
                   }
                 >
-                  {formatRelative(m.created_at)}
+                  <span>{formatRelative(m.created_at)}</span>
+                  {!mine && (
+                    <Link
+                      href={`/dashboard/report?target=message&id=${m.id}`}
+                      className="hover:text-brand-dark"
+                      aria-label="Αναφορά μηνύματος"
+                      title="Αναφορά μηνύματος"
+                    >
+                      <Icon name="flag" />
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>

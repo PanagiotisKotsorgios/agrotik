@@ -3,7 +3,8 @@ import { useState, useTransition } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
-import { savePriceListing, deletePriceListing } from "@/lib/actions/listings";
+import { FreeEnumInput } from "@/components/ui/free-enum-input";
+import { savePriceListing, deletePriceListing, setPriceListingActive } from "@/lib/actions/listings";
 import type { Product, Region, PriceVariant, AttributesSchema, PriceListKind } from "@/lib/db/types";
 import { PRICE_LIST_KIND_LABEL, PRICE_LIST_KIND_HELP } from "@/lib/db/types";
 import { attributeLabel, priceFormat } from "@/lib/utils";
@@ -18,6 +19,7 @@ interface ListingRow {
   region_code: string;
   notes: string | null;
   variants: PriceVariant[];
+  is_active: boolean;
   updated_at: string;
   products: { name_el: string; unit: string; attributes_schema: AttributesSchema };
   regions: { name_el: string };
@@ -49,9 +51,11 @@ export function PriceListingsManager({
   const kindOptions = KIND_OPTIONS_BY_ROLE[role];
   const [listings, setListings] = useState(initialListings);
   const [editing, setEditing] = useState<Partial<ListingRow> | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   return (
     <div className="space-y-4">
+      {actionError && <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{actionError}</p>}
       {!editing && (
         <Button onClick={() => setEditing({ variants: [] })} className="inline-flex items-center gap-2">
           <Icon name="plus" /> Νέος τιμοκατάλογος
@@ -82,7 +86,7 @@ export function PriceListingsManager({
       ) : (
         <div className="space-y-3">
           {listings.map((l) => (
-            <Card key={l.id}>
+            <Card key={l.id} className={!l.is_active ? "opacity-75" : undefined}>
               <div className="flex items-start justify-between mb-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -90,16 +94,25 @@ export function PriceListingsManager({
                     {l.kind && (
                       <Badge tone={KIND_TONE[l.kind]}>{PRICE_LIST_KIND_LABEL[l.kind]}</Badge>
                     )}
+                    {!l.is_active && <Badge tone="muted">Σε παύση</Badge>}
                   </div>
                   <div className="text-xs text-brand-text/60 mt-1">
                     {l.products.name_el} · Παραλαβή {l.regions?.name_el ?? l.region_code}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap justify-end gap-2">
+                  <StatusButton
+                    id={l.id}
+                    isActive={l.is_active}
+                    onChanged={(isActive) =>
+                      setListings((prev) => prev.map((row) => row.id === l.id ? { ...row, is_active: isActive } : row))
+                    }
+                    onError={setActionError}
+                  />
                   <Button variant="secondary" size="sm" onClick={() => setEditing(l)}>
                     Επεξεργασία
                   </Button>
-                  <DeleteButton id={l.id} onDeleted={() => setListings((p) => p.filter((x) => x.id !== l.id))} />
+                  <DeleteButton id={l.id} onDeleted={() => setListings((p) => p.filter((x) => x.id !== l.id))} onError={setActionError} />
                 </div>
               </div>
               <table className="w-full text-sm">
@@ -127,7 +140,28 @@ export function PriceListingsManager({
   );
 }
 
-function DeleteButton({ id, onDeleted }: { id: string; onDeleted: () => void }) {
+function StatusButton({ id, isActive, onChanged, onError }: { id: string; isActive: boolean; onChanged: (active: boolean) => void; onError: (error: string | null) => void }) {
+  const [pending, start] = useTransition();
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={pending}
+      icon={pending ? "spinner" : isActive ? "eyeOff" : "eye"}
+      onClick={() => start(async () => {
+        onError(null);
+        const res = await setPriceListingActive(id, !isActive);
+        if (!res.ok) return onError(res.error);
+        onChanged(!isActive);
+      })}
+      aria-label={isActive ? "Παύση τιμοκαταλόγου" : "Ενεργοποίηση τιμοκαταλόγου"}
+    >
+      {isActive ? "Παύση" : "Ενεργοποίηση"}
+    </Button>
+  );
+}
+
+function DeleteButton({ id, onDeleted, onError }: { id: string; onDeleted: () => void; onError: (error: string | null) => void }) {
   const [pending, start] = useTransition();
   return (
     <Button
@@ -137,8 +171,10 @@ function DeleteButton({ id, onDeleted }: { id: string; onDeleted: () => void }) 
       onClick={() =>
         start(async () => {
           if (!confirm("Διαγραφή τιμοκαταλόγου;")) return;
+          onError(null);
           const res = await deletePriceListing(id);
-          if (res.ok) onDeleted();
+          if (!res.ok) return onError(res.error);
+          onDeleted();
         })
       }
     >
@@ -239,30 +275,27 @@ function PriceEditor({
           </div>
           <div className="space-y-2">
             {variants.map((v, i) => (
-              <div key={i} className="grid grid-cols-[1fr_120px_40px] gap-2 items-center">
-                <div className="flex gap-2">
+              <div key={i} className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_120px_44px] gap-2 items-start">
+                <div className="flex flex-wrap gap-2 min-w-0">
                   {attrEntries.map(([key, def]) =>
                     def.type === "enum" ? (
-                      <Select
-                        key={key}
-                        value={(v.attributes[key] as string) ?? ""}
-                        onChange={(e) =>
-                          setVariants((prev) =>
-                            prev.map((x, xi) =>
-                              xi === i
-                                ? { ...x, attributes: { ...x.attributes, [key]: e.target.value } }
-                                : x,
-                            ),
-                          )
-                        }
-                      >
-                        <option value="">{(def as any).label}...</option>
-                        {(def as any).values.map((val: string) => (
-                          <option key={val} value={val}>
-                            {val}
-                          </option>
-                        ))}
-                      </Select>
+                      <div key={key} className="min-w-[220px]">
+                        <FreeEnumInput
+                          id={`variant-${i}-${key}`}
+                          value={String(v.attributes[key] ?? "")}
+                          suggestions={(def as any).values ?? []}
+                          placeholder={(def as any).label}
+                          onChange={(val) =>
+                            setVariants((prev) =>
+                              prev.map((x, xi) =>
+                                xi === i
+                                  ? { ...x, attributes: { ...x.attributes, [key]: val } }
+                                  : x,
+                              ),
+                            )
+                          }
+                        />
+                      </div>
                     ) : (
                       <Input
                         key={key}
@@ -310,6 +343,7 @@ function PriceEditor({
                   size="sm"
                   type="button"
                   onClick={() => setVariants((prev) => prev.filter((_, xi) => xi !== i))}
+                  aria-label={`Αφαίρεση γραμμής τιμής ${i + 1}`}
                 >
                   <Icon name="trash" />
                 </Button>
@@ -355,6 +389,7 @@ function PriceEditor({
                     region_code: regionCode,
                     notes,
                     variants: variants.filter((v) => v.price > 0),
+                    is_active: initial.is_active ?? true,
                     updated_at: new Date().toISOString(),
                     products: {
                       name_el: product.name_el,

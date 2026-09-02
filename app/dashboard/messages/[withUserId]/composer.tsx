@@ -20,6 +20,7 @@ export function MessageComposer({ recipientId }: { recipientId: string }) {
           setError(null);
           const res = await sendMessage({ recipient_id: recipientId, body: text.trim() });
           if (!res.ok) return setError(res.error);
+          window.dispatchEvent(new CustomEvent("agrotik:message-sent", { detail: res.message }));
           setText("");
           router.refresh();
         });

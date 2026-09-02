@@ -16,7 +16,7 @@ export default async function AdminProducts({
 
   const { data: products } = await svc
     .from("products")
-    .select("*")
+    .select("*, proposer:profiles!products_proposed_by_fkey(display_name)")
     .eq("status", status)
     .order("name_el");
 
@@ -66,6 +66,9 @@ export default async function AdminProducts({
                   <div className="text-xs text-brand-muted mt-1">
                     Χαρακτηριστικά: {Object.keys(p.attributes_schema).map(attributeLabel).join(", ")}
                   </div>
+                )}
+                {p.proposer?.display_name && (
+                  <div className="text-xs text-brand-muted mt-1">Πρόταση από: {p.proposer.display_name}</div>
                 )}
               </div>
               {status === "pending" && <ProductActions id={p.id} />}

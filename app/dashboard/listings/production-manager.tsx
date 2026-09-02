@@ -3,10 +3,11 @@ import { useState, useTransition } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
-import { saveProductionListing, deleteProductionListing } from "@/lib/actions/listings";
+import { FreeEnumInput } from "@/components/ui/free-enum-input";
+import { saveProductionListing, deleteProductionListing, setProductionListingActive } from "@/lib/actions/listings";
 import type { Product, Region, AttributesSchema } from "@/lib/db/types";
 import { Icon } from "@/components/ui/icon";
-import { attributeLabel, formatQuantity } from "@/lib/utils";
+import { attributeLabel, formatDate, formatQuantity } from "@/lib/utils";
 
 interface Row {
   id: string;
@@ -17,6 +18,7 @@ interface Row {
   attributes: Record<string, string | number>;
   available_from: string | null;
   available_until: string | null;
+  is_active: boolean;
   notes?: string | null;
   title?: string | null;
   updated_at: string;
@@ -39,9 +41,11 @@ export function ProductionListingsManager({
 }) {
   const [listings, setListings] = useState(initialListings);
   const [editing, setEditing] = useState<Partial<Row> | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   return (
     <div className="space-y-4">
+      {actionError && <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{actionError}</p>}
       {!editing && (
         <Button onClick={() => setEditing({})} className="inline-flex items-center gap-2">
           <Icon name="plus" /> {isDualProducer ? "Νέα καταχώρηση" : isFisher ? "Νέα καταχώρηση αλιεύματος" : "Νέα καταχώρηση παραγωγής"}
@@ -76,10 +80,13 @@ export function ProductionListingsManager({
       ) : (
         <div className="space-y-3">
           {listings.map((l) => (
-            <Card key={l.id}>
-              <div className="flex items-start justify-between">
+            <Card key={l.id} className={!l.is_active ? "opacity-75" : undefined}>
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-semibold text-brand-dark">{l.products.name_el}</h3>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-semibold text-brand-dark">{l.products.name_el}</h3>
+                    {!l.is_active && <span className="rounded-full bg-brand-border px-2 py-0.5 text-xs text-brand-text/70">Σε παύση</span>}
+                  </div>
                   <div className="text-lg font-bold text-brand-earth mt-1">
                     {formatQuantity(l.quantity, l.unit ?? l.products.unit)}
                   </div>
@@ -95,18 +102,26 @@ export function ProductionListingsManager({
                   </div>
                   {(l.available_from || l.available_until) && (
                     <div className="text-xs text-brand-text/60 mt-1">
-                      Διαθέσιμο: {l.available_from ?? "τώρα"} – {l.available_until ?? "ανοιχτό"}
+                      Διαθέσιμο: {l.available_from ? formatDate(l.available_from) : "τώρα"} – {l.available_until ? formatDate(l.available_until) : "ανοιχτό"}
                     </div>
                   )}
                   {l.notes && (
                     <p className="mt-2 text-sm text-brand-text/80 italic border-l-2 border-brand-earth/40 pl-3">{l.notes}</p>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap justify-end gap-2">
+                  <ProductionStatusButton
+                    id={l.id}
+                    isActive={l.is_active}
+                    onChanged={(isActive) =>
+                      setListings((prev) => prev.map((row) => row.id === l.id ? { ...row, is_active: isActive } : row))
+                    }
+                    onError={setActionError}
+                  />
                   <Button variant="secondary" size="sm" onClick={() => setEditing(l)}>
                     Επεξεργασία
                   </Button>
-                  <DeleteBtn id={l.id} onDeleted={() => setListings((p) => p.filter((x) => x.id !== l.id))} />
+                  <DeleteBtn id={l.id} onDeleted={() => setListings((p) => p.filter((x) => x.id !== l.id))} onError={setActionError} />
                 </div>
               </div>
             </Card>
@@ -117,7 +132,28 @@ export function ProductionListingsManager({
   );
 }
 
-function DeleteBtn({ id, onDeleted }: { id: string; onDeleted: () => void }) {
+function ProductionStatusButton({ id, isActive, onChanged, onError }: { id: string; isActive: boolean; onChanged: (active: boolean) => void; onError: (error: string | null) => void }) {
+  const [pending, start] = useTransition();
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={pending}
+      icon={pending ? "spinner" : isActive ? "eyeOff" : "eye"}
+      onClick={() => start(async () => {
+        onError(null);
+        const res = await setProductionListingActive(id, !isActive);
+        if (!res.ok) return onError(res.error);
+        onChanged(!isActive);
+      })}
+      aria-label={isActive ? "Παύση καταχώρησης" : "Ενεργοποίηση καταχώρησης"}
+    >
+      {isActive ? "Παύση" : "Ενεργοποίηση"}
+    </Button>
+  );
+}
+
+function DeleteBtn({ id, onDeleted, onError }: { id: string; onDeleted: () => void; onError: (error: string | null) => void }) {
   const [pending, start] = useTransition();
   return (
     <Button
@@ -127,8 +163,10 @@ function DeleteBtn({ id, onDeleted }: { id: string; onDeleted: () => void }) {
       onClick={() =>
         start(async () => {
           if (!confirm("Διαγραφή;")) return;
+          onError(null);
           const res = await deleteProductionListing(id);
-          if (res.ok) onDeleted();
+          if (!res.ok) return onError(res.error);
+          onDeleted();
         })
       }
     >
@@ -214,17 +252,12 @@ function Editor({
               <div key={key}>
                 <Label>{(def as any).label}</Label>
                 {def.type === "enum" ? (
-                  <Select
-                    value={(attributes[key] as string) ?? ""}
-                    onChange={(e) => setAttributes((a) => ({ ...a, [key]: e.target.value }))}
-                  >
-                    <option value="">—</option>
-                    {(def as any).values.map((v: string) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
-                  </Select>
+                  <FreeEnumInput
+                    id={`attr-${key}`}
+                    value={String(attributes[key] ?? "")}
+                    suggestions={(def as any).values ?? []}
+                    onChange={(v) => setAttributes((a) => ({ ...a, [key]: v }))}
+                  />
                 ) : (
                   <Input
                     type={def.type === "number" ? "number" : "text"}
@@ -297,6 +330,9 @@ function Editor({
                     attributes,
                     available_from: availableFrom || null,
                     available_until: availableUntil || null,
+                    is_active: initial.is_active ?? true,
+                    notes: notes || null,
+                    title: title || null,
                     updated_at: new Date().toISOString(),
                     products: {
                       name_el: product.name_el,

@@ -26,6 +26,15 @@ const TARGET_LABEL: Record<string, string> = {
   message: "Μήνυμα",
 };
 
+const CATEGORY_LABEL: Record<string, string> = {
+  misleading: "Παραπλανητικό",
+  spam: "Spam",
+  abuse: "Παρενόχληση",
+  privacy: "Προσωπικά δεδομένα",
+  unsafe: "Επικίνδυνο / παράνομο",
+  other: "Άλλο",
+};
+
 export default async function AdminReports({
   searchParams,
 }: {
@@ -73,6 +82,7 @@ export default async function AdminReports({
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</Badge>
                   <Badge tone="muted">{TARGET_LABEL[r.target_type]}</Badge>
+                  <Badge tone="muted">{CATEGORY_LABEL[r.category] ?? CATEGORY_LABEL.other}</Badge>
                   <span className="eyebrow text-brand-muted">{formatRelative(r.created_at)}</span>
                 </div>
                 <div className="mt-2 text-sm text-brand-ink">{r.reason}</div>

@@ -119,7 +119,13 @@ async function isAdmin(): Promise<boolean> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return false;
-  const { data } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const { data } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .eq("is_active", true)
+    .is("deleted_at", null)
+    .single();
   return data?.role === "admin";
 }
 

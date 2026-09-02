@@ -3,6 +3,7 @@ import { Footer } from "@/components/site/footer";
 import { Card, Eyebrow } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { ContactForm } from "./contact-form";
+import Link from "next/link";
 
 export const metadata = {
   title: "Επικοινωνία",
@@ -49,7 +50,7 @@ export default function ContactPage() {
               <div className="eyebrow mb-2">Support</div>
               <p className="text-brand-ink">
                 Για τεχνικά θέματα με τον λογαριασμό σου, μπορείς να στείλεις μήνυμα και μέσω του πίνακα διαχείρισης →{" "}
-                <a href="/dashboard/messages" className="text-brand-mid hover:underline">Μηνύματα</a>.
+                <Link href="/dashboard/messages" className="text-brand-mid hover:underline">Μηνύματα</Link>.
               </p>
             </Card>
           </div>

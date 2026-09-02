@@ -6,7 +6,7 @@ import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { updateProfile, updateProfileMedia } from "@/lib/actions/profiles";
-import { fileToResizedDataUrl } from "@/lib/domain/image-resize";
+import { fileToResizedDataUrl, uploadProfileImage } from "@/lib/domain/image-resize";
 import type { Profile, Region, GalleryItem } from "@/lib/db/types";
 import { isProducerRole } from "@/lib/utils";
 
@@ -27,19 +27,20 @@ export function ProfileEditor({ profile, regions }: { profile: Profile; regions:
     setMessage(null);
     try {
       const dataUrl = await fileToResizedDataUrl(file, kind === "cover" ? 1400 : 720, 0.82);
+      const storedUrl = await uploadProfileImage(dataUrl, kind);
       if (kind === "avatar") {
-        setAvatar(dataUrl);
-        const res = await updateProfileMedia({ avatar_url: dataUrl });
+        const res = await updateProfileMedia({ avatar_url: storedUrl });
         if (!res.ok) throw new Error(res.error);
+        setAvatar(storedUrl);
       } else if (kind === "cover") {
-        setCover(dataUrl);
-        const res = await updateProfileMedia({ cover_url: dataUrl });
+        const res = await updateProfileMedia({ cover_url: storedUrl });
         if (!res.ok) throw new Error(res.error);
+        setCover(storedUrl);
       } else {
-        const next = [...gallery, { url: dataUrl, alt: file.name }].slice(0, 12);
-        setGallery(next);
+        const next = [...gallery, { url: storedUrl, alt: file.name.slice(0, 160) }].slice(0, 12);
         const res = await updateProfileMedia({ gallery: next });
         if (!res.ok) throw new Error(res.error);
+        setGallery(next);
       }
       setMessage({ ok: true, text: "Η εικόνα αποθηκεύτηκε" });
     } catch (e: any) {
@@ -147,7 +148,7 @@ export function ProfileEditor({ profile, regions }: { profile: Profile; regions:
                   <button
                     type="button"
                     onClick={() => removeGalleryItem(i)}
-                    className="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center justify-center text-xs"
+                    className="absolute top-1 right-1 w-8 h-8 rounded-full bg-black/70 text-white opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition-opacity inline-flex items-center justify-center text-xs"
                     aria-label="Αφαίρεση"
                   >
                     <Icon name="close" />

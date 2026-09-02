@@ -2,10 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { getActiveProducts } from "@/lib/db/queries";
-import { Card, Eyebrow, Badge } from "@/components/ui/card";
+import { Card, Eyebrow } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { PurchasesManager } from "./manager";
-import { formatQuantity, formatRelative, priceFormat } from "@/lib/utils";
+import { formatCurrency, formatQuantity } from "@/lib/utils";
 
 export default async function PurchasesPage({
   searchParams,
@@ -116,7 +116,7 @@ export default async function PurchasesPage({
         <SummaryStat
           icon="money"
           label={`Συνολική αξία ${season}`}
-          value={seasonTotal > 0 ? `${seasonTotal.toFixed(2)} €` : "—"}
+          value={seasonTotal > 0 ? formatCurrency(seasonTotal) : "—"}
         />
       </div>
 
@@ -137,7 +137,7 @@ export default async function PurchasesPage({
                       {f.name}
                     </Link>
                     <span className="figures font-semibold text-brand-earth">
-                      {f.totalValue > 0 ? `${f.totalValue.toFixed(2)} €` : "—"}
+                      {f.totalValue > 0 ? formatCurrency(f.totalValue) : "—"}
                     </span>
                   </div>
                   <div className="text-xs text-brand-muted">{f.region}</div>
@@ -148,7 +148,7 @@ export default async function PurchasesPage({
                         <span className="figures">
                           {formatQuantity(it.qty, it.unit)}
                           {it.totalValue > 0 && (
-                            <span className="text-brand-muted ml-2">· {it.totalValue.toFixed(2)} €</span>
+                            <span className="text-brand-muted ml-2">· {formatCurrency(it.totalValue)}</span>
                           )}
                         </span>
                       </li>
@@ -175,7 +175,7 @@ export default async function PurchasesPage({
                   <span className="font-medium text-brand-ink">{p.productName}</span>
                   <span className="figures">
                     {formatQuantity(p.qty, p.unit)}
-                    {p.totalValue > 0 && <span className="text-brand-muted ml-2">· {p.totalValue.toFixed(2)} €</span>}
+                    {p.totalValue > 0 && <span className="text-brand-muted ml-2">· {formatCurrency(p.totalValue)}</span>}
                   </span>
                 </li>
               ))}

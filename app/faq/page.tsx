@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Header } from "@/components/site/header";
 import { Footer } from "@/components/site/footer";
-import { Card, Eyebrow } from "@/components/ui/card";
+import { Eyebrow } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 
 export const metadata = { title: "Συχνές ερωτήσεις" };

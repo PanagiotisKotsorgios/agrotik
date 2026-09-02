@@ -5,6 +5,7 @@ import { Eyebrow } from "@/components/ui/card";
 import { PriceListingsManager } from "./price-manager";
 import { ProductionListingsManager } from "./production-manager";
 import { hasFisherRole, isProducerRole } from "@/lib/utils";
+import { ProductProposal } from "./product-proposal";
 
 export default async function ListingsPage() {
   const supabase = await createSupabaseServer();
@@ -54,6 +55,7 @@ export default async function ListingsPage() {
           isFisher={isFisher}
           isDualProducer={isDualProducer}
         />
+        <div className="mt-5"><ProductProposal /></div>
       </>
     );
   }
@@ -85,6 +87,7 @@ export default async function ListingsPage() {
         regions={regions}
         role={profile?.role as "merchant" | "factory"}
       />
+      <div className="mt-5"><ProductProposal /></div>
     </>
   );
 }

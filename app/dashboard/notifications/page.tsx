@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { Card, Eyebrow, Badge } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
-import { attributeLabel, formatRelative } from "@/lib/utils";
+import { attributeLabel, formatCurrency, formatRelative } from "@/lib/utils";
+import { NotificationActions } from "./notification-actions";
 
 export default async function NotificationsPage() {
   const supabase = await createSupabaseServer();
@@ -47,6 +48,7 @@ export default async function NotificationsPage() {
           <Eyebrow>Ενημερώσεις</Eyebrow>
           <h1 className="display text-3xl text-brand-dark mt-1 field-underline">Ειδοποιήσεις</h1>
         </div>
+        {rows.length > 0 && <NotificationActions />}
       </div>
 
       {rows.length === 0 ? (
@@ -70,6 +72,7 @@ export default async function NotificationsPage() {
                       <h2 className="font-semibold text-brand-dark mt-3">{n.payload?.title}</h2>
                       <p className="text-sm text-brand-ink/85 mt-1 whitespace-pre-wrap break-words">{n.payload?.body}</p>
                     </div>
+                    <NotificationActions id={n.id} />
                   </div>
                 </Card>
               );
@@ -85,7 +88,7 @@ export default async function NotificationsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       {isNewBetter ? (
-                        <Badge tone="ok"><Icon name="trendDown" /> Καλύτερη τιμή</Badge>
+                        <Badge tone="ok"><Icon name="trendUp" /> Καλύτερη τιμή</Badge>
                       ) : (
                         <Badge tone="brand"><Icon name="money" /> Αλλαγή τιμής</Badge>
                       )}
@@ -105,22 +108,25 @@ export default async function NotificationsPage() {
                             :{" "}
                           </span>
                           <span className="figures line-through text-brand-muted">
-                            {Number(c.old_price).toFixed(2)}€
+                            {formatCurrency(c.old_price)}
                           </span>
                           <Icon name="arrowRight" className="text-brand-muted text-[0.7em]" />
                           <span className="figures font-semibold text-brand-earth">
-                            {Number(c.new_price).toFixed(2)}€
+                            {formatCurrency(c.new_price)}
                           </span>
                         </li>
                       ))}
                     </ul>
                   </div>
-                  <Link
-                    href={`/profile/${n.payload?.target_profile_id}`}
-                    className="text-sm text-brand-mid hover:text-brand-dark inline-flex items-center gap-1 whitespace-nowrap shrink-0"
-                  >
-                    Δες <Icon name="arrowRight" />
-                  </Link>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Link
+                      href={`/profile/${n.payload?.target_profile_id}`}
+                      className="text-sm text-brand-mid hover:text-brand-dark inline-flex items-center gap-1 whitespace-nowrap"
+                    >
+                      Δες <Icon name="arrowRight" />
+                    </Link>
+                    <NotificationActions id={n.id} />
+                  </div>
                 </div>
               </Card>
             );
