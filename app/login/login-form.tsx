@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/icon";
 import { login } from "@/lib/actions/auth";
 import { cn } from "@/lib/utils";
 
-export function LoginForm() {
+export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +21,7 @@ export function LoginForm() {
           setError(null);
           const res = await login(fd);
           if (!res.ok) setError(res.error);
-          else router.push("/dashboard");
+          else router.replace(nextPath);
         })
       }
     >

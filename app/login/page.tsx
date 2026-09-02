@@ -8,12 +8,18 @@ import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Σύνδεση" };
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
   const supabase = await createSupabaseServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) redirect("/dashboard");
+  const requestedNext = (await searchParams).next;
+  const nextPath = safeNextPath(requestedNext);
+  if (user) redirect(nextPath);
 
   return (
     <>
@@ -27,7 +33,7 @@ export default async function LoginPage() {
             <h1 className="display text-3xl text-brand-dark">Σύνδεση</h1>
             <p className="mt-2 text-brand-muted text-[14px]">Καλωσόρισες πίσω στο AGROTIK.</p>
           </div>
-          <LoginForm />
+          <LoginForm nextPath={nextPath} />
         </Card>
         <p className="mt-6 text-sm text-brand-muted text-center">
           Δεν έχεις λογαριασμό;{" "}
@@ -38,4 +44,9 @@ export default async function LoginPage() {
       </div>
     </>
   );
+}
+
+function safeNextPath(value: string | undefined): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/dashboard";
+  return value;
 }

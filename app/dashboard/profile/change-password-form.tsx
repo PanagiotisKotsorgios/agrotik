@@ -59,9 +59,9 @@ export function ChangePasswordForm() {
         <PasswordField
           id="new-password"
           name="new_password"
-          label="Νέος κωδικός (τουλάχιστον 6 χαρακτήρες)"
+          label="Νέος κωδικός (τουλάχιστον 8 χαρακτήρες)"
           autoComplete="new-password"
-          minLength={6}
+          minLength={8}
           visible={visible.new_password}
           onToggle={() => toggle("new_password")}
         />
@@ -70,7 +70,7 @@ export function ChangePasswordForm() {
           name="confirm_password"
           label="Επιβεβαίωση νέου κωδικού"
           autoComplete="new-password"
-          minLength={6}
+          minLength={8}
           visible={visible.confirm_password}
           onToggle={() => toggle("confirm_password")}
         />

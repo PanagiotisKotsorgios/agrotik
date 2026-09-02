@@ -48,14 +48,15 @@ export function ResetForm({ token }: { token: string }) {
       }
     >
       <div>
-        <Label htmlFor="rp-password">Νέος κωδικός (τουλάχιστον 6 χαρακτήρες)</Label>
+        <Label htmlFor="rp-password">Νέος κωδικός (τουλάχιστον 8 χαρακτήρες)</Label>
         <div className="relative">
           <Input
             id="rp-password"
             name="password"
             type={show ? "text" : "password"}
             required
-            minLength={6}
+            minLength={8}
+            maxLength={128}
             autoComplete="new-password"
             className="pr-12"
           />

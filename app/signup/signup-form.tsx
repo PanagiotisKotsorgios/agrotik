@@ -139,14 +139,15 @@ export function SignupForm({ regions, initialRole }: { regions: Region[]; initia
       </div>
 
       <div>
-        <Label htmlFor="password">Κωδικός (min 6 χαρακτήρες)</Label>
+        <Label htmlFor="password">Κωδικός (τουλάχιστον 8 χαρακτήρες)</Label>
         <div className="relative">
           <Input
             id="password"
             name="password"
             type={showPassword ? "text" : "password"}
             required
-            minLength={6}
+            minLength={8}
+            maxLength={128}
             autoComplete="new-password"
             className="pr-12"
           />
