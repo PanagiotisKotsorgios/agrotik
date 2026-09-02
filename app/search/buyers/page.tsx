@@ -50,7 +50,7 @@ export default async function BuyersSearchPage({
   return (
     <>
       <Header />
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="w-full min-w-0 max-w-6xl mx-auto overflow-x-hidden px-4 py-8">
         <Tabs active="buyers" />
 
         <div className="mt-6 mb-6">
@@ -65,7 +65,7 @@ export default async function BuyersSearchPage({
 
         <FiltersDrawer activeCount={countActive(params)}>
         <LiveFilterForm key={JSON.stringify(params)} resultsId="search-results" className="p-5 bg-brand-surface rounded-card border border-brand-border shadow-card mb-6">
-          <div className="grid sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
               <Label>Νομός</Label>
               <Select name="region_code" defaultValue={filters.region_code ?? ""}>
@@ -185,16 +185,16 @@ export default async function BuyersSearchPage({
             </div>
           </Card>
         ) : (
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid min-w-0 grid-cols-1 sm:grid-cols-2 gap-4">
             {pageResults.map((r) => (
               <Link
                 key={r.profile.id}
                 href={`/profile/${r.profile.id}`}
                 prefetch
-                className="group block bg-brand-surface border border-brand-border rounded-card shadow-card p-5 sm:p-6 hover:border-brand-dark/40 hover:shadow-elev transition-all"
+                className="group block w-full min-w-0 overflow-hidden bg-brand-surface border border-brand-border rounded-card shadow-card p-4 sm:p-6 hover:border-brand-dark/40 hover:shadow-elev transition-all"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden shrink-0 border-2 border-brand-border bg-brand-dark text-white flex items-center justify-center shadow-sm">
+                <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 sm:gap-4">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full overflow-hidden shrink-0 border-2 border-brand-border bg-brand-dark text-white flex items-center justify-center shadow-sm">
                     {r.profile.avatar_url ? (
                       <img
                         src={r.profile.avatar_url}
@@ -207,22 +207,24 @@ export default async function BuyersSearchPage({
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-brand-dark text-lg truncate group-hover:underline underline-offset-2">{r.profile.display_name}</h3>
-                      <Badge tone="brand">{roleLabel(r.profile.role)}</Badge>
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <h3 className="min-w-0 max-w-full basis-full break-words font-semibold text-brand-dark text-base sm:basis-auto sm:text-lg group-hover:underline underline-offset-2 [overflow-wrap:anywhere]">{r.profile.display_name}</h3>
+                      <Badge tone="brand" className="max-w-full whitespace-normal leading-snug">{roleLabel(r.profile.role)}</Badge>
                     </div>
-                    <div className="text-sm text-brand-muted mt-0.5 flex items-center gap-1.5">
-                      <Icon name="location" /> {r.region_name}
-                      {r.municipality && ` · ${r.municipality}`}
+                    <div className="min-w-0 text-sm text-brand-muted mt-1 flex items-start gap-1.5">
+                      <Icon name="location" className="mt-0.5 shrink-0" />
+                      <span className="min-w-0 break-words [overflow-wrap:anywhere]">
+                        {r.region_name}{r.municipality && ` · ${r.municipality}`}
+                      </span>
                     </div>
                     {r.has_listing && r.product ? (
                       <div className="mt-4">
-                        <div className="text-sm text-brand-muted">{r.product.name_el}</div>
-                        <div className="figures text-3xl font-semibold mt-1 text-brand-dark">
+                        <div className="break-words text-sm text-brand-muted [overflow-wrap:anywhere]">{r.product.name_el}</div>
+                        <div className="figures break-words text-3xl font-semibold mt-1 text-brand-dark [overflow-wrap:anywhere]">
                           {r.best_price != null ? `από ${priceFormat(r.best_price, r.product.unit)}` : "—"}
                         </div>
                         {r.best_attributes && (
-                          <div className="text-sm text-brand-muted mt-1">
+                          <div className="break-words text-sm text-brand-muted mt-1 [overflow-wrap:anywhere]">
                             {Object.entries(r.best_attributes)
                               .map(([k, v]) => `${attributeLabel(k)}: ${v}`)
                               .join(" · ")}
@@ -231,8 +233,8 @@ export default async function BuyersSearchPage({
                       </div>
                     ) : (
                       <div className="mt-4">
-                        <Badge tone="muted">Χωρίς καταχωρισμένο τιμοκατάλογο</Badge>
-                        <p className="text-sm text-brand-muted mt-2 line-clamp-2">
+                        <Badge tone="muted" className="max-w-full whitespace-normal text-left leading-snug">Χωρίς καταχωρισμένο τιμοκατάλογο</Badge>
+                        <p className="break-words text-sm text-brand-muted mt-2 line-clamp-2 [overflow-wrap:anywhere]">
                           {r.profile.bio || "Ο αγοραστής δεν έχει καταχωρίσει τιμές αγοράς ακόμη."}
                         </p>
                       </div>
@@ -284,18 +286,18 @@ function Tabs({ active }: { active: "buyers" | "producers" }) {
     { key: "producers", href: "/search/producers", label: "Βρες Παραγωγό", icon: "seedling" as const },
   ];
   return (
-    <div className="flex items-center gap-1 border-b border-brand-border">
+    <div className="grid grid-cols-2 items-stretch border-b border-brand-border">
       {items.map((t) => (
         <Link
           key={t.key}
           href={t.href}
           className={
             active === t.key
-              ? "inline-flex items-center gap-2 px-5 py-3 border-b-2 border-brand-dark font-semibold text-brand-dark text-lg -mb-px"
-              : "inline-flex items-center gap-2 px-5 py-3 border-b-2 border-transparent text-brand-muted hover:text-brand-dark text-lg"
+              ? "min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-5 py-3 border-b-2 border-brand-dark text-center font-semibold text-brand-dark text-sm sm:text-lg leading-tight -mb-px"
+              : "min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-5 py-3 border-b-2 border-transparent text-center text-brand-muted hover:text-brand-dark text-sm sm:text-lg leading-tight"
           }
         >
-          <Icon name={t.icon} /> {t.label}
+          <Icon name={t.icon} className="shrink-0" /> <span>{t.label}</span>
         </Link>
       ))}
     </div>
