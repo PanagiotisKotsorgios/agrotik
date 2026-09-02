@@ -14,6 +14,7 @@ import { attributeLabel, formatDate, formatQuantityNumber, formatRelative, hasFi
 import { FavoriteButton } from "./favorite-button";
 import { PRICE_LIST_KIND_LABEL, type PriceListKind } from "@/lib/db/types";
 import { DealButton } from "./deal-button";
+import { Gallery } from "@/components/site/gallery-lightbox";
 
 export async function generateMetadata({
   params,
@@ -134,7 +135,14 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             <div className="flex items-start gap-4 min-w-0">
               <Avatar url={profile.avatar_url} name={profile.display_name} />
               <div className="min-w-0">
-                <Badge tone={roleBadgeTone(profile.role)}>{roleLabel(profile.role)}</Badge>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge tone={roleBadgeTone(profile.role)}>{roleLabel(profile.role)}</Badge>
+                  {profile.is_verified && (
+                    <Badge tone="ok" aria-label="Επαληθευμένο προφίλ">
+                      <Icon name="ok" /> Επαληθευμένο
+                    </Badge>
+                  )}
+                </div>
                 <h1 className="display text-3xl sm:text-4xl text-brand-dark leading-tight mt-1">
                   {profile.display_name}
                 </h1>
@@ -271,13 +279,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             <div className="flex items-baseline justify-between mb-3">
               <Eyebrow>Φωτογραφίες</Eyebrow>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {gallery.map((g, i) => (
-                <div key={i} className="relative aspect-square rounded-md overflow-hidden bg-brand-bg border border-brand-border">
-                  <Image src={g.url} alt={g.alt ?? ""} fill className="object-cover hover:scale-105 transition-transform duration-500" unoptimized sizes="(max-width: 640px) 50vw, 25vw" />
-                </div>
-              ))}
-            </div>
+            <Gallery images={gallery} />
           </div>
         )}
 

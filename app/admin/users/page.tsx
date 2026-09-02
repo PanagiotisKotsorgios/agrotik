@@ -175,6 +175,7 @@ export default async function AdminUsers({
               displayName={u.display_name}
               isActive={u.is_active}
               isPublic={u.is_public}
+              isVerified={u.is_verified ?? false}
               role={u.role}
               isSelf={currentUser?.id === u.id}
             />
