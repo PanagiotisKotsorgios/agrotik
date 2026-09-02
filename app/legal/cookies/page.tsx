@@ -1,6 +1,12 @@
 import { ProsePage } from "@/components/site/prose-page";
 
-export const metadata = { title: "Πολιτική Cookies" };
+export const dynamic = "force-static";
+export const revalidate = 86400;
+
+export const metadata = {
+  title: "Πολιτική Cookies",
+  alternates: { canonical: "/legal/cookies" },
+};
 
 export default function CookiesPage() {
   return (

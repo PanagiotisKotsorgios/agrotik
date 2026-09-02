@@ -4,7 +4,13 @@ import { Footer } from "@/components/site/footer";
 import { Eyebrow } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 
-export const metadata = { title: "Συχνές ερωτήσεις" };
+export const dynamic = "force-static";
+export const revalidate = 3600;
+
+export const metadata = {
+  title: "Συχνές ερωτήσεις",
+  alternates: { canonical: "/faq" },
+};
 
 const faqs: { q: string; a: React.ReactNode }[] = [
   {

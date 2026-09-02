@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Header } from "@/components/site/header";
@@ -19,6 +20,13 @@ import { LiveFilterForm } from "@/components/site/live-filter-form";
 import { SearchPagination } from "@/components/site/search-pagination";
 
 const PAGE_SIZE = 12;
+
+export const metadata: Metadata = {
+  title: "Παραγωγοί",
+  description:
+    "Βρείτε αγρότες και αλιείς σε όλη την Ελλάδα. Φιλτράρετε ανά προϊόν, περιοχή και ποιότητα.",
+  alternates: { canonical: "/search/producers" },
+};
 
 export default async function ProducersSearchPage({
   searchParams,

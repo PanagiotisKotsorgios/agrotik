@@ -1,6 +1,12 @@
 import { ProsePage } from "@/components/site/prose-page";
 
-export const metadata = { title: "Όροι χρήσης" };
+export const dynamic = "force-static";
+export const revalidate = 86400;
+
+export const metadata = {
+  title: "Όροι χρήσης",
+  alternates: { canonical: "/legal/terms" },
+};
 
 export default function TermsPage() {
   return (

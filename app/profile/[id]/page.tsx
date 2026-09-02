@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -13,6 +14,43 @@ import { attributeLabel, formatDate, formatQuantityNumber, formatRelative, hasFi
 import { FavoriteButton } from "./favorite-button";
 import { PRICE_LIST_KIND_LABEL, type PriceListKind } from "@/lib/db/types";
 import { DealButton } from "./deal-button";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const profile: any = await getProfileById(id, false).catch(() => null);
+  if (!profile || !profile.is_active) {
+    return { title: "Προφίλ", robots: { index: false, follow: false } };
+  }
+  const name: string = profile.display_name || "Προφίλ";
+  const role = roleLabel(profile.role);
+  const region = profile.region_code ? ` — ${profile.region_code}` : "";
+  const description =
+    profile.bio?.slice(0, 155) ||
+    `${role}${region}. Δείτε τιμές, παραγωγή και στοιχεία επικοινωνίας στο AGROTIK.`;
+  const image = profile.avatar_url || profile.cover_url || "/hero.jpg";
+  return {
+    title: `${name} · ${role}`,
+    description,
+    alternates: { canonical: `/profile/${id}` },
+    openGraph: {
+      type: "profile",
+      title: name,
+      description,
+      url: `/profile/${id}`,
+      images: [{ url: image, alt: name }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: name,
+      description,
+      images: [image],
+    },
+  };
+}
 
 export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

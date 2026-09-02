@@ -1,6 +1,12 @@
 import { ProsePage } from "@/components/site/prose-page";
 
-export const metadata = { title: "Πολιτική απορρήτου" };
+export const dynamic = "force-static";
+export const revalidate = 86400;
+
+export const metadata = {
+  title: "Πολιτική απορρήτου",
+  alternates: { canonical: "/legal/privacy" },
+};
 
 export default function PrivacyPage() {
   return (

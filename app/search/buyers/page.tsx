@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Header } from "@/components/site/header";
@@ -19,6 +20,13 @@ import { LiveFilterForm } from "@/components/site/live-filter-form";
 import { SearchPagination } from "@/components/site/search-pagination";
 
 const PAGE_SIZE = 12;
+
+export const metadata: Metadata = {
+  title: "Έμποροι & Εργοστάσια",
+  description:
+    "Δείτε τιμές αγοράς από εμπόρους και εργοστάσια. Ταξινομήστε ανά καλύτερη τιμή και περιοχή.",
+  alternates: { canonical: "/search/buyers" },
+};
 
 export default async function BuyersSearchPage({
   searchParams,
