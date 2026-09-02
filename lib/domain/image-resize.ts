@@ -7,7 +7,9 @@ export async function fileToResizedDataUrl(
   maxSize = 720,
   quality = 0.82,
 ): Promise<string> {
-  if (!file.type.startsWith("image/")) throw new Error("Δεν είναι εικόνα");
+  const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+  if (!allowedTypes.has(file.type)) throw new Error("Επίλεξε εικόνα JPG, PNG ή WebP");
+  if (file.size > 10 * 1024 * 1024) throw new Error("Η εικόνα πρέπει να είναι μικρότερη από 10 MB");
   const img = document.createElement("img");
   const src = URL.createObjectURL(file);
   try {
@@ -29,4 +31,36 @@ export async function fileToResizedDataUrl(
   } finally {
     URL.revokeObjectURL(src);
   }
+}
+
+/**
+ * Store resized profile media outside the profiles row. During a rolling
+ * deployment, installations that do not have the bucket yet keep the existing
+ * data-URL behaviour, so uploads do not suddenly stop working.
+ */
+export async function uploadProfileImage(
+  dataUrl: string,
+  kind: "avatar" | "cover" | "gallery",
+): Promise<string> {
+  const { createSupabaseBrowser } = await import("@/lib/supabase/browser");
+  const supabase = createSupabaseBrowser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Απαιτείται σύνδεση");
+
+  const blob = await fetch(dataUrl).then((response) => response.blob());
+  const path = `${user.id}/${kind}-${crypto.randomUUID()}.jpg`;
+  const { error } = await supabase.storage.from("profile-media").upload(path, blob, {
+    contentType: "image/jpeg",
+    cacheControl: "31536000",
+    upsert: false,
+  });
+
+  // Backwards compatibility until the additive storage migration is applied.
+  if (error) {
+    console.warn("[profile media storage fallback]", error.message);
+    return dataUrl;
+  }
+  return supabase.storage.from("profile-media").getPublicUrl(path).data.publicUrl;
 }

@@ -10,22 +10,30 @@ import { getAppOrigin } from "@/lib/app-origin";
 import type { ActionResult } from "./auth";
 import type { PriceVariant } from "@/lib/db/types";
 
+const attributeValueSchema = z.union([
+  z.string().trim().max(120),
+  z.number().finite().min(-1_000_000_000).max(1_000_000_000),
+]);
+const attributeMapSchema = z
+  .record(z.string().regex(/^[a-zA-Z0-9_]{1,50}$/), attributeValueSchema)
+  .refine((value) => Object.keys(value).length <= 20, "Υπάρχουν πάρα πολλά χαρακτηριστικά");
+
 const variantSchema = z.object({
-  attributes: z.record(z.string(), z.union([z.string(), z.number()])),
-  price: z.number().positive(),
+  attributes: attributeMapSchema,
+  price: z.number().positive().max(1_000_000_000),
   currency: z.literal("EUR").default("EUR"),
 });
 
 const priceListingSchema = z.object({
   id: z.string().uuid().optional(),
   product_id: z.string().uuid(),
-  region_code: z.string().min(1),
-  notes: z.string().optional(),
+  region_code: z.string().min(1).max(20),
+  notes: z.string().trim().max(2000).optional(),
   kind: z
     .enum(["buy_from_producer", "buy_from_merchant", "sell_wholesale", "sell_retail"])
     .optional(),
-  title: z.string().max(120).optional(),
-  variants: z.array(variantSchema).min(1, "Απαιτείται τουλάχιστον μία τιμή"),
+  title: z.string().trim().max(120).optional(),
+  variants: z.array(variantSchema).min(1, "Απαιτείται τουλάχιστον μία τιμή").max(50),
 });
 
 export async function savePriceListing(input: unknown): Promise<ActionResult & { id?: string }> {
@@ -38,27 +46,37 @@ export async function savePriceListing(input: unknown): Promise<ActionResult & {
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Απαιτείται σύνδεση" };
 
-  const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (!me || (me.role !== "merchant" && me.role !== "factory")) {
+  const { data: me } = await supabase.from("profiles").select("role, is_active, deleted_at").eq("id", user.id).single();
+  if (!me?.is_active || me.deleted_at || (me.role !== "merchant" && me.role !== "factory")) {
     return { ok: false, error: "Μόνο έμποροι/εργοστάσια μπορούν να καταχωρήσουν τιμοκατάλογο" };
   }
+  const listingKind = parsed.data.kind ?? "buy_from_producer";
+  if (me.role === "merchant" && listingKind === "buy_from_merchant") {
+    return { ok: false, error: "Μόνο εργοστάσια μπορούν να καταχωρήσουν αγορά από εμπόρους" };
+  }
+  const { data: selectedProduct } = await supabase
+    .from("products")
+    .select("id")
+    .eq("id", parsed.data.product_id)
+    .eq("status", "active")
+    .maybeSingle();
+  if (!selectedProduct) return { ok: false, error: "Το προϊόν δεν είναι διαθέσιμο" };
 
   const payload = {
     owner_id: user.id,
     product_id: parsed.data.product_id,
     region_code: parsed.data.region_code,
     notes: parsed.data.notes ?? null,
-    kind: parsed.data.kind ?? "buy_from_producer",
+    kind: listingKind,
     title: parsed.data.title ?? null,
     variants: parsed.data.variants,
-    is_active: true,
   };
 
   if (parsed.data.id) {
     // Fetch existing to compute variant diff for notifications
     const { data: existing } = await supabase
       .from("price_listings")
-      .select("variants, owner_id, product_id")
+      .select("variants, owner_id, product_id, kind")
       .eq("id", parsed.data.id)
       .single();
     if (!existing || existing.owner_id !== user.id) {
@@ -72,7 +90,7 @@ export async function savePriceListing(input: unknown): Promise<ActionResult & {
       (existing.variants ?? []) as PriceVariant[],
       parsed.data.variants,
     );
-    if (changes.length > 0) {
+    if (changes.length > 0 && parsed.data.kind === "buy_from_producer") {
       await notifyFavoriters(user.id, parsed.data.id, parsed.data.product_id, changes);
     }
 
@@ -83,22 +101,24 @@ export async function savePriceListing(input: unknown): Promise<ActionResult & {
 
   const { data: created, error } = await supabase
     .from("price_listings")
-    .insert(payload)
+    .insert({ ...payload, is_active: true })
     .select("id")
     .single();
   if (error) return { ok: false, error: error.message };
 
   // Fire off "new better price" scan (best-effort; runs synchronously in dev)
-  try {
-    await notifyNewBetterPrice(
-      user.id,
-      created.id,
-      parsed.data.product_id,
-      parsed.data.variants,
-      parsed.data.region_code,
-    );
-  } catch (e) {
-    console.error("[notifyNewBetterPrice]", e);
+  if (listingKind === "buy_from_producer") {
+    try {
+      await notifyNewBetterPrice(
+        user.id,
+        created.id,
+        parsed.data.product_id,
+        parsed.data.variants,
+        parsed.data.region_code,
+      );
+    } catch (e) {
+      console.error("[notifyNewBetterPrice]", e);
+    }
   }
 
   revalidatePath(`/profile/${user.id}`);
@@ -169,18 +189,19 @@ async function notifyNewBetterPrice(
     .select("owner_id, variants")
     .eq("product_id", productId)
     .eq("region_code", regionCode)
+    .eq("kind", "buy_from_producer")
     .eq("is_active", true)
     .neq("id", listingId);
 
-  const priorMin = (existing ?? [])
+  const priorBest = (existing ?? [])
     .flatMap((row: any) => (row.variants ?? []).map((v: any) => Number(v.price)))
     .filter((n) => Number.isFinite(n) && n > 0)
-    .reduce((min: number, p: number) => Math.min(min, p), Number.POSITIVE_INFINITY);
-  const newMin = variants
+    .reduce((max: number, p: number) => Math.max(max, p), Number.NEGATIVE_INFINITY);
+  const newBest = variants
     .map((v) => Number(v.price))
     .filter((n) => n > 0)
-    .reduce((min, p) => Math.min(min, p), Number.POSITIVE_INFINITY);
-  if (!isFinite(priorMin) || newMin >= priorMin) return;
+    .reduce((max, p) => Math.max(max, p), Number.NEGATIVE_INFINITY);
+  if (!isFinite(priorBest) || newBest <= priorBest) return;
 
   const { data: audienceProduct } = await svc
     .from("products")
@@ -208,7 +229,7 @@ async function notifyNewBetterPrice(
       listing_id: listingId,
       target_profile_id: ownerId,
       product_id: productId,
-      changed_variants: [{ attributes: {}, old_price: priorMin, new_price: newMin }],
+      changed_variants: [{ attributes: {}, old_price: priorBest, new_price: newBest }],
     },
   }));
   await svc.from("notifications").insert(rows);
@@ -232,7 +253,7 @@ async function notifyNewBetterPrice(
       htmlContent: renderEmailShell(
         "Νέος αγοραστής με καλύτερη τιμή",
         `<p>Ο <strong>${escapeHtml(buyerName)}</strong> καταχώρησε νέα τιμή για <strong>${escapeHtml(productName)}</strong>.</p>
-         <p>Νέα τιμή: <strong>${newMin.toFixed(2)}€/${escapeHtml(unit)}</strong></p>
+         <p>Νέα τιμή: <strong>${newBest.toFixed(2)}€/${escapeHtml(unit)}</strong></p>
          <p><a href="${profileUrl}" style="color:#1B4D2E;font-weight:600">Δες το προφίλ του αγοραστή</a></p>`,
       ),
       tag: "new_better_price",
@@ -248,14 +269,42 @@ function escapeHtml(s: string) {
 }
 
 export async function deletePriceListing(id: string): Promise<ActionResult> {
+  const parsedId = z.string().uuid().safeParse(id);
+  if (!parsedId.success) return { ok: false, error: "Μη έγκυρη καταχώρηση" };
   const supabase = await createSupabaseServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Απαιτείται σύνδεση" };
 
-  const { error } = await supabase.from("price_listings").delete().eq("id", id).eq("owner_id", user.id);
+  const { data, error } = await supabase.from("price_listings").delete().eq("id", parsedId.data).eq("owner_id", user.id).select("id").maybeSingle();
   if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Η καταχώρηση δεν βρέθηκε" };
+  revalidatePath("/dashboard/listings");
+  revalidatePath(`/profile/${user.id}`);
+  return { ok: true };
+}
+
+export async function setPriceListingActive(id: string, isActive: boolean): Promise<ActionResult> {
+  const parsedId = z.string().uuid().safeParse(id);
+  if (!parsedId.success) return { ok: false, error: "Μη έγκυρη καταχώρηση" };
+
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Απαιτείται σύνδεση" };
+
+  const { data, error } = await supabase
+    .from("price_listings")
+    .update({ is_active: isActive })
+    .eq("id", parsedId.data)
+    .eq("owner_id", user.id)
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Η καταχώρηση δεν βρέθηκε" };
+
   revalidatePath("/dashboard/listings");
   revalidatePath(`/profile/${user.id}`);
   return { ok: true };
@@ -264,15 +313,18 @@ export async function deletePriceListing(id: string): Promise<ActionResult> {
 const productionListingSchema = z.object({
   id: z.string().uuid().optional(),
   product_id: z.string().uuid(),
-  region_code: z.string().min(1),
-  quantity: z.number().positive(),
-  unit: z.string().optional(),
-  attributes: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
-  available_from: z.string().nullable().optional(),
-  available_until: z.string().nullable().optional(),
-  notes: z.string().max(2000).optional(),
-  title: z.string().max(120).optional(),
-});
+  region_code: z.string().min(1).max(20),
+  quantity: z.number().positive().max(1_000_000_000_000),
+  unit: z.string().trim().max(50).optional(),
+  attributes: attributeMapSchema.optional(),
+  available_from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  available_until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  notes: z.string().trim().max(2000).optional(),
+  title: z.string().trim().max(120).optional(),
+}).refine(
+  (value) => !value.available_from || !value.available_until || value.available_from <= value.available_until,
+  { message: "Η ημερομηνία λήξης πρέπει να είναι μετά την ημερομηνία έναρξης", path: ["available_until"] },
+);
 
 export async function saveProductionListing(input: unknown): Promise<ActionResult & { id?: string }> {
   const parsed = productionListingSchema.safeParse(input);
@@ -284,8 +336,8 @@ export async function saveProductionListing(input: unknown): Promise<ActionResul
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Απαιτείται σύνδεση" };
 
-  const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (!me || !isProducerRole(me.role)) {
+  const { data: me } = await supabase.from("profiles").select("role, is_active, deleted_at").eq("id", user.id).single();
+  if (!me?.is_active || me.deleted_at || !isProducerRole(me.role)) {
     return { ok: false, error: "Μόνο αγρότες και αλιείς μπορούν να κάνουν καταχώρηση παραγωγής" };
   }
 
@@ -315,16 +367,18 @@ export async function saveProductionListing(input: unknown): Promise<ActionResul
     available_until: parsed.data.available_until ?? null,
     notes: parsed.data.notes ?? null,
     title: parsed.data.title ?? null,
-    is_active: true,
   };
 
   if (parsed.data.id) {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("production_listings")
       .update(payload)
       .eq("id", parsed.data.id)
-      .eq("owner_id", user.id);
+      .eq("owner_id", user.id)
+      .select("id")
+      .maybeSingle();
     if (error) return { ok: false, error: error.message };
+    if (!data) return { ok: false, error: "Η καταχώρηση δεν βρέθηκε" };
     revalidatePath("/dashboard/listings");
     revalidatePath(`/profile/${user.id}`);
     return { ok: true, id: parsed.data.id };
@@ -332,7 +386,7 @@ export async function saveProductionListing(input: unknown): Promise<ActionResul
 
   const { data: created, error } = await supabase
     .from("production_listings")
-    .insert(payload)
+    .insert({ ...payload, is_active: true })
     .select("id")
     .single();
   if (error) return { ok: false, error: error.message };
@@ -342,14 +396,42 @@ export async function saveProductionListing(input: unknown): Promise<ActionResul
 }
 
 export async function deleteProductionListing(id: string): Promise<ActionResult> {
+  const parsedId = z.string().uuid().safeParse(id);
+  if (!parsedId.success) return { ok: false, error: "Μη έγκυρη καταχώρηση" };
   const supabase = await createSupabaseServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Απαιτείται σύνδεση" };
 
-  const { error } = await supabase.from("production_listings").delete().eq("id", id).eq("owner_id", user.id);
+  const { data, error } = await supabase.from("production_listings").delete().eq("id", parsedId.data).eq("owner_id", user.id).select("id").maybeSingle();
   if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Η καταχώρηση δεν βρέθηκε" };
+  revalidatePath("/dashboard/listings");
+  revalidatePath(`/profile/${user.id}`);
+  return { ok: true };
+}
+
+export async function setProductionListingActive(id: string, isActive: boolean): Promise<ActionResult> {
+  const parsedId = z.string().uuid().safeParse(id);
+  if (!parsedId.success) return { ok: false, error: "Μη έγκυρη καταχώρηση" };
+
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Απαιτείται σύνδεση" };
+
+  const { data, error } = await supabase
+    .from("production_listings")
+    .update({ is_active: isActive })
+    .eq("id", parsedId.data)
+    .eq("owner_id", user.id)
+    .select("id")
+    .maybeSingle();
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Η καταχώρηση δεν βρέθηκε" };
+
   revalidatePath("/dashboard/listings");
   revalidatePath(`/profile/${user.id}`);
   return { ok: true };
