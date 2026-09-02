@@ -18,6 +18,7 @@ import { Footer } from "@/components/site/footer";
 import { LiveSearchInput } from "@/components/site/live-search-input";
 import { LiveFilterForm } from "@/components/site/live-filter-form";
 import { SearchPagination } from "@/components/site/search-pagination";
+import { SaveSearchButton } from "@/components/site/save-search-button";
 
 const PAGE_SIZE = 12;
 
@@ -177,12 +178,15 @@ export default async function ProducersSearchPage({
         </LiveFilterForm>
         </FiltersDrawer>
 
-        <FilterChips
-          basePath="/search/producers"
-          params={params}
-          regionLabels={regionMap}
-          productLabels={productMap}
-        />
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <FilterChips
+            basePath="/search/producers"
+            params={params}
+            regionLabels={regionMap}
+            productLabels={productMap}
+          />
+          <SaveSearchButton scope="producers" />
+        </div>
 
         <div
           id="search-results"
