@@ -1,38 +1,13 @@
 import Link from "next/link";
 import { Logo } from "./logo";
 import { Icon } from "@/components/ui/icon";
-import { createSupabaseServer } from "@/lib/supabase/server";
 import { NotificationBell } from "./notification-bell";
 import { MobileNav } from "./mobile-nav";
 import { hasFisherRole, isProducerRole } from "@/lib/utils";
+import { getSession } from "@/lib/auth/session";
 
 export async function Header() {
-  const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let profile: { id: string; role: string; display_name: string } | null = null;
-  let unreadNotif = 0;
-  let unreadMsg = 0;
-  if (user) {
-    const [p, n, m] = await Promise.all([
-      supabase.from("profiles").select("id, role, display_name").eq("id", user.id).single(),
-      supabase
-        .from("notifications")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .is("read_at", null),
-      supabase
-        .from("messages")
-        .select("id", { count: "exact", head: true })
-        .eq("recipient_id", user.id)
-        .is("read_at", null),
-    ]);
-    profile = p.data;
-    unreadNotif = n.count ?? 0;
-    unreadMsg = m.count ?? 0;
-  }
+  const { userId, profile, unreadNotifications: unreadNotif, unreadMessages: unreadMsg } = await getSession();
 
   return (
     <header className="bg-brand-surface/95 backdrop-blur border-b border-brand-border sticky top-0 z-30">
@@ -58,7 +33,7 @@ export async function Header() {
               <NotificationBell
                 initialCount={unreadNotif}
                 initialMessages={unreadMsg}
-                userId={user!.id}
+                userId={userId!}
                 messageHref={profile.role === "admin" ? "/admin/messages" : "/dashboard/messages"}
                 notificationHref={profile.role === "admin" ? "/admin" : "/dashboard/notifications"}
               />

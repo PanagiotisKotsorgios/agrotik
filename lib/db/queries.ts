@@ -387,6 +387,7 @@ const PUBLIC_PROFILE_COLUMNS = [
   "opening_hours",
   "is_public",
   "is_active",
+  "is_verified",
   "deleted_at",
   "created_at",
   "updated_at",

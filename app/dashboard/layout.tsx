@@ -2,25 +2,17 @@ export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
 import { Header } from "@/components/site/header";
-import { createSupabaseServer } from "@/lib/supabase/server";
 import { LogoutButton } from "@/components/site/logout-button";
 import { DashboardMobileNav } from "@/components/site/dashboard-mobile-nav";
 import { SidebarNav } from "@/components/site/sidebar-nav";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { hasFisherRole, isProducerRole } from "@/lib/utils";
+import { getSession } from "@/lib/auth/session";
+import { FeedbackWidget } from "@/components/site/feedback-widget";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, display_name, is_active")
-    .eq("id", user.id)
-    .single();
+  const { userId, profile } = await getSession();
+  if (!userId) redirect("/login");
 
   if (!profile || !profile.is_active) {
     return (
@@ -67,6 +59,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       : []),
     { href: "/dashboard/messages", icon: "chat", label: "Μηνύματα" },
     { href: "/dashboard/notifications", icon: "bell", label: "Ειδοποιήσεις" },
+    { href: "/dashboard/saved-searches", icon: "search", label: "Αποθηκευμένες αναζητήσεις" },
   ];
 
   return (
@@ -90,6 +83,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <main className="min-w-0">{children}</main>
         </div>
       </div>
+      <FeedbackWidget />
     </>
   );
 }
