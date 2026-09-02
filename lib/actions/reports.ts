@@ -105,9 +105,38 @@ export async function updateReport(
   } else if (parsed.data.status) {
     update.resolved_at = null;
   }
-  const { data, error } = await svc.from("reports").update(update).eq("id", parsed.data.id).select("id").maybeSingle();
+  const { data, error } = await svc
+    .from("reports")
+    .update(update)
+    .eq("id", parsed.data.id)
+    .select("id, reporter_id, target_type, target_id, category, status")
+    .maybeSingle();
   if (error) return { ok: false, error: error.message };
   if (!data) return { ok: false, error: "Η αναφορά δεν βρέθηκε" };
+
+  const nextStatus = parsed.data.status;
+  if (nextStatus === "resolved" || nextStatus === "dismissed") {
+    const outcome = nextStatus === "resolved" ? "accepted" : "rejected";
+    await Promise.all([
+      svc.from("report_resolutions").insert({
+        report_id: parsed.data.id,
+        outcome,
+        note: patch.admin_note ?? null,
+      }),
+      svc.from("notifications").insert({
+        user_id: (data as any).reporter_id,
+        kind: "report_resolved",
+        payload: {
+          outcome,
+          target_type: (data as any).target_type,
+          target_id: (data as any).target_id,
+          category: (data as any).category,
+          note: patch.admin_note ?? null,
+        },
+      }),
+    ]);
+  }
+
   revalidatePath("/admin/reports");
   return { ok: true };
 }

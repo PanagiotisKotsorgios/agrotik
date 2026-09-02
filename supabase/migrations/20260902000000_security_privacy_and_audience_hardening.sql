@@ -510,3 +510,53 @@ create policy "purchases active owner delete"
       where buyer.id = auth.uid() and buyer.role in ('merchant', 'factory') and buyer.is_active = true and buyer.deleted_at is null
     )
   );
+
+-- Admin audit log: append-only, service-role written.
+create table if not exists public.admin_audit (
+  id uuid primary key default gen_random_uuid(),
+  actor_id uuid references public.profiles(id) on delete set null,
+  action text not null,
+  target_type text,
+  target_id text,
+  detail jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists admin_audit_created_at_idx
+  on public.admin_audit(created_at desc);
+create index if not exists admin_audit_actor_id_idx
+  on public.admin_audit(actor_id);
+alter table public.admin_audit enable row level security;
+-- Only admins read; only service role writes (implicit — no policy).
+drop policy if exists "admin_audit admin read" on public.admin_audit;
+create policy "admin_audit admin read"
+  on public.admin_audit for select
+  using (
+    exists (
+      select 1 from public.profiles admin
+      where admin.id = auth.uid() and admin.role = 'admin'
+        and admin.is_active = true and admin.deleted_at is null
+    )
+  );
+
+-- Report resolutions: dedicated moderation trail per report.
+create table if not exists public.report_resolutions (
+  id uuid primary key default gen_random_uuid(),
+  report_id uuid not null references public.reports(id) on delete cascade,
+  resolver_id uuid references public.profiles(id) on delete set null,
+  outcome text not null check (outcome in ('accepted', 'rejected', 'invalid')),
+  note text,
+  created_at timestamptz not null default now()
+);
+create index if not exists report_resolutions_report_id_idx
+  on public.report_resolutions(report_id);
+alter table public.report_resolutions enable row level security;
+drop policy if exists "report_resolutions admin read" on public.report_resolutions;
+create policy "report_resolutions admin read"
+  on public.report_resolutions for select
+  using (
+    exists (
+      select 1 from public.profiles admin
+      where admin.id = auth.uid() and admin.role = 'admin'
+        and admin.is_active = true and admin.deleted_at is null
+    )
+  );

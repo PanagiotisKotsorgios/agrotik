@@ -78,6 +78,35 @@ export default async function NotificationsPage() {
               );
             }
 
+            if (n.kind === "report_resolved") {
+              const outcome = n.payload?.outcome;
+              const accepted = outcome === "accepted";
+              return (
+                <Card key={n.id}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge tone={accepted ? "ok" : "muted"}>
+                          <Icon name={accepted ? "ok" : "xmark"} />
+                          {accepted ? "Η αναφορά έγινε δεκτή" : "Η αναφορά απορρίφθηκε"}
+                        </Badge>
+                        <span className="eyebrow text-brand-muted">{formatRelative(n.created_at)}</span>
+                      </div>
+                      <p className="text-sm text-brand-ink/85 mt-2">
+                        Ευχαριστούμε που μας ενημέρωσες. Η αναφορά σου έχει εξεταστεί.
+                      </p>
+                      {n.payload?.note && (
+                        <p className="text-sm text-brand-muted mt-1 whitespace-pre-wrap break-words">
+                          {n.payload.note}
+                        </p>
+                      )}
+                    </div>
+                    <NotificationActions id={n.id} />
+                  </div>
+                </Card>
+              );
+            }
+
             const targetName = targetMap.get(n.payload?.target_profile_id) ?? "Έμπορος";
             const product = prodMap.get(n.payload?.product_id);
             const changes = n.payload?.changed_variants ?? [];

@@ -30,6 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin/messages", icon: "chat", label: "Μηνύματα" },
     { href: "/admin/products", icon: "box", label: "Προϊόντα" },
     { href: "/admin/reports", icon: "flag", label: "Αναφορές" },
+    { href: "/admin/audit-log", icon: "listCheck", label: "Ημερολόγιο ελέγχου" },
     { href: "/admin/settings", icon: "gear", label: "Ρυθμίσεις" },
     { href: "/admin/exports", icon: "download", label: "Εξαγωγές / Backup" },
   ];
