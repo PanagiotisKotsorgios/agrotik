@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icon";
+import { useDialogFocus } from "./use-dialog-focus";
 
 /**
  * Renders `children` inline on desktop; on mobile shows a "Φίλτρα" button
@@ -17,6 +18,7 @@ export function FiltersDrawer({
   activeCount?: number;
 }) {
   const [open, setOpen] = useState(false);
+  const { dialogRef, triggerRef } = useDialogFocus(open, setOpen);
 
   // Body scroll lock while open
   useEffect(() => {
@@ -29,23 +31,16 @@ export function FiltersDrawer({
     }
   }, [open]);
 
-  // Escape to close
-  useEffect(() => {
-    if (!open) return;
-    const h = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [open]);
-
   return (
     <>
       {/* Mobile toggle button */}
       <div className="md:hidden mb-4">
         <button
+          ref={triggerRef}
           type="button"
           onClick={() => setOpen(true)}
+          aria-expanded={open}
+          aria-haspopup="dialog"
           className="w-full inline-flex items-center justify-between gap-3 px-4 py-3 rounded-md bg-brand-surface border-2 border-brand-dark text-brand-dark font-semibold text-[16px]"
         >
           <span className="inline-flex items-center gap-2">
@@ -65,15 +60,23 @@ export function FiltersDrawer({
 
       {/* Mobile drawer */}
       {open && (
-        <div className="md:hidden fixed inset-0 z-50 flex flex-col bg-brand-bg">
+        <div
+          ref={dialogRef}
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="filters-dialog-title"
+          className="md:hidden fixed inset-0 z-50 flex flex-col bg-brand-bg"
+        >
           <div className="flex items-center justify-between px-4 h-[64px] border-b border-brand-border bg-brand-surface shrink-0">
-            <div className="font-semibold text-brand-dark text-[17px] inline-flex items-center gap-2">
+            <div id="filters-dialog-title" className="font-semibold text-brand-dark text-[17px] inline-flex items-center gap-2">
               <Icon name="filter" /> Φίλτρα αναζήτησης
             </div>
             <button
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Κλείσιμο"
+              data-dialog-autofocus
               className="w-11 h-11 rounded-md hover:bg-brand-border/40 inline-flex items-center justify-center text-brand-ink"
             >
               <Icon name="close" className="text-lg" />

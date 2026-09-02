@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { LogoutButton } from "./logout-button";
+import { useDialogFocus } from "./use-dialog-focus";
 
 interface Item {
   href: string;
@@ -22,17 +23,15 @@ export function DashboardMobileNav({
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const path = usePathname();
+  const { dialogRef, triggerRef } = useDialogFocus(open, setOpen);
   useEffect(() => setMounted(true), []);
   useEffect(() => setOpen(false), [path]);
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const h = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", h);
     return () => {
       document.body.style.overflow = prev;
-      window.removeEventListener("keydown", h);
     };
   }, [open]);
 
@@ -45,10 +44,13 @@ export function DashboardMobileNav({
 
   const drawer = open ? (
     <div
+      ref={dialogRef}
+      tabIndex={-1}
       style={{ position: "fixed", inset: 0, zIndex: 100 }}
       className="md:hidden flex flex-col bg-brand-dark text-white"
       role="dialog"
       aria-modal="true"
+      aria-label={title}
     >
       <div className="flex items-center justify-between h-[68px] px-4 border-b border-white/10 shrink-0">
         <div className="font-bold text-lg inline-flex items-center gap-2">
@@ -58,6 +60,7 @@ export function DashboardMobileNav({
           type="button"
           onClick={() => setOpen(false)}
           aria-label="Κλείσιμο"
+          data-dialog-autofocus
           className="w-11 h-11 rounded-md hover:bg-white/10 inline-flex items-center justify-center"
         >
           <Icon name="close" className="text-xl" />
@@ -93,8 +96,11 @@ export function DashboardMobileNav({
   return (
     <div className="md:hidden bg-brand-dark text-white sticky top-[88px] z-20">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
+        aria-expanded={open}
+        aria-haspopup="dialog"
         className="w-full flex items-center justify-between px-4 py-3 text-left"
       >
         <span className="inline-flex items-center gap-3 min-w-0">

@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Header } from "@/components/site/header";
 import { Card, Badge, Eyebrow } from "@/components/ui/card";
 import { Select, Label, Input } from "@/components/ui/input";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { searchProducers, getRegions, getActiveProducts } from "@/lib/db/queries";
 import { parseProducerFilters } from "@/lib/domain/search-params";
-import { attributeLabel, formatQuantityNumber, formatRelative, hasFisherRole, pluralizeQuantityUnit, roleBadgeTone, roleLabel } from "@/lib/utils";
+import { attributeLabel, formatDate, formatQuantityNumber, formatRelative, hasFisherRole, pluralizeQuantityUnit, roleBadgeTone, roleLabel } from "@/lib/utils";
 import { FilterChips } from "@/components/site/filter-chips";
 import { AttributeFilters } from "@/components/site/attribute-filters";
 import { FiltersDrawer } from "@/components/site/filters-drawer";
@@ -147,11 +148,6 @@ export default async function ProducersSearchPage({
             </div>
 
             <div>
-              <Label>Όνομα παραγωγού / αλιέα</Label>
-              <Input name="name" placeholder="Αναζήτηση…" defaultValue={filters.name ?? ""} />
-            </div>
-
-            <div>
               <Label>Ταξινόμηση</Label>
               <Select name="sort" defaultValue={filters.sort ?? "updated"}>
                 <option value="updated">Πιο πρόσφατα</option>
@@ -224,9 +220,12 @@ export default async function ProducersSearchPage({
                     }`}
                   >
                     {r.profile.avatar_url ? (
-                      <img
+                      <Image
                         src={r.profile.avatar_url}
                         alt={`Φωτογραφία προφίλ ${r.profile.display_name}`}
+                        width={64}
+                        height={64}
+                        unoptimized
                         loading="lazy"
                         className="w-full h-full object-cover"
                       />
@@ -265,7 +264,7 @@ export default async function ProducersSearchPage({
                           <div className="text-sm text-brand-muted mt-2 flex min-w-0 flex-wrap items-center gap-1.5">
                             <Icon name="calendar" className="shrink-0" />
                             <span className="min-w-0 break-words">
-                              {r.available_from ?? "τώρα"} → {r.available_until ?? "ανοιχτό"}
+                              {r.available_from ? formatDate(r.available_from) : "τώρα"} → {r.available_until ? formatDate(r.available_until) : "ανοιχτό"}
                             </span>
                           </div>
                         )}

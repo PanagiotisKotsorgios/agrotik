@@ -46,9 +46,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       )}
       {...props}
     >
-      {icon && <Icon name={icon} className="text-[1em] opacity-95" />}
+      {icon && <Icon name={icon} className={cn("text-[1em] opacity-95", icon === "spinner" && "animate-spin")} />}
       {children}
-      {iconTrailing && <Icon name={iconTrailing} className="text-[1em] opacity-95" />}
+      {iconTrailing && <Icon name={iconTrailing} className={cn("text-[1em] opacity-95", iconTrailing === "spinner" && "animate-spin")} />}
     </button>
   ),
 );

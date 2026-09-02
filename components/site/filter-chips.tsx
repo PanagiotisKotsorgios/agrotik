@@ -23,7 +23,10 @@ export function FilterChips({
     if (!v) return false;
     if (Array.isArray(v) && v.length === 0) return false;
     if (k === "page") return false;
-    if (k === "sort") return v !== "price_asc" && v !== "updated"; // default value
+    if (k === "sort") {
+      const defaultSort = basePath === "/search/buyers" ? "price_desc" : "updated";
+      return v !== defaultSort;
+    }
     return true;
   });
 
@@ -63,7 +66,7 @@ export function FilterChips({
       <span className="text-sm text-brand-muted mr-1">Ενεργά φίλτρα:</span>
       {active.map(([k, v]) => {
         const raw = Array.isArray(v) ? v[0] : (v as string);
-        const label = describeFilter(k, raw);
+        const label = describeFilter(k);
         return (
           <Link
             key={k}

@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon, type IconName } from "@/components/ui/icon";
+import { useDialogFocus } from "./use-dialog-focus";
 
 interface Props {
   authed: boolean;
@@ -19,6 +20,7 @@ export function MobileNav({ authed, isAdmin, isProducer, isFisher, isDualProduce
   const [mounted, setMounted] = useState(false);
   const path = usePathname();
   const hideMobileTrigger = path?.startsWith("/dashboard") || path?.startsWith("/admin");
+  const { dialogRef, triggerRef } = useDialogFocus(open, setOpen);
 
   useEffect(() => setMounted(true), []);
 
@@ -38,16 +40,10 @@ export function MobileNav({ authed, isAdmin, isProducer, isFisher, isDualProduce
     }
   }, [open]);
 
-  // Escape to close
-  useEffect(() => {
-    if (!open) return;
-    const h = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [open]);
-
   const drawer = open ? (
     <div
+      ref={dialogRef}
+      tabIndex={-1}
       style={{ position: "fixed", inset: 0, zIndex: 100 }}
       className="md:hidden bg-brand-bg flex flex-col"
       role="dialog"
@@ -60,6 +56,7 @@ export function MobileNav({ authed, isAdmin, isProducer, isFisher, isDualProduce
           type="button"
           onClick={() => setOpen(false)}
           aria-label="Κλείσιμο"
+          data-dialog-autofocus
           className="w-11 h-11 rounded-md text-brand-ink hover:bg-brand-border/40 inline-flex items-center justify-center"
         >
           <Icon name="close" className="text-xl" />
@@ -81,10 +78,18 @@ export function MobileNav({ authed, isAdmin, isProducer, isFisher, isDualProduce
             </MobileGroup>
           </>
         ) : (
-          <MobileGroup title="Αναζήτηση">
-            <MobileLink href="/search/buyers" icon="store">Βρες Αγοραστή</MobileLink>
-            <MobileLink href="/search/producers" icon="seedling">Βρες Παραγωγό</MobileLink>
-          </MobileGroup>
+          <>
+            <MobileGroup title="Αναζήτηση">
+              <MobileLink href="/search/buyers" icon="store">Βρες Αγοραστή</MobileLink>
+              <MobileLink href="/search/producers" icon="seedling">Βρες Παραγωγό</MobileLink>
+            </MobileGroup>
+            <MobileGroup title="Πληροφορίες">
+              <MobileLink href="/how-it-works" icon="listCheck">Πώς λειτουργεί</MobileLink>
+              <MobileLink href="/pricing" icon="tag">Κόστος</MobileLink>
+              <MobileLink href="/faq" icon="info">Συχνές ερωτήσεις</MobileLink>
+              <MobileLink href="/contact" icon="envelope">Επικοινωνία</MobileLink>
+            </MobileGroup>
+          </>
         )}
 
         {authed && isAdmin && (
@@ -164,6 +169,7 @@ export function MobileNav({ authed, isAdmin, isProducer, isFisher, isDualProduce
     <>
       {!hideMobileTrigger && (
         <button
+          ref={triggerRef}
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Άνοιγμα μενού"

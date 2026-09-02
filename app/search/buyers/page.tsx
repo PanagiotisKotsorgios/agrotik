@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Header } from "@/components/site/header";
 import { Card, Badge, Eyebrow } from "@/components/ui/card";
 import { Select, Label, Input } from "@/components/ui/input";
@@ -125,15 +126,10 @@ export default async function BuyersSearchPage({
             </div>
 
             <div>
-              <Label>Επωνυμία</Label>
-              <Input name="name" placeholder="Αναζήτηση…" defaultValue={filters.name ?? ""} />
-            </div>
-
-            <div>
               <Label>Ταξινόμηση</Label>
-              <Select name="sort" defaultValue={filters.sort ?? "price_asc"}>
-                <option value="price_asc">Καλύτερη τιμή</option>
-                <option value="price_desc">Ακριβότερη πρώτη</option>
+              <Select name="sort" defaultValue={filters.sort ?? "price_desc"}>
+                <option value="price_desc">Καλύτερη τιμή (υψηλότερη)</option>
+                <option value="price_asc">Χαμηλότερη τιμή</option>
                 <option value="updated">Πιο πρόσφατη</option>
               </Select>
             </div>
@@ -196,9 +192,12 @@ export default async function BuyersSearchPage({
                 <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 sm:gap-4">
                   <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full overflow-hidden shrink-0 border-2 border-brand-border bg-brand-dark text-white flex items-center justify-center shadow-sm">
                     {r.profile.avatar_url ? (
-                      <img
+                      <Image
                         src={r.profile.avatar_url}
                         alt={`Φωτογραφία προφίλ ${r.profile.display_name}`}
+                        width={64}
+                        height={64}
+                        unoptimized
                         loading="lazy"
                         className="w-full h-full object-cover"
                       />
