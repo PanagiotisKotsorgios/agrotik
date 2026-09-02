@@ -156,7 +156,60 @@ export function PurchasesManager({
           <Icon name="info" /> Δεν έχεις καταχωρημένες αγορές ακόμα.
         </p>
       ) : (
-        <div className="overflow-x-auto">
+        <>
+        <ul className="md:hidden space-y-2">
+          {rows.map((r) => (
+            <li key={r.id} className="rounded-xl border border-brand-border bg-white p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-medium text-brand-dark truncate">{r.profiles.display_name}</div>
+                  <div className="text-sm text-brand-muted truncate">{r.products.name_el}</div>
+                </div>
+                <Badge tone="muted">{r.season}</Badge>
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <div className="eyebrow text-brand-muted">Ημερομηνία</div>
+                  <div className="figures text-brand-dark">{formatDate(r.purchased_at)}</div>
+                </div>
+                <div>
+                  <div className="eyebrow text-brand-muted">Ποσότητα</div>
+                  <div className="figures text-brand-dark">{formatQuantity(r.quantity, r.unit)}</div>
+                </div>
+                <div className="col-span-2">
+                  <div className="eyebrow text-brand-muted">Τιμή</div>
+                  <div className="figures text-brand-dark">{r.price_per_unit != null ? formatCurrency(r.price_per_unit) : "—"}</div>
+                </div>
+              </div>
+              <div className="mt-2 flex justify-end gap-1">
+                <button
+                  type="button"
+                  onClick={() => { setMessage(null); setEditing(r); }}
+                  className="text-brand-muted hover:text-brand-dark p-2"
+                  aria-label="Επεξεργασία"
+                >
+                  <Icon name="edit" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    start(async () => {
+                      if (!confirm("Διαγραφή αγοράς;")) return;
+                      const res = await deletePurchase(r.id);
+                      if (res.ok) setRows((prev) => prev.filter((x) => x.id !== r.id));
+                    })
+                  }
+                  disabled={pending}
+                  className="text-brand-muted hover:text-red-700 p-2"
+                  aria-label="Διαγραφή"
+                >
+                  <Icon name="trash" />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left border-b border-brand-border eyebrow text-brand-muted">
@@ -217,6 +270,7 @@ export function PurchasesManager({
             </tbody>
           </table>
         </div>
+        </>
       )}
     </Card>
   );
