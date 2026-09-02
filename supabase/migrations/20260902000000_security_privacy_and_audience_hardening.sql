@@ -511,6 +511,98 @@ create policy "purchases active owner delete"
     )
   );
 
+-- Verification badge for trusted profiles (set by admins).
+alter table public.profiles add column if not exists is_verified boolean not null default false;
+create index if not exists profiles_is_verified_idx on public.profiles(is_verified) where is_verified;
+
+-- In-app feedback (bugs, ideas). Any authenticated user can insert.
+create table if not exists public.feedback (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.profiles(id) on delete set null,
+  kind text not null check (kind in ('bug', 'idea', 'praise', 'other')),
+  message text not null check (char_length(message) between 3 and 4000),
+  page_path text,
+  created_at timestamptz not null default now()
+);
+create index if not exists feedback_created_at_idx on public.feedback(created_at desc);
+alter table public.feedback enable row level security;
+drop policy if exists "feedback owner insert" on public.feedback;
+create policy "feedback owner insert"
+  on public.feedback for insert to authenticated
+  with check (auth.uid() = user_id);
+drop policy if exists "feedback admin read" on public.feedback;
+create policy "feedback admin read"
+  on public.feedback for select
+  using (
+    exists (
+      select 1 from public.profiles admin
+      where admin.id = auth.uid() and admin.role = 'admin'
+        and admin.is_active = true and admin.deleted_at is null
+    )
+  );
+
+-- Saved searches per user. Alert delivery is handled by an out-of-band
+-- scheduler (see /api/cron/saved-searches when configured); the table
+-- captures the filter payload the app parses back into a search URL.
+create table if not exists public.saved_searches (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  scope text not null check (scope in ('producers', 'buyers')),
+  label text not null check (char_length(label) between 1 and 120),
+  filters jsonb not null default '{}'::jsonb,
+  alerts_enabled boolean not null default false,
+  last_notified_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists saved_searches_user_idx on public.saved_searches(user_id, created_at desc);
+alter table public.saved_searches enable row level security;
+drop policy if exists "saved_searches owner all" on public.saved_searches;
+create policy "saved_searches owner all"
+  on public.saved_searches for all to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- Support tickets store contact-form submissions when Brevo is
+-- disabled or fails. Admin-only read; anon insert via service role.
+create table if not exists public.support_tickets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.profiles(id) on delete set null,
+  name text not null,
+  email text not null,
+  subject text not null,
+  category text,
+  message text not null,
+  status text not null default 'open' check (status in ('open', 'answered', 'closed')),
+  created_at timestamptz not null default now()
+);
+create index if not exists support_tickets_status_idx on public.support_tickets(status, created_at desc);
+alter table public.support_tickets enable row level security;
+drop policy if exists "support_tickets admin read" on public.support_tickets;
+create policy "support_tickets admin read"
+  on public.support_tickets for select
+  using (
+    exists (
+      select 1 from public.profiles admin
+      where admin.id = auth.uid() and admin.role = 'admin'
+        and admin.is_active = true and admin.deleted_at is null
+    )
+  );
+
+-- Price history snapshots. Written whenever a price_listings variant
+-- changes; drives sparkline + trend chart.
+create table if not exists public.price_history (
+  id uuid primary key default gen_random_uuid(),
+  listing_id uuid not null references public.price_listings(id) on delete cascade,
+  variant_key text not null,
+  price numeric not null,
+  captured_at timestamptz not null default now()
+);
+create index if not exists price_history_listing_idx on public.price_history(listing_id, captured_at desc);
+alter table public.price_history enable row level security;
+drop policy if exists "price_history public read" on public.price_history;
+create policy "price_history public read"
+  on public.price_history for select using (true);
+
 -- Admin audit log: append-only, service-role written.
 create table if not exists public.admin_audit (
   id uuid primary key default gen_random_uuid(),
