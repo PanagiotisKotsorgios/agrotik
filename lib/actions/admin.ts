@@ -20,7 +20,13 @@ async function requireAdmin() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const { data } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .eq("is_active", true)
+    .is("deleted_at", null)
+    .single();
   if (data?.role !== "admin") return null;
   return user;
 }
@@ -150,18 +156,22 @@ export async function deleteUserPermanently(userId: string): Promise<ActionResul
 
 export async function approveProduct(id: string): Promise<ActionResult> {
   if (!(await requireAdmin())) return { ok: false, error: "Δεν έχεις δικαίωμα" };
+  if (!userIdSchema.safeParse(id).success) return { ok: false, error: "Μη έγκυρο προϊόν" };
   const svc = createSupabaseService();
-  const { error } = await svc.from("products").update({ status: "active" }).eq("id", id);
+  const { data, error } = await svc.from("products").update({ status: "active" }).eq("id", id).eq("status", "pending").select("id").maybeSingle();
   if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Η πρόταση δεν βρέθηκε ή έχει ήδη εξεταστεί" };
   revalidatePath("/admin/products");
   return { ok: true };
 }
 
 export async function rejectProduct(id: string): Promise<ActionResult> {
   if (!(await requireAdmin())) return { ok: false, error: "Δεν έχεις δικαίωμα" };
+  if (!userIdSchema.safeParse(id).success) return { ok: false, error: "Μη έγκυρο προϊόν" };
   const svc = createSupabaseService();
-  const { error } = await svc.from("products").update({ status: "rejected" }).eq("id", id);
+  const { data, error } = await svc.from("products").update({ status: "rejected" }).eq("id", id).eq("status", "pending").select("id").maybeSingle();
   if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Η πρόταση δεν βρέθηκε ή έχει ήδη εξεταστεί" };
   revalidatePath("/admin/products");
   return { ok: true };
 }

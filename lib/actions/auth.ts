@@ -5,19 +5,20 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { createSupabaseService } from "@/lib/supabase/service";
 import { sendBrevoEmail, renderEmailShell, getBrevoSettings } from "@/lib/brevo";
-import type { UserRole } from "@/lib/db/types";
+import { getAppOrigin } from "@/lib/app-origin";
+import { consumeRateLimit } from "@/lib/rate-limit";
 
 const roleEnum = z.enum(["farmer", "fisher", "farmer_fisher", "merchant", "factory"]);
 
 const signupSchema = z.object({
-  email: z.string().email("Μη έγκυρο email"),
-  password: z.string().min(6, "Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες"),
+  email: z.string().trim().toLowerCase().email("Μη έγκυρο email").max(254),
+  password: z.string().min(8, "Ο κωδικός πρέπει να έχει τουλάχιστον 8 χαρακτήρες").max(128),
   role: roleEnum,
-  display_name: z.string().min(2, "Απαιτείται όνομα"),
-  phone: z.string().min(6, "Απαιτείται τηλέφωνο"),
+  display_name: z.string().trim().min(2, "Απαιτείται όνομα").max(120),
+  phone: z.string().trim().min(6, "Απαιτείται τηλέφωνο").max(40),
   region_code: z.string().min(1, "Απαιτείται Νομός / Π.Ε."),
-  municipality: z.string().min(2, "Απαιτείται συγκεκριμένη περιοχή (Δήμος / πόλη / χωριό)"),
-  bio: z.string().optional(),
+  municipality: z.string().trim().min(2, "Απαιτείται συγκεκριμένη περιοχή (Δήμος / πόλη / χωριό)").max(120),
+  bio: z.string().trim().max(2000).optional(),
 });
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
@@ -28,6 +29,9 @@ export async function signup(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Μη έγκυρα δεδομένα" };
   }
   const data = parsed.data;
+  if (!(await consumeRateLimit("signup", data.email, 5, 3600))) {
+    return { ok: false, error: "Έγιναν πολλές προσπάθειες εγγραφής. Δοκίμασε ξανά αργότερα." };
+  }
 
   const supabase = await createSupabaseServer();
   const { data: authData, error: signUpError } = await supabase.auth.signUp({
@@ -37,17 +41,16 @@ export async function signup(formData: FormData): Promise<ActionResult> {
   if (signUpError || !authData.user) {
     return { ok: false, error: signUpError?.message ?? "Αποτυχία εγγραφής" };
   }
-
-  const seedAdminEmail = process.env.SEED_ADMIN_EMAIL?.toLowerCase();
-  const finalRole: UserRole =
-    seedAdminEmail && data.email.toLowerCase() === seedAdminEmail
-      ? "admin"
-      : data.role;
+  if (Array.isArray(authData.user.identities) && authData.user.identities.length === 0) {
+    return { ok: false, error: "Δεν ήταν δυνατή η δημιουργία λογαριασμού με αυτό το email" };
+  }
 
   const service = createSupabaseService();
   const { error: profileError } = await service.from("profiles").insert({
     id: authData.user.id,
-    role: finalRole,
+    // Public signup can never create an administrator. Admin promotion is a
+    // separate, authenticated operational action.
+    role: data.role,
     display_name: data.display_name,
     phone: data.phone,
     region_code: data.region_code,
@@ -58,6 +61,10 @@ export async function signup(formData: FormData): Promise<ActionResult> {
   });
 
   if (profileError) {
+    // Avoid leaving an auth-only account that prevents the user from retrying
+    // the same email after a transient profile insert failure.
+    const { error: cleanupError } = await service.auth.admin.deleteUser(authData.user.id, false);
+    if (cleanupError) console.error("[signup cleanup]", cleanupError.message);
     return { ok: false, error: `Αποτυχία δημιουργίας προφίλ: ${profileError.message}` };
   }
 
@@ -67,7 +74,7 @@ export async function signup(formData: FormData): Promise<ActionResult> {
     const tpl = (settings as any).welcome_template ?? {};
     const subject = tpl.subject || "Καλωσόρισες στο AGROTIK";
     const heading = tpl.heading || `Γεια σου ${data.display_name},`;
-    const bodyHtml = tpl.body_html || defaultWelcomeBody(data.display_name);
+    const bodyHtml = tpl.body_html || defaultWelcomeBody();
     await sendBrevoEmail("welcome", {
       to: [{ email: data.email, name: data.display_name }],
       subject,
@@ -82,14 +89,14 @@ export async function signup(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
-function defaultWelcomeBody(name: string): string {
+function defaultWelcomeBody(): string {
   return `
     <p>Καλωσόρισες στο <strong>AGROTIK</strong>, τη νέα ελληνική αγορά που συνδέει
     αγρότες και αλιείς με εμπόρους και εργοστάσια — απευθείας, χωρίς μεσάζοντες.</p>
     <p>Ο λογαριασμός σου είναι έτοιμος. Το επόμενο βήμα είναι να συμπληρώσεις
     τα στοιχεία του προφίλ σου και να καταχωρήσεις την πρώτη σου καταχώρηση.</p>
     <p style="margin: 24px 0">
-      <a href="http://agrotik.gr/login" style="display:inline-block;background:#1B4D2E;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600">
+      <a href="${getAppOrigin()}/login" style="display:inline-block;background:#1B4D2E;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600">
         Σύνδεση στον λογαριασμό μου
       </a>
     </p>
@@ -103,7 +110,7 @@ function defaultWelcomeBody(name: string): string {
 }
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().email(),
   password: z.string().min(1),
 });
 

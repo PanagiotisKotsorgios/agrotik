@@ -4,16 +4,17 @@ import { createSupabaseService } from "@/lib/supabase/service";
 import { sendBrevoEmail, renderEmailShell, getBrevoSettings } from "@/lib/brevo";
 import { getAppOrigin } from "@/lib/app-origin";
 import type { ActionResult } from "./auth";
+import { consumeRateLimit } from "@/lib/rate-limit";
 
 const TOKEN_TTL_MIN = 60;
 
 const requestSchema = z.object({
-  email: z.string().email("Μη έγκυρο email"),
+  email: z.string().trim().toLowerCase().email("Μη έγκυρο email").max(254),
 });
 
 const applySchema = z.object({
   token: z.string().uuid(),
-  password: z.string().min(6, "Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες"),
+  password: z.string().min(8, "Ο κωδικός πρέπει να έχει τουλάχιστον 8 χαρακτήρες").max(128),
 });
 
 /**
@@ -24,14 +25,23 @@ export async function requestPasswordReset(formData: FormData): Promise<ActionRe
   const parsed = requestSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Μη έγκυρο email" };
 
-  const svc = createSupabaseService();
-  // Find user by email (Supabase Auth admin listUsers doesn't filter on email directly)
-  const { data, error: usersError } = await svc.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  if (usersError) {
-    console.error("[password reset user lookup]", usersError.message);
+  if (!(await consumeRateLimit("password-reset-request", parsed.data.email, 3, 3600))) {
+    // Keep the response indistinguishable from a successful request.
     return { ok: true };
   }
-  const user = data?.users?.find((u) => u.email?.toLowerCase() === parsed.data.email.toLowerCase());
+
+  const svc = createSupabaseService();
+  // Find the user without silently excluding accounts beyond the first page.
+  let user: Awaited<ReturnType<typeof svc.auth.admin.listUsers>>["data"]["users"][number] | undefined;
+  for (let page = 1; page <= 100 && !user; page += 1) {
+    const { data, error: usersError } = await svc.auth.admin.listUsers({ page, perPage: 1000 });
+    if (usersError) {
+      console.error("[password reset user lookup]", usersError.message);
+      return { ok: true };
+    }
+    user = data?.users?.find((candidate) => candidate.email?.toLowerCase() === parsed.data.email);
+    if (!data || data.users.length < 1000) break;
+  }
   if (!user) return { ok: true }; // silent success
 
   // Invalidate previous unused tokens for this user
@@ -78,24 +88,33 @@ export async function applyPasswordReset(formData: FormData): Promise<ActionResu
   const parsed = applySchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Μη έγκυρα δεδομένα" };
 
+  if (!(await consumeRateLimit("password-reset-apply", parsed.data.token, 10, 3600))) {
+    return { ok: false, error: "Έγιναν πολλές προσπάθειες. Ζήτησε νέο σύνδεσμο." };
+  }
+
   const svc = createSupabaseService();
+  const claimedAt = new Date().toISOString();
   const { data: row } = await svc
     .from("password_reset_tokens")
-    .select("*")
+    .update({ used_at: claimedAt })
     .eq("token", parsed.data.token)
+    .is("used_at", null)
+    .gt("expires_at", claimedAt)
+    .select("*")
     .maybeSingle();
-  if (!row) return { ok: false, error: "Ο σύνδεσμος δεν είναι έγκυρος" };
-  if (row.used_at) return { ok: false, error: "Ο σύνδεσμος έχει ήδη χρησιμοποιηθεί" };
-  if (new Date(row.expires_at).getTime() < Date.now()) {
-    return { ok: false, error: "Ο σύνδεσμος έχει λήξει. Ζήτησε καινούριο." };
-  }
+  if (!row) return { ok: false, error: "Ο σύνδεσμος δεν είναι έγκυρος ή έχει λήξει" };
 
   const { error: updErr } = await svc.auth.admin.updateUserById(row.user_id, {
     password: parsed.data.password,
   });
-  if (updErr) return { ok: false, error: "Αποτυχία ενημέρωσης κωδικού" };
-
-  await svc.from("password_reset_tokens").update({ used_at: new Date().toISOString() }).eq("token", parsed.data.token);
+  if (updErr) {
+    await svc
+      .from("password_reset_tokens")
+      .update({ used_at: null })
+      .eq("token", parsed.data.token)
+      .eq("used_at", claimedAt);
+    return { ok: false, error: "Αποτυχία ενημέρωσης κωδικού" };
+  }
   return { ok: true };
 }
 
