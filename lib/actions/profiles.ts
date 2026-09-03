@@ -19,7 +19,17 @@ const updateSchema = z.object({
   specialties: z.string().optional(),
   opening_hours: z.string().optional(),
   is_public: z.coerce.boolean().optional(),
-  producer_role: z.enum(["farmer", "fisher", "farmer_fisher"]).optional(),
+  producer_role: z
+    .enum([
+      "farmer",
+      "fisher",
+      "farmer_fisher",
+      "stockbreeder",
+      "beekeeper",
+      "farmer_stockbreeder",
+      "farmer_beekeeper",
+    ])
+    .optional(),
 });
 
 export async function updateProfile(formData: FormData): Promise<ActionResult> {
@@ -38,17 +48,25 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
   if (!user) return { ok: false, error: "Απαιτείται σύνδεση" };
 
   const d = parsed.data;
-  let nextProducerRole: "farmer" | "fisher" | "farmer_fisher" | undefined;
+  type ProducerRole = NonNullable<typeof d.producer_role>;
+  let nextProducerRole: ProducerRole | undefined;
   if (d.producer_role) {
     const { data: currentProfile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
-    const allowedTransitions: Record<string, Array<typeof d.producer_role>> = {
-      farmer: ["farmer", "farmer_fisher"],
+    // Allowed self-transitions: a producer may upgrade from a solo role
+    // to the matching combined role, but not downgrade or jump to an
+    // unrelated activity. Combined roles are terminal.
+    const allowedTransitions: Record<string, ProducerRole[]> = {
+      farmer: ["farmer", "farmer_fisher", "farmer_stockbreeder", "farmer_beekeeper"],
       fisher: ["fisher", "farmer_fisher"],
+      stockbreeder: ["stockbreeder", "farmer_stockbreeder"],
+      beekeeper: ["beekeeper", "farmer_beekeeper"],
       farmer_fisher: ["farmer_fisher"],
+      farmer_stockbreeder: ["farmer_stockbreeder"],
+      farmer_beekeeper: ["farmer_beekeeper"],
     };
     if (!currentProfile || !allowedTransitions[currentProfile.role]?.includes(d.producer_role)) {
       return { ok: false, error: "Η αλλαγή δραστηριότητας δεν επιτρέπεται" };

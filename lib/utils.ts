@@ -15,11 +15,25 @@ export function formatRelative(iso: string): string {
   }
 }
 
+export const PRODUCER_ROLES = [
+  "farmer",
+  "fisher",
+  "farmer_fisher",
+  "stockbreeder",
+  "beekeeper",
+  "farmer_stockbreeder",
+  "farmer_beekeeper",
+] as const;
+
 export function roleLabel(role: string): string {
   switch (role) {
     case "farmer": return "Αγρότης";
     case "fisher": return "Αλιέας";
     case "farmer_fisher": return "Αγρότης & Αλιέας";
+    case "stockbreeder": return "Κτηνοτρόφος";
+    case "beekeeper": return "Μελισσοκόμος";
+    case "farmer_stockbreeder": return "Αγρότης & Κτηνοτρόφος";
+    case "farmer_beekeeper": return "Αγρότης & Μελισσοκόμος";
     case "merchant": return "Έμπορος";
     case "factory": return "Εργοστάσιο";
     case "admin": return "Διαχειριστής";
@@ -28,19 +42,37 @@ export function roleLabel(role: string): string {
 }
 
 export function isProducerRole(role: string | null | undefined): boolean {
-  return role === "farmer" || role === "fisher" || role === "farmer_fisher";
+  return PRODUCER_ROLES.includes(role as (typeof PRODUCER_ROLES)[number]);
 }
 
 export function hasFarmerRole(role: string | null | undefined): boolean {
-  return role === "farmer" || role === "farmer_fisher";
+  return (
+    role === "farmer" ||
+    role === "farmer_fisher" ||
+    role === "farmer_stockbreeder" ||
+    role === "farmer_beekeeper"
+  );
 }
 
 export function hasFisherRole(role: string | null | undefined): boolean {
   return role === "fisher" || role === "farmer_fisher";
 }
 
-export function roleBadgeTone(role: string | null | undefined): "brand" | "fisher" {
-  return hasFisherRole(role) ? "fisher" : "brand";
+export function hasStockbreederRole(role: string | null | undefined): boolean {
+  return role === "stockbreeder" || role === "farmer_stockbreeder";
+}
+
+export function hasBeekeeperRole(role: string | null | undefined): boolean {
+  return role === "beekeeper" || role === "farmer_beekeeper";
+}
+
+export function roleBadgeTone(
+  role: string | null | undefined,
+): "brand" | "fisher" | "olive" | "warn" {
+  if (hasFisherRole(role)) return "fisher";
+  if (hasBeekeeperRole(role)) return "warn";
+  if (hasStockbreederRole(role)) return "olive";
+  return "brand";
 }
 
 const attributeLabels: Record<string, string> = {
@@ -54,6 +86,36 @@ const attributeLabels: Record<string, string> = {
   condition: "Μορφή / κατάσταση",
   size: "Μέγεθος / διαλογή",
   origin: "Περιοχή αλίευσης / προέλευση",
+  // Livestock
+  fat_pct: "Λιπαρά %",
+  protein_pct: "Πρωτεΐνη %",
+  breed: "Φυλή",
+  refrigeration: "Ψύξη / συντήρηση",
+  cut: "Κοπή",
+  age_months: "Ηλικία (μήνες)",
+  age_weeks: "Ηλικία (εβδομάδες)",
+  organic: "Βιολογικό",
+  free_range: "Ελευθέρας βοσκής",
+  milk_fed: "Γαλακτούχο",
+  class: "Κατηγορία",
+  aged_days: "Ωρίμανση (ημέρες)",
+  aged_months: "Ωρίμανση (μήνες)",
+  milk_mix: "Είδος γάλακτος",
+  color: "Χρώμα",
+  animal: "Ζώο προέλευσης",
+  composted: "Κομποστοποιημένη",
+  // Beekeeping
+  region: "Περιοχή",
+  harvest_year: "Έτος συγκομιδής",
+  raw: "Ωμό / αθέρμαστο",
+  blossom_source: "Ανθοφορία",
+  freshness: "Νωπότητα",
+  batch: "Παρτίδα",
+  form: "Μορφή",
+  purity_pct: "Καθαρότητα %",
+  drying: "Ξήρανση",
+  frames_count: "Πλαίσια",
+  queen_year: "Έτος βασίλισσας",
 };
 
 export function attributeLabel(key: string): string {

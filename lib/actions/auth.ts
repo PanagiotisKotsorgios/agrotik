@@ -7,7 +7,17 @@ import { createSupabaseService } from "@/lib/supabase/service";
 import { sendBrevoEmail, renderEmailShell, getBrevoSettings } from "@/lib/brevo";
 import type { UserRole } from "@/lib/db/types";
 
-const roleEnum = z.enum(["farmer", "fisher", "farmer_fisher", "merchant", "factory"]);
+const roleEnum = z.enum([
+  "farmer",
+  "fisher",
+  "farmer_fisher",
+  "stockbreeder",
+  "beekeeper",
+  "farmer_stockbreeder",
+  "farmer_beekeeper",
+  "merchant",
+  "factory",
+]);
 
 const signupSchema = z.object({
   email: z.string().email("Μη έγκυρο email"),

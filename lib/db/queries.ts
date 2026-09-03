@@ -49,8 +49,10 @@ export interface BuyerFilters {
   sort?: "price_asc" | "price_desc" | "updated";
 }
 
+export type ProducerTypeFilter = "farmer" | "fisher" | "stockbreeder" | "beekeeper";
+
 export interface ProducerFilters {
-  producer_type?: "farmer" | "fisher";
+  producer_type?: ProducerTypeFilter;
   product_id?: string;
   product_category?: string;
   region_code?: string;
@@ -220,13 +222,35 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
   return cards;
 }
 
+const ALL_PRODUCER_ROLES = [
+  "farmer",
+  "fisher",
+  "farmer_fisher",
+  "stockbreeder",
+  "beekeeper",
+  "farmer_stockbreeder",
+  "farmer_beekeeper",
+];
+
 export async function searchProducers(filters: ProducerFilters): Promise<ProducerCard[]> {
   const supabase = await createSupabaseServer();
-  const roles = filters.producer_type === "farmer"
-    ? ["farmer", "farmer_fisher"]
-    : filters.producer_type === "fisher"
-      ? ["fisher", "farmer_fisher"]
-      : ["farmer", "fisher", "farmer_fisher"];
+  let roles: string[];
+  switch (filters.producer_type) {
+    case "farmer":
+      roles = ["farmer", "farmer_fisher", "farmer_stockbreeder", "farmer_beekeeper"];
+      break;
+    case "fisher":
+      roles = ["fisher", "farmer_fisher"];
+      break;
+    case "stockbreeder":
+      roles = ["stockbreeder", "farmer_stockbreeder"];
+      break;
+    case "beekeeper":
+      roles = ["beekeeper", "farmer_beekeeper"];
+      break;
+    default:
+      roles = ALL_PRODUCER_ROLES;
+  }
 
   const hasListingFilter =
     filters.product_id !== undefined ||
@@ -276,7 +300,14 @@ export async function searchProducers(filters: ProducerFilters): Promise<Produce
     if (filters.product_id) lstQ = lstQ.eq("product_id", filters.product_id);
     if (filters.product_category) lstQ = lstQ.eq("products.category", filters.product_category);
     if (filters.producer_type === "fisher") lstQ = lstQ.eq("products.category", "Αλιευτικά είδη");
-    if (filters.producer_type === "farmer") lstQ = lstQ.neq("products.category", "Αλιευτικά είδη");
+    if (filters.producer_type === "stockbreeder") lstQ = lstQ.eq("products.category", "Κτηνοτροφικά προϊόντα");
+    if (filters.producer_type === "beekeeper") lstQ = lstQ.eq("products.category", "Μελισσοκομικά προϊόντα");
+    if (filters.producer_type === "farmer") {
+      lstQ = lstQ
+        .neq("products.category", "Αλιευτικά είδη")
+        .neq("products.category", "Κτηνοτροφικά προϊόντα")
+        .neq("products.category", "Μελισσοκομικά προϊόντα");
+    }
     if (filters.quantity_min) lstQ = lstQ.gte("quantity", filters.quantity_min);
     if (filters.quantity_max) lstQ = lstQ.lte("quantity", filters.quantity_max);
     if (filters.date) {

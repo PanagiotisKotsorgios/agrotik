@@ -187,9 +187,19 @@ async function notifyNewBetterPrice(
     .select("category")
     .eq("id", productId)
     .single();
-  const producerRoles = (audienceProduct as any)?.category === "Αλιευτικά είδη"
-    ? ["fisher", "farmer_fisher"]
-    : ["farmer", "farmer_fisher"];
+  // Pick the audience whose activity matches the product category so a
+  // milk price change alerts stockbreeders (not olive farmers), etc.
+  const audienceCategory = (audienceProduct as any)?.category;
+  let producerRoles: string[];
+  if (audienceCategory === "Αλιευτικά είδη") {
+    producerRoles = ["fisher", "farmer_fisher"];
+  } else if (audienceCategory === "Κτηνοτροφικά προϊόντα") {
+    producerRoles = ["stockbreeder", "farmer_stockbreeder"];
+  } else if (audienceCategory === "Μελισσοκομικά προϊόντα") {
+    producerRoles = ["beekeeper", "farmer_beekeeper"];
+  } else {
+    producerRoles = ["farmer", "farmer_fisher", "farmer_stockbreeder", "farmer_beekeeper"];
+  }
 
   // Notify the matching producer audience in the same region.
   const { data: farmers } = await svc

@@ -46,10 +46,17 @@ export function parseProducerFilters(params: Record<string, string | string[] | 
     else if (k.startsWith("nmax_")) numAttrs[k.slice(5)] = { ...(numAttrs[k.slice(5)] ?? {}), max: Number(v) };
   }
 
+  const producerTypeRaw = g("producer_type");
+  const producerType =
+    producerTypeRaw === "farmer" ||
+    producerTypeRaw === "fisher" ||
+    producerTypeRaw === "stockbreeder" ||
+    producerTypeRaw === "beekeeper"
+      ? (producerTypeRaw as "farmer" | "fisher" | "stockbreeder" | "beekeeper")
+      : undefined;
+
   return {
-    producer_type: g("producer_type") === "farmer" || g("producer_type") === "fisher"
-      ? (g("producer_type") as "farmer" | "fisher")
-      : undefined,
+    producer_type: producerType,
     product_id: g("product_id") || undefined,
     product_category: g("product_category") || undefined,
     region_code: g("region_code") || undefined,
