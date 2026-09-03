@@ -10,11 +10,48 @@ interface Props {
   isAdmin: boolean;
   isProducer: boolean;
   isFisher: boolean;
+  isStockbreeder?: boolean;
+  isBeekeeper?: boolean;
   isDualProducer: boolean;
+  role?: string;
   displayName?: string;
 }
 
-export function MobileNav({ authed, isAdmin, isProducer, isFisher, isDualProducer, displayName }: Props) {
+export function MobileNav({
+  authed,
+  isAdmin,
+  isProducer,
+  isFisher,
+  isStockbreeder = false,
+  isBeekeeper = false,
+  isDualProducer,
+  role,
+  displayName,
+}: Props) {
+  const listingsIcon: IconName = isBeekeeper
+    ? "hive"
+    : isStockbreeder
+      ? "cow"
+      : isFisher
+        ? "fish"
+        : isProducer
+          ? "wheat"
+          : "tag";
+  const listingsLabel = !isProducer
+    ? "Τιμοκατάλογος"
+    : role === "farmer_fisher"
+      ? "Παραγωγή & αλιεύματα"
+      : role === "farmer_stockbreeder"
+        ? "Παραγωγή & κτηνοτροφικά"
+        : role === "farmer_beekeeper"
+          ? "Παραγωγή & μελισσοκομικά"
+          : isBeekeeper
+            ? "Μελισσοκομικά προϊόντα"
+            : isStockbreeder
+              ? "Κτηνοτροφικά προϊόντα"
+              : isFisher
+                ? "Αλιεύματα"
+                : "Παραγωγή";
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const path = usePathname();
@@ -97,17 +134,11 @@ export function MobileNav({ authed, isAdmin, isProducer, isFisher, isDualProduce
           <MobileGroup title={displayName ? `Λογαριασμός · ${displayName}` : "Λογαριασμός"}>
             <MobileLink href="/dashboard" icon="chart">Αρχική</MobileLink>
             <MobileLink href="/dashboard/profile" icon="user">Στοιχεία προφίλ</MobileLink>
-            <MobileLink href="/dashboard/listings" icon={isFisher ? "fish" : isProducer ? "wheat" : "tag"}>
-              {isProducer
-                ? isDualProducer
-                  ? "Παραγωγή & αλιεύματα"
-                  : isFisher
-                    ? "Αλιεύματα"
-                    : "Παραγωγή"
-                : "Τιμοκατάλογος"}
+            <MobileLink href="/dashboard/listings" icon={listingsIcon}>
+              {listingsLabel}
             </MobileLink>
             {isProducer && <MobileLink href="/dashboard/network" icon="heart">Οι αγοραστές μου</MobileLink>}
-            {!isProducer && <MobileLink href="/dashboard/network" icon="users">Παραγωγοί & αλιείς</MobileLink>}
+            {!isProducer && <MobileLink href="/dashboard/network" icon="users">Παραγωγοί</MobileLink>}
             {!isProducer && <MobileLink href="/dashboard/purchases" icon="box">Αγορές & σεζόν</MobileLink>}
             <MobileLink href="/dashboard/messages" icon="chat">Μηνύματα</MobileLink>
             <MobileLink href="/dashboard/notifications" icon="bell">Ειδοποιήσεις</MobileLink>

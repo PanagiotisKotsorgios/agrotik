@@ -4,7 +4,12 @@ import { getRegions, getActiveProducts } from "@/lib/db/queries";
 import { Eyebrow } from "@/components/ui/card";
 import { PriceListingsManager } from "./price-manager";
 import { ProductionListingsManager } from "./production-manager";
-import { hasFisherRole, isProducerRole } from "@/lib/utils";
+import {
+  hasBeekeeperRole,
+  hasFisherRole,
+  hasStockbreederRole,
+  isProducerRole,
+} from "@/lib/utils";
 
 export default async function ListingsPage() {
   const supabase = await createSupabaseServer();
@@ -18,14 +23,28 @@ export default async function ListingsPage() {
 
   if (isProducerRole(profile?.role)) {
     const isFisher = hasFisherRole(profile?.role);
-    const isDualProducer = profile?.role === "farmer_fisher";
-    const producerProducts = products.filter((product) =>
-      isDualProducer
-        ? true
-        : isFisher
-          ? product.category === "Αλιευτικά είδη"
-          : product.category !== "Αλιευτικά είδη",
-    );
+    const isStockbreeder = hasStockbreederRole(profile?.role);
+    const isBeekeeper = hasBeekeeperRole(profile?.role);
+    const isDualFarmerFisher = profile?.role === "farmer_fisher";
+    const isDualFarmerStockbreeder = profile?.role === "farmer_stockbreeder";
+    const isDualFarmerBeekeeper = profile?.role === "farmer_beekeeper";
+    const isDualProducer =
+      isDualFarmerFisher || isDualFarmerStockbreeder || isDualFarmerBeekeeper;
+
+    const SEAFOOD = "Αλιευτικά είδη";
+    const LIVESTOCK = "Κτηνοτροφικά προϊόντα";
+    const BEEKEEPING = "Μελισσοκομικά προϊόντα";
+
+    const producerProducts = products.filter((product) => {
+      if (isDualFarmerFisher) return product.category !== LIVESTOCK && product.category !== BEEKEEPING;
+      if (isDualFarmerStockbreeder) return product.category !== SEAFOOD && product.category !== BEEKEEPING;
+      if (isDualFarmerBeekeeper) return product.category !== SEAFOOD && product.category !== LIVESTOCK;
+      if (isFisher) return product.category === SEAFOOD;
+      if (isStockbreeder) return product.category === LIVESTOCK;
+      if (isBeekeeper) return product.category === BEEKEEPING;
+      // pure farmer — crops only
+      return product.category !== SEAFOOD && product.category !== LIVESTOCK && product.category !== BEEKEEPING;
+    });
     const { data: listings } = await supabase
       .from("production_listings")
       .select("*, products(name_el, unit, attributes_schema), regions(name_el)")
@@ -37,14 +56,30 @@ export default async function ListingsPage() {
         <div className="mb-6">
           <Eyebrow>Καταχώρηση</Eyebrow>
           <h1 className="display text-3xl text-brand-dark mt-1 field-underline">
-            {isDualProducer ? "Η παραγωγή & τα αλιεύματά μου" : isFisher ? "Τα αλιεύματά μου" : "Η παραγωγή μου"}
+            {isDualFarmerFisher
+              ? "Η παραγωγή & τα αλιεύματά μου"
+              : isDualFarmerStockbreeder
+                ? "Η παραγωγή & τα κτηνοτροφικά μου"
+                : isDualFarmerBeekeeper
+                  ? "Η παραγωγή & τα μελισσοκομικά μου"
+                  : isBeekeeper
+                    ? "Τα μελισσοκομικά μου"
+                    : isStockbreeder
+                      ? "Τα κτηνοτροφικά μου"
+                      : isFisher
+                        ? "Τα αλιεύματά μου"
+                        : "Η παραγωγή μου"}
           </h1>
           <p className="mt-3 text-brand-muted">
             {isDualProducer
-              ? "Καταχώρισε αγροτική παραγωγή ή αλιεύματα από τον ίδιο λογαριασμό. Κάθε καταχώρηση εμφανίζεται στα σωστά φίλτρα αναζήτησης."
-              : isFisher
-              ? "Δήλωσε το είδος αλιεύματος, την ποσότητα και τη διαθεσιμότητα. Η καταχώρηση γίνεται αμέσως ορατή στους αγοραστές."
-              : "Δήλωσε τι έχεις έτοιμο και σε τι ποσότητα. Οι εγγραφές γίνονται αμέσως ορατές στην αναζήτηση αγοραστών."}
+              ? "Καταχώρισε δύο διαφορετικές δραστηριότητες από τον ίδιο λογαριασμό. Κάθε καταχώρηση εμφανίζεται στα σωστά φίλτρα αναζήτησης."
+              : isBeekeeper
+                ? "Δήλωσε το είδος μελιού ή προϊόντος κυψέλης, την ποσότητα και τη διαθεσιμότητα. Η καταχώρηση γίνεται αμέσως ορατή στους αγοραστές."
+                : isStockbreeder
+                  ? "Δήλωσε το κτηνοτροφικό προϊόν, την ποσότητα και τη διαθεσιμότητα. Η καταχώρηση γίνεται αμέσως ορατή στους αγοραστές."
+                  : isFisher
+                    ? "Δήλωσε το είδος αλιεύματος, την ποσότητα και τη διαθεσιμότητα. Η καταχώρηση γίνεται αμέσως ορατή στους αγοραστές."
+                    : "Δήλωσε τι έχεις έτοιμο και σε τι ποσότητα. Οι εγγραφές γίνονται αμέσως ορατές στην αναζήτηση αγοραστών."}
           </p>
         </div>
         <ProductionListingsManager

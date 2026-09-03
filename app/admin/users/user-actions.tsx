@@ -208,7 +208,11 @@ export function UserActions({
             <Select id={`role-${userId}`} value={selectedRole} onChange={(event) => setSelectedRole(event.target.value)}>
               <option value="farmer">Αγρότης</option>
               <option value="fisher">Αλιέας</option>
+              <option value="stockbreeder">Κτηνοτρόφος</option>
+              <option value="beekeeper">Μελισσοκόμος</option>
               <option value="farmer_fisher">Αγρότης & Αλιέας</option>
+              <option value="farmer_stockbreeder">Αγρότης & Κτηνοτρόφος</option>
+              <option value="farmer_beekeeper">Αγρότης & Μελισσοκόμος</option>
               <option value="merchant">Έμπορος</option>
               <option value="factory">Εργοστάσιο</option>
               <option value="admin">Διαχειριστής</option>

@@ -17,10 +17,24 @@ interface Hit {
   regions?: { name_el: string } | null;
 }
 
+const ALL_PUBLIC_ROLES = [
+  "farmer",
+  "fisher",
+  "farmer_fisher",
+  "stockbreeder",
+  "beekeeper",
+  "farmer_stockbreeder",
+  "farmer_beekeeper",
+  "merchant",
+  "factory",
+];
+
 const ROLE_FILTERS = [
   { key: "all", label: "Όλοι", role: null as string | null },
   { key: "farmer", label: "Αγρότες", role: "farmer" },
   { key: "fisher", label: "Αλιείς", role: "fisher" },
+  { key: "stockbreeder", label: "Κτηνοτρόφοι", role: "stockbreeder" },
+  { key: "beekeeper", label: "Μελισσοκόμοι", role: "beekeeper" },
   { key: "merchant", label: "Έμποροι", role: "merchant" },
   { key: "factory", label: "Εργοστάσια", role: "factory" },
 ];
@@ -51,7 +65,7 @@ export function GlobalLiveSearch() {
         .eq("is_active", true)
         .eq("is_public", true)
         .neq("role", "admin")
-        .in("role", ["farmer", "fisher", "farmer_fisher", "merchant", "factory"])
+        .in("role", ALL_PUBLIC_ROLES)
         .is("deleted_at", null)
         .limit(24);
       const arr = ((data as any as Hit[]) ?? [])
@@ -78,16 +92,28 @@ export function GlobalLiveSearch() {
         .eq("is_active", true)
         .eq("is_public", true)
         .neq("role", "admin")
-        .in("role", ["farmer", "fisher", "farmer_fisher", "merchant", "factory"])
+        .in("role", ALL_PUBLIC_ROLES)
         .is("deleted_at", null);
 
       const activeFilter = ROLE_FILTERS.find((f) => f.key === roleFilter);
       if (activeFilter?.role) {
-        query = activeFilter.role === "farmer"
-          ? query.in("role", ["farmer", "farmer_fisher"])
-          : activeFilter.role === "fisher"
-            ? query.in("role", ["fisher", "farmer_fisher"])
-            : query.eq("role", activeFilter.role);
+        const role = activeFilter.role;
+        if (role === "farmer") {
+          query = query.in("role", [
+            "farmer",
+            "farmer_fisher",
+            "farmer_stockbreeder",
+            "farmer_beekeeper",
+          ]);
+        } else if (role === "fisher") {
+          query = query.in("role", ["fisher", "farmer_fisher"]);
+        } else if (role === "stockbreeder") {
+          query = query.in("role", ["stockbreeder", "farmer_stockbreeder"]);
+        } else if (role === "beekeeper") {
+          query = query.in("role", ["beekeeper", "farmer_beekeeper"]);
+        } else {
+          query = query.eq("role", role);
+        }
       }
 
       const term = q.trim();

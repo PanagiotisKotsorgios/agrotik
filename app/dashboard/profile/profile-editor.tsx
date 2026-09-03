@@ -183,10 +183,20 @@ export function ProfileEditor({ profile, regions }: { profile: Profile; regions:
               <Select id="producer_role" name="producer_role" defaultValue={profile.role}>
                 {profile.role === "farmer" && <option value="farmer">Αγρότης</option>}
                 {profile.role === "fisher" && <option value="fisher">Αλιέας</option>}
-                <option value="farmer_fisher">Αγρότης & Αλιέας</option>
+                {profile.role === "stockbreeder" && <option value="stockbreeder">Κτηνοτρόφος</option>}
+                {profile.role === "beekeeper" && <option value="beekeeper">Μελισσοκόμος</option>}
+                {(profile.role === "farmer" || profile.role === "fisher" || profile.role === "farmer_fisher") && (
+                  <option value="farmer_fisher">Αγρότης & Αλιέας</option>
+                )}
+                {(profile.role === "farmer" || profile.role === "stockbreeder" || profile.role === "farmer_stockbreeder") && (
+                  <option value="farmer_stockbreeder">Αγρότης & Κτηνοτρόφος</option>
+                )}
+                {(profile.role === "farmer" || profile.role === "beekeeper" || profile.role === "farmer_beekeeper") && (
+                  <option value="farmer_beekeeper">Αγρότης & Μελισσοκόμος</option>
+                )}
               </Select>
               <p className="mt-2 text-xs leading-relaxed text-sky-950/75">
-                Με τη διπλή ιδιότητα χρησιμοποιείς το ίδιο email και τηλέφωνο και καταχωρίζεις τόσο αγροτική παραγωγή όσο και αλιεύματα.
+                Με μια διπλή ιδιότητα χρησιμοποιείς το ίδιο email και τηλέφωνο και καταχωρίζεις παραπάνω από ένα είδος παραγωγής.
               </p>
             </div>
           )}

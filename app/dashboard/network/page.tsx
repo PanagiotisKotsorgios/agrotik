@@ -22,7 +22,12 @@ export default async function NetworkPage({
   const role = me?.role ?? "farmer";
   const isFarmer = isProducerRole(role);
   const isFisher = hasFisherRole(role);
-  const isDualProducer = role === "farmer_fisher";
+  const isStockbreeder = role === "stockbreeder" || role === "farmer_stockbreeder";
+  const isBeekeeper = role === "beekeeper" || role === "farmer_beekeeper";
+  const isDualProducer =
+    role === "farmer_fisher" ||
+    role === "farmer_stockbreeder" ||
+    role === "farmer_beekeeper";
   const isFactory = role === "factory";
   const title = isFarmer
     ? "Οι αγοραστές μου"
@@ -31,13 +36,17 @@ export default async function NetworkPage({
     : "Οι πελάτες μου";
   const description = isFarmer
     ? isDualProducer
-      ? "Αγοραστές παραγωγής και αλιευμάτων που παρακολουθείς και αυτοί με τους οποίους έχεις κλείσει συμφωνία."
+      ? "Αγοραστές των προϊόντων σου που παρακολουθείς και αυτοί με τους οποίους έχεις κλείσει συμφωνία."
+      : isBeekeeper
+      ? "Αγοραστές μελισσοκομικών προϊόντων που παρακολουθείς και αυτοί με τους οποίους έχεις κλείσει συμφωνία."
+      : isStockbreeder
+      ? "Αγοραστές κτηνοτροφικών προϊόντων που παρακολουθείς και αυτοί με τους οποίους έχεις κλείσει συμφωνία."
       : isFisher
       ? "Αγοραστές αλιευμάτων που παρακολουθείς και αυτοί με τους οποίους έχεις κλείσει συμφωνία."
       : "Αγοραστές που παρακολουθείς και αυτοί με τους οποίους έχεις κλείσει συμφωνία."
     : isFactory
     ? "Παραγωγοί που προμηθεύεσαι, έμποροι-μεσίτες συνεργάτες, και αγαπημένα προφίλ."
-    : "Παραγωγοί και αλιείς με τους οποίους έχεις κλείσει συμφωνία μέσω της πλατφόρμας.";
+    : "Παραγωγοί με τους οποίους έχεις κλείσει συμφωνία μέσω της πλατφόρμας.";
 
   const [favResp, dealResp] = await Promise.all([
     supabase

@@ -21,7 +21,12 @@ export default async function DashboardHome() {
   const isBuyer = profile?.role === "merchant" || profile?.role === "factory";
   const isProducer = isProducerRole(profile?.role);
   const isFisher = hasFisherRole(profile?.role);
-  const isDualProducer = profile?.role === "farmer_fisher";
+  const isStockbreeder = profile?.role === "stockbreeder" || profile?.role === "farmer_stockbreeder";
+  const isBeekeeper = profile?.role === "beekeeper" || profile?.role === "farmer_beekeeper";
+  const isDualProducer =
+    profile?.role === "farmer_fisher" ||
+    profile?.role === "farmer_stockbreeder" ||
+    profile?.role === "farmer_beekeeper";
   const table = isBuyer ? "price_listings" : "production_listings";
   const [{ count: listingCount }, { count: msgCount }, { count: notifCount }, { count: networkCount }] = await Promise.all([
     supabase.from(table).select("id", { count: "exact", head: true }).eq("owner_id", user.id).eq("is_active", true),
@@ -45,8 +50,34 @@ export default async function DashboardHome() {
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatBox
-          icon={isBuyer ? "tag" : isFisher ? "fish" : "wheat"}
-          label={isBuyer ? "Τιμοκατάλογος" : isDualProducer ? "Παραγωγή & αλιεύματα" : isFisher ? "Αλιεύματα" : "Παραγωγές"}
+          icon={
+            isBuyer
+              ? "tag"
+              : isBeekeeper
+                ? "hive"
+                : isStockbreeder
+                  ? "cow"
+                  : isFisher
+                    ? "fish"
+                    : "wheat"
+          }
+          label={
+            isBuyer
+              ? "Τιμοκατάλογος"
+              : profile?.role === "farmer_fisher"
+                ? "Παραγωγή & αλιεύματα"
+                : profile?.role === "farmer_stockbreeder"
+                  ? "Παραγωγή & κτηνοτροφικά"
+                  : profile?.role === "farmer_beekeeper"
+                    ? "Παραγωγή & μελισσοκομικά"
+                    : isBeekeeper
+                      ? "Μελισσοκομικά"
+                      : isStockbreeder
+                        ? "Κτηνοτροφικά"
+                        : isFisher
+                          ? "Αλιεύματα"
+                          : "Παραγωγές"
+          }
           value={listingCount ?? 0}
           href="/dashboard/listings"
           tone={isFisher ? "fisher" : "dark"}

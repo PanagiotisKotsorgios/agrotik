@@ -11,7 +11,7 @@ import {
   faEyeSlash, faLock, faLockOpen, faTriangleExclamation, faCircleCheck,
   faInbox, faComments, faReply, faArrowTrendUp, faArrowTrendDown, faMoneyBillWave,
   faPaperclip, faImage, faBars, faXmark as faClose,
-  faFish,
+  faFish, faCow, faJar,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Curated allowlist — keeps the bundle predictable and gives us Greek labels.
@@ -73,6 +73,8 @@ export const icons = {
   menu: faBars,
   close: faClose,
   fish: faFish,
+  cow: faCow,
+  hive: faJar,
 } as const;
 
 export type IconName = keyof typeof icons;

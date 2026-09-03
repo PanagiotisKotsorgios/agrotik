@@ -36,7 +36,15 @@ export default async function PurchasesPage({
     supabase
       .from("profiles")
       .select("id, display_name, municipality, region_code, regions(name_el)")
-      .in("role", ["farmer", "fisher", "farmer_fisher"])
+      .in("role", [
+        "farmer",
+        "fisher",
+        "farmer_fisher",
+        "stockbreeder",
+        "beekeeper",
+        "farmer_stockbreeder",
+        "farmer_beekeeper",
+      ])
       .eq("is_active", true)
       .eq("is_public", true)
       .order("display_name")

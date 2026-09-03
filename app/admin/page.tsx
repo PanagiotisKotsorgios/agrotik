@@ -32,9 +32,34 @@ export default async function AdminStats() {
         <h1 className="display text-3xl text-brand-dark mt-1 field-underline">Στατιστικά</h1>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Stat icon="seedling" label="Αγρότες" value={(roleCounts.get("farmer") ?? 0) + (roleCounts.get("farmer_fisher") ?? 0)} />
-        <Stat icon="fish" label="Αλιείς" value={(roleCounts.get("fisher") ?? 0) + (roleCounts.get("farmer_fisher") ?? 0)} />
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Stat
+          icon="seedling"
+          label="Αγρότες"
+          value={
+            (roleCounts.get("farmer") ?? 0) +
+            (roleCounts.get("farmer_fisher") ?? 0) +
+            (roleCounts.get("farmer_stockbreeder") ?? 0) +
+            (roleCounts.get("farmer_beekeeper") ?? 0)
+          }
+        />
+        <Stat
+          icon="fish"
+          label="Αλιείς"
+          value={(roleCounts.get("fisher") ?? 0) + (roleCounts.get("farmer_fisher") ?? 0)}
+        />
+        <Stat
+          icon="cow"
+          label="Κτηνοτρόφοι"
+          value={(roleCounts.get("stockbreeder") ?? 0) + (roleCounts.get("farmer_stockbreeder") ?? 0)}
+        />
+        <Stat
+          icon="hive"
+          label="Μελισσοκόμοι"
+          value={(roleCounts.get("beekeeper") ?? 0) + (roleCounts.get("farmer_beekeeper") ?? 0)}
+        />
+      </div>
+      <div className="grid sm:grid-cols-3 gap-4 mt-4">
         <Stat icon="store" label="Έμποροι" value={roleCounts.get("merchant") ?? 0} />
         <Stat icon="industry" label="Εργοστάσια" value={roleCounts.get("factory") ?? 0} />
         <Stat icon="shield" label="Διαχειριστές" value={roleCounts.get("admin") ?? 0} />

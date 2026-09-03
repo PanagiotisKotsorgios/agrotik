@@ -20,8 +20,20 @@ export default async function SignupPage({
 
   const { data: regions } = await supabase.from("regions").select("code, name_el").order("name_el");
   const params = await searchParams;
-  const initialRole = ["farmer", "fisher", "farmer_fisher", "merchant", "factory"].includes(params.role ?? "")
-    ? (params.role as "farmer" | "fisher" | "farmer_fisher" | "merchant" | "factory")
+  const ALLOWED_ROLES = [
+    "farmer",
+    "fisher",
+    "farmer_fisher",
+    "stockbreeder",
+    "beekeeper",
+    "farmer_stockbreeder",
+    "farmer_beekeeper",
+    "merchant",
+    "factory",
+  ] as const;
+  type SignupRole = (typeof ALLOWED_ROLES)[number];
+  const initialRole: SignupRole = (ALLOWED_ROLES as readonly string[]).includes(params.role ?? "")
+    ? (params.role as SignupRole)
     : "farmer";
 
   return (

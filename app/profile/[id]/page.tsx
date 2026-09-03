@@ -9,7 +9,7 @@ import { Card, Badge, Eyebrow, CardTitle } from "@/components/ui/card";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { getProfileById, getProfileListings } from "@/lib/db/queries";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { attributeLabel, formatQuantityNumber, formatRelative, hasFisherRole, pluralizeQuantityUnit, priceFormat, roleBadgeTone, roleLabel } from "@/lib/utils";
+import { attributeLabel, formatQuantityNumber, formatRelative, hasBeekeeperRole, hasFisherRole, hasStockbreederRole, pluralizeQuantityUnit, priceFormat, roleBadgeTone, roleLabel } from "@/lib/utils";
 import { FavoriteButton } from "./favorite-button";
 
 export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -43,7 +43,17 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
       <Header />
 
       {/* Cover */}
-      <div className={`relative w-full h-56 sm:h-72 overflow-hidden ${hasFisherRole(profile.role) ? "bg-sky-950" : "bg-brand-dark"}`}>
+      <div
+        className={`relative w-full h-56 sm:h-72 overflow-hidden ${
+          hasFisherRole(profile.role)
+            ? "bg-sky-950"
+            : hasBeekeeperRole(profile.role)
+              ? "bg-amber-800"
+              : hasStockbreederRole(profile.role)
+                ? "bg-stone-800"
+                : "bg-brand-dark"
+        }`}
+      >
         {profile.cover_url ? (
           <Image src={profile.cover_url} alt="" fill className="object-cover opacity-95" unoptimized />
         ) : (
@@ -52,11 +62,25 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             style={{
               background: hasFisherRole(profile.role)
                 ? "linear-gradient(135deg, #082F49 0%, #075985 55%, #0E7490 100%)"
-                : "linear-gradient(135deg, #1B4D2E 0%, #3F8B34 55%, #6B7F3F 100%)",
+                : hasBeekeeperRole(profile.role)
+                  ? "linear-gradient(135deg, #78350F 0%, #B45309 55%, #F59E0B 100%)"
+                  : hasStockbreederRole(profile.role)
+                    ? "linear-gradient(135deg, #292524 0%, #57534E 55%, #A8A29E 100%)"
+                    : "linear-gradient(135deg, #1B4D2E 0%, #3F8B34 55%, #6B7F3F 100%)",
             }}
           />
         )}
-        <div className={`absolute inset-0 bg-gradient-to-t to-transparent ${hasFisherRole(profile.role) ? "from-sky-950/85 via-sky-950/25" : "from-brand-dark/80 via-brand-dark/20"}`} />
+        <div
+          className={`absolute inset-0 bg-gradient-to-t to-transparent ${
+            hasFisherRole(profile.role)
+              ? "from-sky-950/85 via-sky-950/25"
+              : hasBeekeeperRole(profile.role)
+                ? "from-amber-900/85 via-amber-900/25"
+                : hasStockbreederRole(profile.role)
+                  ? "from-stone-900/85 via-stone-900/25"
+                  : "from-brand-dark/80 via-brand-dark/20"
+          }`}
+        />
       </div>
 
       <div className="max-w-5xl mx-auto px-4 -mt-20 relative z-10 pb-10 space-y-6">
@@ -211,18 +235,34 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                   ? "Τιμοκατάλογος"
                   : profile.role === "farmer_fisher"
                     ? "Παραγωγή & αλιεύματα"
-                    : profile.role === "fisher"
-                      ? "Αλιεύματα"
-                      : "Παραγωγή"}
+                    : profile.role === "farmer_stockbreeder"
+                      ? "Παραγωγή & κτηνοτροφικά"
+                      : profile.role === "farmer_beekeeper"
+                        ? "Παραγωγή & μελισσοκομικά"
+                        : profile.role === "fisher"
+                          ? "Αλιεύματα"
+                          : profile.role === "stockbreeder"
+                            ? "Κτηνοτροφικά"
+                            : profile.role === "beekeeper"
+                              ? "Μελισσοκομικά"
+                              : "Παραγωγή"}
               </Eyebrow>
               <h2 className="display text-2xl text-brand-dark mt-1 field-underline">
                 {type === "price"
                   ? "Τιμές που αγοράζει"
                   : profile.role === "farmer_fisher"
                     ? "Διαθέσιμη παραγωγή & αλιεύματα"
-                    : profile.role === "fisher"
-                      ? "Διαθέσιμα αλιεύματα"
-                      : "Διαθέσιμη παραγωγή"}
+                    : profile.role === "farmer_stockbreeder"
+                      ? "Διαθέσιμη παραγωγή & κτηνοτροφικά"
+                      : profile.role === "farmer_beekeeper"
+                        ? "Διαθέσιμη παραγωγή & μελισσοκομικά"
+                        : profile.role === "fisher"
+                          ? "Διαθέσιμα αλιεύματα"
+                          : profile.role === "stockbreeder"
+                            ? "Διαθέσιμα κτηνοτροφικά προϊόντα"
+                            : profile.role === "beekeeper"
+                              ? "Διαθέσιμα μελισσοκομικά προϊόντα"
+                              : "Διαθέσιμη παραγωγή"}
               </h2>
             </div>
             <Badge tone="muted">{listings.length} καταχωρήσεις</Badge>
@@ -236,9 +276,17 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                   ? "Δεν υπάρχουν καταχωρημένες τιμές."
                   : profile.role === "farmer_fisher"
                     ? "Δεν υπάρχει καταχωρημένη παραγωγή ή αλίευμα."
-                    : profile.role === "fisher"
-                      ? "Δεν υπάρχουν καταχωρημένα αλιεύματα."
-                      : "Δεν υπάρχει καταχωρημένη παραγωγή."}
+                    : profile.role === "farmer_stockbreeder"
+                      ? "Δεν υπάρχει καταχωρημένη παραγωγή ή κτηνοτροφικό προϊόν."
+                      : profile.role === "farmer_beekeeper"
+                        ? "Δεν υπάρχει καταχωρημένη παραγωγή ή μελισσοκομικό προϊόν."
+                        : profile.role === "fisher"
+                          ? "Δεν υπάρχουν καταχωρημένα αλιεύματα."
+                          : profile.role === "stockbreeder"
+                            ? "Δεν υπάρχουν καταχωρημένα κτηνοτροφικά προϊόντα."
+                            : profile.role === "beekeeper"
+                              ? "Δεν υπάρχουν καταχωρημένα μελισσοκομικά προϊόντα."
+                              : "Δεν υπάρχει καταχωρημένη παραγωγή."}
               </div>
             </Card>
           ) : (

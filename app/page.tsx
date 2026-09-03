@@ -36,7 +36,17 @@ async function safeFetchLandingData() {
         .eq("is_active", true)
         .eq("is_public", true)
         .neq("role", "admin")
-        .in("role", ["farmer", "fisher", "farmer_fisher", "merchant", "factory"])
+        .in("role", [
+          "farmer",
+          "fisher",
+          "farmer_fisher",
+          "stockbreeder",
+          "beekeeper",
+          "farmer_stockbreeder",
+          "farmer_beekeeper",
+          "merchant",
+          "factory",
+        ])
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(8),

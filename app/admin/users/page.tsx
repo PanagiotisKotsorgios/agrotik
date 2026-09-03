@@ -30,9 +30,15 @@ export default async function AdminUsers({
     .select("*, regions(name_el)")
     .order("created_at", { ascending: false })
     .limit(1000);
-  if (selectedRole === "farmer") query = query.in("role", ["farmer", "farmer_fisher"]);
-  else if (selectedRole === "fisher") query = query.in("role", ["fisher", "farmer_fisher"]);
-  else if (selectedRole) query = query.eq("role", selectedRole);
+  if (selectedRole === "farmer") {
+    query = query.in("role", ["farmer", "farmer_fisher", "farmer_stockbreeder", "farmer_beekeeper"]);
+  } else if (selectedRole === "fisher") {
+    query = query.in("role", ["fisher", "farmer_fisher"]);
+  } else if (selectedRole === "stockbreeder") {
+    query = query.in("role", ["stockbreeder", "farmer_stockbreeder"]);
+  } else if (selectedRole === "beekeeper") {
+    query = query.in("role", ["beekeeper", "farmer_beekeeper"]);
+  } else if (selectedRole) query = query.eq("role", selectedRole);
 
   const [{ data: users }, { data: authUsers }] = await Promise.all([
     query,
@@ -68,7 +74,11 @@ export default async function AdminUsers({
     { v: "", l: "Όλοι" },
     { v: "farmer", l: "Αγρότες" },
     { v: "fisher", l: "Αλιείς" },
+    { v: "stockbreeder", l: "Κτηνοτρόφοι" },
+    { v: "beekeeper", l: "Μελισσοκόμοι" },
     { v: "farmer_fisher", l: "Αγρότες & Αλιείς" },
+    { v: "farmer_stockbreeder", l: "Αγρότες & Κτηνοτρόφοι" },
+    { v: "farmer_beekeeper", l: "Αγρότες & Μελισσοκόμοι" },
     { v: "merchant", l: "Έμποροι" },
     { v: "factory", l: "Εργοστάσια" },
     { v: "admin", l: "Διαχειριστές" },

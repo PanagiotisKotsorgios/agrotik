@@ -32,9 +32,20 @@ export default async function ProducersSearchPage({
     searchProducers(filters),
   ]);
 
+  const SEAFOOD = "Αλιευτικά είδη";
+  const LIVESTOCK = "Κτηνοτροφικά προϊόντα";
+  const BEEKEEPING = "Μελισσοκομικά προϊόντα";
   const producerProducts = products.filter((product) => {
-    if (filters.producer_type === "fisher") return product.category === "Αλιευτικά είδη";
-    if (filters.producer_type === "farmer") return product.category !== "Αλιευτικά είδη";
+    if (filters.producer_type === "fisher") return product.category === SEAFOOD;
+    if (filters.producer_type === "stockbreeder") return product.category === LIVESTOCK;
+    if (filters.producer_type === "beekeeper") return product.category === BEEKEEPING;
+    if (filters.producer_type === "farmer") {
+      return (
+        product.category !== SEAFOOD &&
+        product.category !== LIVESTOCK &&
+        product.category !== BEEKEEPING
+      );
+    }
     return true;
   });
   const categories = [...new Set(producerProducts.map((product) => product.category))].sort((a, b) =>
@@ -67,19 +78,19 @@ export default async function ProducersSearchPage({
             href="/search/producers"
             className="min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-5 py-3 border-b-2 border-brand-dark text-center font-semibold text-brand-dark text-sm sm:text-lg leading-tight -mb-px"
           >
-            <Icon name="seedling" className="shrink-0" /> <span>Βρες Παραγωγό ή Αλιέα</span>
+            <Icon name="seedling" className="shrink-0" /> <span>Βρες Παραγωγό</span>
           </Link>
         </div>
 
         <div className="mt-6 mb-6">
           <Eyebrow>Αναζήτηση</Eyebrow>
-          <h1 className="display text-[38px] leading-tight text-brand-dark mt-1 field-underline">Βρες Παραγωγό ή Αλιέα</h1>
+          <h1 className="display text-[38px] leading-tight text-brand-dark mt-1 field-underline">Βρες Παραγωγό</h1>
           <p className="mt-3 text-brand-muted text-lg leading-relaxed">
-            Όλοι οι ενεργοί αγρότες και αλιείς, με ή χωρίς δηλωμένη παραγωγή ή αλίευμα. Φιλτράρισε ανά τύπο, περιοχή, προϊόν, είδος αλιεύματος, ποσότητα ή διαθεσιμότητα.
+            Όλοι οι ενεργοί αγρότες, αλιείς, κτηνοτρόφοι και μελισσοκόμοι, με ή χωρίς δηλωμένη παραγωγή. Φιλτράρισε ανά τύπο, περιοχή, προϊόν, ποσότητα ή διαθεσιμότητα.
           </p>
         </div>
 
-        <LiveSearchInput placeholder="Αναζήτηση αγρότη ή αλιέα με όνομα ή επωνυμία…" />
+        <LiveSearchInput placeholder="Αναζήτηση με όνομα ή επωνυμία…" />
 
         <FiltersDrawer activeCount={countActive(params)}>
         <LiveFilterForm key={JSON.stringify(params)} resultsId="search-results" className="p-5 bg-brand-surface rounded-card border border-brand-border shadow-card mb-6">
@@ -87,9 +98,11 @@ export default async function ProducersSearchPage({
             <div>
               <Label>Τύπος παραγωγού</Label>
               <Select name="producer_type" defaultValue={filters.producer_type ?? ""}>
-                <option value="">Αγρότες + Αλιείς</option>
+                <option value="">Όλοι οι παραγωγοί</option>
                 <option value="farmer">Μόνο Αγρότες</option>
                 <option value="fisher">Μόνο Αλιείς</option>
+                <option value="stockbreeder">Μόνο Κτηνοτρόφοι</option>
+                <option value="beekeeper">Μόνο Μελισσοκόμοι</option>
               </Select>
             </div>
             <div>
@@ -275,16 +288,33 @@ export default async function ProducersSearchPage({
                         <Badge tone="muted" className="max-w-full whitespace-normal text-left leading-snug">
                           {r.profile.role === "farmer_fisher"
                             ? "Χωρίς δηλωμένη παραγωγή ή αλίευμα"
-                            : r.profile.role === "fisher"
-                              ? "Χωρίς δηλωμένο αλίευμα"
-                              : "Χωρίς δηλωμένη παραγωγή"}
+                            : r.profile.role === "farmer_stockbreeder"
+                              ? "Χωρίς δηλωμένη παραγωγή ή κτηνοτροφικό"
+                              : r.profile.role === "farmer_beekeeper"
+                                ? "Χωρίς δηλωμένη παραγωγή ή μελισσοκομικό"
+                                : r.profile.role === "fisher"
+                                  ? "Χωρίς δηλωμένο αλίευμα"
+                                  : r.profile.role === "stockbreeder"
+                                    ? "Χωρίς δηλωμένα κτηνοτροφικά προϊόντα"
+                                    : r.profile.role === "beekeeper"
+                                      ? "Χωρίς δηλωμένα μελισσοκομικά προϊόντα"
+                                      : "Χωρίς δηλωμένη παραγωγή"}
                         </Badge>
                         <p className="break-words text-sm text-brand-muted mt-2 line-clamp-2 [overflow-wrap:anywhere]">
-                          {r.profile.bio || (r.profile.role === "farmer_fisher"
-                            ? "Ο παραγωγός και αλιέας δεν έχει καταχωρίσει διαθέσιμη παραγωγή ή αλίευμα ακόμη."
-                            : r.profile.role === "fisher"
-                              ? "Ο αλιέας δεν έχει καταχωρίσει διαθέσιμο αλίευμα ακόμη."
-                              : "Ο παραγωγός δεν έχει καταχωρίσει διαθέσιμη παραγωγή ακόμη.")}
+                          {r.profile.bio ||
+                            (r.profile.role === "farmer_fisher"
+                              ? "Ο παραγωγός και αλιέας δεν έχει καταχωρίσει διαθέσιμη παραγωγή ή αλίευμα ακόμη."
+                              : r.profile.role === "farmer_stockbreeder"
+                                ? "Ο αγρότης και κτηνοτρόφος δεν έχει καταχωρίσει διαθέσιμα προϊόντα ακόμη."
+                                : r.profile.role === "farmer_beekeeper"
+                                  ? "Ο αγρότης και μελισσοκόμος δεν έχει καταχωρίσει διαθέσιμα προϊόντα ακόμη."
+                                  : r.profile.role === "fisher"
+                                    ? "Ο αλιέας δεν έχει καταχωρίσει διαθέσιμο αλίευμα ακόμη."
+                                    : r.profile.role === "stockbreeder"
+                                      ? "Ο κτηνοτρόφος δεν έχει καταχωρίσει διαθέσιμα προϊόντα ακόμη."
+                                      : r.profile.role === "beekeeper"
+                                        ? "Ο μελισσοκόμος δεν έχει καταχωρίσει διαθέσιμα προϊόντα ακόμη."
+                                        : "Ο παραγωγός δεν έχει καταχωρίσει διαθέσιμη παραγωγή ακόμη.")}
                         </p>
                       </div>
                     )}
