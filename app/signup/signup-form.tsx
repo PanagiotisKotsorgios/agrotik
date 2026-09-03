@@ -8,14 +8,15 @@ import { signup } from "@/lib/actions/auth";
 import type { Region } from "@/lib/db/types";
 import { cn } from "@/lib/utils";
 
+// Signup keeps a single "primary activity" picker for simplicity.
+// A second activity (Αγρότης & Αλιέας, Αγρότης & Κτηνοτρόφος, or
+// Αγρότης & Μελισσοκόμος) is added later from the dashboard profile
+// editor — one field instead of nine cards on the register screen.
 type Role =
   | "farmer"
   | "fisher"
-  | "farmer_fisher"
   | "stockbreeder"
   | "beekeeper"
-  | "farmer_stockbreeder"
-  | "farmer_beekeeper"
   | "merchant"
   | "factory";
 
@@ -24,9 +25,6 @@ const roleCards: { value: Role; label: string; icon: IconName; desc: string }[] 
   { value: "fisher", label: "Αλιέας", icon: "fish", desc: "Αλιεύω & πουλάω" },
   { value: "stockbreeder", label: "Κτηνοτρόφος", icon: "cow", desc: "Εκτρέφω & πουλάω" },
   { value: "beekeeper", label: "Μελισσοκόμος", icon: "hive", desc: "Παράγω μέλι & προϊόντα κυψέλης" },
-  { value: "farmer_fisher", label: "Αγρότης & Αλιέας", icon: "fish", desc: "Παράγω, αλιεύω & πουλάω" },
-  { value: "farmer_stockbreeder", label: "Αγρότης & Κτηνοτρόφος", icon: "cow", desc: "Παράγω, εκτρέφω & πουλάω" },
-  { value: "farmer_beekeeper", label: "Αγρότης & Μελισσοκόμος", icon: "hive", desc: "Παράγω, μελισσοκομώ & πουλάω" },
   { value: "merchant", label: "Έμπορος", icon: "store", desc: "Αγοράζω παραγωγή" },
   { value: "factory", label: "Εργοστάσιο", icon: "industry", desc: "Επεξεργάζομαι" },
 ];
@@ -49,13 +47,6 @@ const roleCardStyles: Record<
     activeIcon: "bg-white/15 text-white ring-1 ring-inset ring-white/20",
     idleDescription: "text-sky-800",
   },
-  farmer_fisher: {
-    idle: "border-teal-800/70 bg-gradient-to-r from-green-50/90 to-sky-50/90 text-teal-950 hover:border-teal-950",
-    active: "border-teal-950 bg-gradient-to-r from-green-900 to-sky-900 text-white shadow-md shadow-teal-950/15",
-    idleIcon: "bg-teal-100 text-teal-900 ring-1 ring-inset ring-teal-800/20",
-    activeIcon: "bg-white/15 text-white ring-1 ring-inset ring-white/20",
-    idleDescription: "text-teal-800",
-  },
   stockbreeder: {
     idle: "border-stone-700/70 bg-stone-50/80 text-stone-950 hover:border-stone-900 hover:bg-stone-100/70",
     active: "border-stone-900 bg-stone-800 text-white shadow-md shadow-stone-900/15",
@@ -66,20 +57,6 @@ const roleCardStyles: Record<
   beekeeper: {
     idle: "border-amber-700/70 bg-amber-50/80 text-amber-950 hover:border-amber-900 hover:bg-amber-100/60",
     active: "border-amber-900 bg-amber-700 text-white shadow-md shadow-amber-900/15",
-    idleIcon: "bg-amber-100 text-amber-900 ring-1 ring-inset ring-amber-700/20",
-    activeIcon: "bg-white/15 text-white ring-1 ring-inset ring-white/20",
-    idleDescription: "text-amber-800",
-  },
-  farmer_stockbreeder: {
-    idle: "border-stone-700/70 bg-gradient-to-r from-green-50/90 to-stone-50/90 text-stone-950 hover:border-stone-900",
-    active: "border-stone-900 bg-gradient-to-r from-green-900 to-stone-800 text-white shadow-md shadow-stone-900/15",
-    idleIcon: "bg-stone-200 text-stone-900 ring-1 ring-inset ring-stone-700/20",
-    activeIcon: "bg-white/15 text-white ring-1 ring-inset ring-white/20",
-    idleDescription: "text-stone-700",
-  },
-  farmer_beekeeper: {
-    idle: "border-amber-700/70 bg-gradient-to-r from-green-50/90 to-amber-50/90 text-amber-950 hover:border-amber-900",
-    active: "border-amber-900 bg-gradient-to-r from-green-900 to-amber-700 text-white shadow-md shadow-amber-900/15",
     idleIcon: "bg-amber-100 text-amber-900 ring-1 ring-inset ring-amber-700/20",
     activeIcon: "bg-white/15 text-white ring-1 ring-inset ring-white/20",
     idleDescription: "text-amber-800",
@@ -135,10 +112,6 @@ export function SignupForm({ regions, initialRole }: { regions: Region[]; initia
                 aria-pressed={selected}
                 className={cn(
                   "w-full min-w-0 min-h-[76px] sm:min-h-[150px] p-3.5 sm:p-4 rounded-lg border-2 text-left transition-all duration-200",
-                  (r.value === "farmer_fisher" ||
-                    r.value === "farmer_stockbreeder" ||
-                    r.value === "farmer_beekeeper") &&
-                    "sm:col-span-2 sm:min-h-[112px]",
                   "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-mid focus-visible:ring-offset-2",
                   selected ? styles.active : styles.idle,
                 )}
@@ -211,7 +184,7 @@ export function SignupForm({ regions, initialRole }: { regions: Region[]; initia
 
       <div>
         <Label htmlFor="display_name">
-          {role === "farmer" || role === "farmer_fisher" || role === "farmer_stockbreeder" || role === "farmer_beekeeper"
+          {role === "farmer"
             ? "Ονοματεπώνυμο / όνομα εκμετάλλευσης"
             : role === "fisher"
               ? "Ονοματεπώνυμο / όνομα αλιευτικής επιχείρησης"
@@ -222,6 +195,11 @@ export function SignupForm({ regions, initialRole }: { regions: Region[]; initia
                   : "Επωνυμία επιχείρησης"}
         </Label>
         <Input id="display_name" name="display_name" required />
+        {(role === "farmer" || role === "fisher" || role === "stockbreeder" || role === "beekeeper") && (
+          <p className="mt-1 text-[12px] text-brand-muted">
+            Μπορείς να προσθέσεις δεύτερη δραστηριότητα (π.χ. Αγρότης & Κτηνοτρόφος) αργότερα από τον λογαριασμό σου.
+          </p>
+        )}
       </div>
 
       <div>
