@@ -70,21 +70,26 @@ export default async function ProducersSearchPage({
         <div className="grid grid-cols-3 items-stretch border-b border-brand-border">
           <Link
             href="/search/buyers"
-            className="min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-5 py-3 border-b-2 border-transparent text-center text-brand-muted hover:text-brand-dark text-sm sm:text-lg leading-tight"
+            className="min-w-0 inline-flex items-center justify-center gap-1 sm:gap-1.5 px-1 sm:px-4 py-2.5 sm:py-3 border-b-2 border-transparent text-center text-brand-muted hover:text-brand-dark text-[13px] sm:text-lg leading-tight whitespace-nowrap"
           >
-            <Icon name="store" className="shrink-0" /> <span>Βρες Αγοραστή</span>
+            <Icon name="store" className="shrink-0" />
+            <span className="hidden sm:inline">Βρες Αγοραστή</span>
+            <span className="sm:hidden truncate">Αγοραστές</span>
           </Link>
           <Link
             href="/search/producers"
-            className="min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-5 py-3 border-b-2 border-brand-dark text-center font-semibold text-brand-dark text-sm sm:text-lg leading-tight -mb-px"
+            className="min-w-0 inline-flex items-center justify-center gap-1 sm:gap-1.5 px-1 sm:px-4 py-2.5 sm:py-3 border-b-2 border-brand-dark text-center font-semibold text-brand-dark text-[13px] sm:text-lg leading-tight -mb-px whitespace-nowrap"
           >
-            <Icon name="seedling" className="shrink-0" /> <span>Βρες Παραγωγό</span>
+            <Icon name="seedling" className="shrink-0" />
+            <span className="hidden sm:inline">Βρες Παραγωγό</span>
+            <span className="sm:hidden truncate">Παραγωγοί</span>
           </Link>
           <Link
             href="/search/suppliers"
-            className="min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-5 py-3 border-b-2 border-transparent text-center text-brand-muted hover:text-brand-dark text-sm sm:text-lg leading-tight"
+            className="min-w-0 inline-flex items-center justify-center gap-1 sm:gap-1.5 px-1 sm:px-4 py-2.5 sm:py-3 border-b-2 border-transparent text-center text-brand-muted hover:text-brand-dark text-[13px] sm:text-lg leading-tight whitespace-nowrap"
           >
-            <Icon name="listCheck" className="shrink-0" /> <span>Αγροεφόδια</span>
+            <Icon name="listCheck" className="shrink-0" />
+            <span className="truncate">Αγροεφόδια</span>
           </Link>
         </div>
 

@@ -282,9 +282,9 @@ function parsePage(value: string | string[] | undefined): number {
 
 function Tabs({ active }: { active: "buyers" | "producers" | "suppliers" }) {
   const items = [
-    { key: "buyers", href: "/search/buyers", label: "Βρες Αγοραστή", icon: "store" as const },
-    { key: "producers", href: "/search/producers", label: "Βρες Παραγωγό", icon: "seedling" as const },
-    { key: "suppliers", href: "/search/suppliers", label: "Αγροεφόδια", icon: "listCheck" as const },
+    { key: "buyers", href: "/search/buyers", shortLabel: "Αγοραστές", label: "Βρες Αγοραστή", icon: "store" as const },
+    { key: "producers", href: "/search/producers", shortLabel: "Παραγωγοί", label: "Βρες Παραγωγό", icon: "seedling" as const },
+    { key: "suppliers", href: "/search/suppliers", shortLabel: "Αγροεφόδια", label: "Αγροεφόδια", icon: "listCheck" as const },
   ];
   return (
     <div className="grid grid-cols-3 items-stretch border-b border-brand-border">
@@ -294,11 +294,13 @@ function Tabs({ active }: { active: "buyers" | "producers" | "suppliers" }) {
           href={t.href}
           className={
             active === t.key
-              ? "min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-5 py-3 border-b-2 border-brand-dark text-center font-semibold text-brand-dark text-sm sm:text-lg leading-tight -mb-px"
-              : "min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-5 py-3 border-b-2 border-transparent text-center text-brand-muted hover:text-brand-dark text-sm sm:text-lg leading-tight"
+              ? "min-w-0 inline-flex items-center justify-center gap-1 sm:gap-1.5 px-1 sm:px-4 py-2.5 sm:py-3 border-b-2 border-brand-dark text-center font-semibold text-brand-dark text-[13px] sm:text-lg leading-tight -mb-px whitespace-nowrap"
+              : "min-w-0 inline-flex items-center justify-center gap-1 sm:gap-1.5 px-1 sm:px-4 py-2.5 sm:py-3 border-b-2 border-transparent text-center text-brand-muted hover:text-brand-dark text-[13px] sm:text-lg leading-tight whitespace-nowrap"
           }
         >
-          <Icon name={t.icon} className="shrink-0" /> <span>{t.label}</span>
+          <Icon name={t.icon} className="shrink-0" />
+          <span className="hidden sm:inline">{t.label}</span>
+          <span className="sm:hidden truncate">{t.shortLabel}</span>
         </Link>
       ))}
     </div>

@@ -46,7 +46,7 @@ export async function Header() {
           <Logo size={72} />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-1">
           <NavItem href="/search/buyers" icon="store" label="Αγοραστές" />
           <NavItem href="/search/producers" icon="seedling" label="Παραγωγοί" />
           <NavItem href="/search/suppliers" icon="listCheck" label="Αγροεφόδια" />

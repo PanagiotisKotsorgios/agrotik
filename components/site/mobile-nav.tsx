@@ -86,7 +86,7 @@ export function MobileNav({
   const drawer = open ? (
     <div
       style={{ position: "fixed", inset: 0, zIndex: 100 }}
-      className="md:hidden bg-brand-bg flex flex-col"
+      className="lg:hidden bg-brand-bg flex flex-col"
       role="dialog"
       aria-modal="true"
       aria-label="Μενού"
@@ -201,7 +201,7 @@ export function MobileNav({
           onClick={() => setOpen(true)}
           aria-label="Άνοιγμα μενού"
           aria-expanded={open}
-          className="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-md text-brand-dark hover:bg-brand-border/40"
+          className="lg:hidden inline-flex items-center justify-center w-11 h-11 rounded-md text-brand-dark hover:bg-brand-border/40"
         >
           <Icon name="menu" className="text-xl" />
         </button>
