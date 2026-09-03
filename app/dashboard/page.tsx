@@ -18,7 +18,14 @@ export default async function DashboardHome() {
     .eq("id", user.id)
     .single();
 
-  const isBuyer = profile?.role === "merchant" || profile?.role === "factory";
+  // Merchant, factory, and agri_supplier all publish price_listings from
+  // the same dashboard surface, so treat them identically for count +
+  // navigation purposes.
+  const isBuyer =
+    profile?.role === "merchant" ||
+    profile?.role === "factory" ||
+    profile?.role === "agri_supplier";
+  const isAgriSupplier = profile?.role === "agri_supplier";
   const isProducer = isProducerRole(profile?.role);
   const isFisher = hasFisherRole(profile?.role);
   const isStockbreeder = profile?.role === "stockbreeder" || profile?.role === "farmer_stockbreeder";
@@ -51,18 +58,22 @@ export default async function DashboardHome() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatBox
           icon={
-            isBuyer
-              ? "tag"
-              : isBeekeeper
-                ? "hive"
-                : isStockbreeder
-                  ? "cow"
-                  : isFisher
-                    ? "fish"
-                    : "wheat"
+            isAgriSupplier
+              ? "listCheck"
+              : isBuyer
+                ? "tag"
+                : isBeekeeper
+                  ? "hive"
+                  : isStockbreeder
+                    ? "cow"
+                    : isFisher
+                      ? "fish"
+                      : "wheat"
           }
           label={
-            isBuyer
+            isAgriSupplier
+              ? "Κατάλογος αγροεφοδίων"
+              : isBuyer
               ? "Τιμοκατάλογος"
               : profile?.role === "farmer_fisher"
                 ? "Παραγωγή & αλιεύματα"

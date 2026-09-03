@@ -81,6 +81,7 @@ export default async function AdminUsers({
     { v: "farmer_beekeeper", l: "Αγρότες & Μελισσοκόμοι" },
     { v: "merchant", l: "Έμποροι" },
     { v: "factory", l: "Εργοστάσια" },
+    { v: "agri_supplier", l: "Αγροεφόδια" },
     { v: "admin", l: "Διαχειριστές" },
   ];
 

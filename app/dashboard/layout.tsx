@@ -46,21 +46,29 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isFisher = hasFisherRole(profile.role);
   const isStockbreeder = hasStockbreederRole(profile.role);
   const isBeekeeper = hasBeekeeperRole(profile.role);
+  const isAgriSupplier = profile.role === "agri_supplier";
   const isDualFarmerFisher = profile.role === "farmer_fisher";
   const isDualFarmerStockbreeder = profile.role === "farmer_stockbreeder";
   const isDualFarmerBeekeeper = profile.role === "farmer_beekeeper";
+  // agri_supplier publishes price_listings but sells to producers
+  // rather than buying from them, so it never sees the "Αγορές" tab.
+  const showsPurchasesTab = !isProducer && !isAgriSupplier;
 
-  const listingsIcon: IconName = isBeekeeper
-    ? "hive"
-    : isStockbreeder
-      ? "cow"
-      : isFisher
-        ? "fish"
-        : isProducer
-          ? "wheat"
-          : "tag";
+  const listingsIcon: IconName = isAgriSupplier
+    ? "listCheck"
+    : isBeekeeper
+      ? "hive"
+      : isStockbreeder
+        ? "cow"
+        : isFisher
+          ? "fish"
+          : isProducer
+            ? "wheat"
+            : "tag";
 
-  const listingsLabel = !isProducer
+  const listingsLabel = isAgriSupplier
+    ? "Κατάλογος αγροεφοδίων"
+    : !isProducer
     ? "Τιμοκατάλογος"
     : isDualFarmerFisher
       ? "Παραγωγή & αλιεύματα"
@@ -86,8 +94,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     },
     isProducer
       ? { href: "/dashboard/network", icon: "heart", label: "Οι αγοραστές μου" }
-      : { href: "/dashboard/network", icon: "users", label: "Παραγωγοί & αλιείς" },
-    ...(!isProducer
+      : isAgriSupplier
+        ? { href: "/dashboard/network", icon: "users", label: "Οι πελάτες μου" }
+        : { href: "/dashboard/network", icon: "users", label: "Παραγωγοί" },
+    ...(showsPurchasesTab
       ? [{ href: "/dashboard/purchases", icon: "box" as IconName, label: "Αγορές" }]
       : []),
     { href: "/dashboard/messages", icon: "chat", label: "Μηνύματα" },
@@ -109,7 +119,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
                     ? "bg-amber-800"
                     : isStockbreeder
                       ? "bg-stone-800"
-                      : "bg-brand-dark"
+                      : isAgriSupplier
+                        ? "bg-red-900"
+                        : "bg-brand-dark"
               }`}
             >
               <div className="px-3 pb-3">

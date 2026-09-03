@@ -62,6 +62,7 @@ export function Footer() {
           <FooterColumn title="Εξερεύνηση">
             <FooterLink href="/search/buyers" icon="store">Αγοραστές</FooterLink>
             <FooterLink href="/search/producers" icon="seedling">Παραγωγοί</FooterLink>
+            <FooterLink href="/search/suppliers" icon="listCheck">Αγροεφόδια</FooterLink>
             <FooterLink href="/signup" icon="user">Εγγραφή</FooterLink>
             <FooterLink href="/login" icon="unlock">Σύνδεση</FooterLink>
           </FooterColumn>

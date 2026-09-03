@@ -23,9 +23,12 @@ interface ListingRow {
   regions: { name_el: string };
 }
 
-const KIND_OPTIONS_BY_ROLE: Record<"merchant" | "factory", PriceListKind[]> = {
+const KIND_OPTIONS_BY_ROLE: Record<"merchant" | "factory" | "agri_supplier", PriceListKind[]> = {
   merchant: ["buy_from_producer", "sell_wholesale", "sell_retail"],
   factory: ["buy_from_producer", "buy_from_merchant", "sell_wholesale", "sell_retail"],
+  // Suppliers only sell their catalogue to producers. They never buy
+  // produce back from a farm, so only the retail kind fits.
+  agri_supplier: ["sell_retail"],
 };
 
 const KIND_TONE: Record<PriceListKind, "brand" | "olive" | "warn" | "muted"> = {
@@ -44,7 +47,7 @@ export function PriceListingsManager({
   initialListings: ListingRow[];
   products: Product[];
   regions: Region[];
-  role?: "merchant" | "factory";
+  role?: "merchant" | "factory" | "agri_supplier";
 }) {
   const kindOptions = KIND_OPTIONS_BY_ROLE[role];
   const [listings, setListings] = useState(initialListings);

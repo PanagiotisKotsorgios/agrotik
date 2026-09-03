@@ -49,6 +49,7 @@ export async function Header() {
         <nav className="hidden md:flex items-center gap-1">
           <NavItem href="/search/buyers" icon="store" label="Αγοραστές" />
           <NavItem href="/search/producers" icon="seedling" label="Παραγωγοί" />
+          <NavItem href="/search/suppliers" icon="listCheck" label="Αγροεφόδια" />
           <NavItem href="/contact" icon="envelope" label="Επικοινωνία" />
         </nav>
 

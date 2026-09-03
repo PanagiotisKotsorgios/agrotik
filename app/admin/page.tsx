@@ -59,9 +59,10 @@ export default async function AdminStats() {
           value={(roleCounts.get("beekeeper") ?? 0) + (roleCounts.get("farmer_beekeeper") ?? 0)}
         />
       </div>
-      <div className="grid sm:grid-cols-3 gap-4 mt-4">
+      <div className="grid sm:grid-cols-4 gap-4 mt-4">
         <Stat icon="store" label="Έμποροι" value={roleCounts.get("merchant") ?? 0} />
         <Stat icon="industry" label="Εργοστάσια" value={roleCounts.get("factory") ?? 0} />
+        <Stat icon="listCheck" label="Αγροεφόδια" value={roleCounts.get("agri_supplier") ?? 0} />
         <Stat icon="shield" label="Διαχειριστές" value={roleCounts.get("admin") ?? 0} />
       </div>
 

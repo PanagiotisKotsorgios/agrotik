@@ -35,6 +35,8 @@ export interface ProducerCard {
   has_listing: boolean;
 }
 
+export type BuyerScopeRole = "merchant" | "factory" | "agri_supplier";
+
 export interface BuyerFilters {
   product_id?: string;
   product_category?: string;
@@ -44,7 +46,7 @@ export interface BuyerFilters {
   number_attrs?: Record<string, { min?: number; max?: number }>;
   price_min?: number;
   price_max?: number;
-  buyer_type?: Array<"merchant" | "factory">;
+  buyer_type?: Array<BuyerScopeRole>;
   name?: string;
   sort?: "price_asc" | "price_desc" | "updated";
 }
@@ -406,7 +408,9 @@ export async function getProfileById(id: string) {
 
 export async function getProfileListings(profileId: string, role: string) {
   const supabase = await createSupabaseServer();
-  if (role === "merchant" || role === "factory") {
+  // Merchant, factory, and agri_supplier all publish price_listings.
+  // The public profile shows them under a single "τιμοκατάλογος" section.
+  if (role === "merchant" || role === "factory" || role === "agri_supplier") {
     const { data } = await supabase
       .from("price_listings")
       .select("*, products(name_el, unit, attributes_schema), regions(name_el)")

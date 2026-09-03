@@ -17,6 +17,7 @@ const roleEnum = z.enum([
   "beekeeper",
   "merchant",
   "factory",
+  "agri_supplier",
 ]);
 
 const signupSchema = z.object({

@@ -18,7 +18,8 @@ type Role =
   | "stockbreeder"
   | "beekeeper"
   | "merchant"
-  | "factory";
+  | "factory"
+  | "agri_supplier";
 
 const roleCards: { value: Role; label: string; icon: IconName; desc: string }[] = [
   { value: "farmer", label: "Αγρότης", icon: "seedling", desc: "Παράγω & πουλάω" },
@@ -27,6 +28,7 @@ const roleCards: { value: Role; label: string; icon: IconName; desc: string }[] 
   { value: "beekeeper", label: "Μελισσοκόμος", icon: "hive", desc: "Παράγω μέλι & προϊόντα κυψέλης" },
   { value: "merchant", label: "Έμπορος", icon: "store", desc: "Αγοράζω παραγωγή" },
   { value: "factory", label: "Εργοστάσιο", icon: "industry", desc: "Επεξεργάζομαι" },
+  { value: "agri_supplier", label: "Γεωπόνος / Αγροεφόδια", icon: "listCheck", desc: "Πουλάω λιπάσματα, εργαλεία & υπηρεσίες" },
 ];
 
 const roleCardStyles: Record<
@@ -74,6 +76,13 @@ const roleCardStyles: Record<
     idleIcon: "bg-green-100 text-brand-dark ring-1 ring-inset ring-brand-dark/20",
     activeIcon: "bg-white/15 text-white ring-1 ring-inset ring-white/20",
     idleDescription: "text-green-800",
+  },
+  agri_supplier: {
+    idle: "border-red-900/70 bg-red-50/70 text-red-950 hover:border-red-950 hover:bg-red-50",
+    active: "border-red-950 bg-red-800 text-white shadow-md shadow-red-950/15",
+    idleIcon: "bg-red-100 text-red-900 ring-1 ring-inset ring-red-800/20",
+    activeIcon: "bg-white/15 text-white ring-1 ring-inset ring-white/20",
+    idleDescription: "text-red-800",
   },
 };
 
@@ -192,7 +201,9 @@ export function SignupForm({ regions, initialRole }: { regions: Region[]; initia
                 ? "Ονοματεπώνυμο / όνομα κτηνοτροφικής μονάδας"
                 : role === "beekeeper"
                   ? "Ονοματεπώνυμο / όνομα μελισσοκομικής μονάδας"
-                  : "Επωνυμία επιχείρησης"}
+                  : role === "agri_supplier"
+                    ? "Επωνυμία καταστήματος / γεωπονικού γραφείου"
+                    : "Επωνυμία επιχείρησης"}
         </Label>
         <Input id="display_name" name="display_name" required />
         {(role === "farmer" || role === "fisher" || role === "stockbreeder" || role === "beekeeper") && (
@@ -232,10 +243,19 @@ export function SignupForm({ regions, initialRole }: { regions: Region[]; initia
         </div>
       </div>
 
-      {(role === "merchant" || role === "factory") && (
+      {(role === "merchant" || role === "factory" || role === "agri_supplier") && (
         <div>
           <Label htmlFor="bio">Σύντομη περιγραφή δραστηριότητας</Label>
-          <Textarea id="bio" name="bio" rows={3} placeholder="π.χ. Εμπορία ελιάς & ελαιολάδου, Πελοπόννησος" />
+          <Textarea
+            id="bio"
+            name="bio"
+            rows={3}
+            placeholder={
+              role === "agri_supplier"
+                ? "π.χ. Γεωργικά φάρμακα, λιπάσματα, εφόδια — Αιτωλοακαρνανία"
+                : "π.χ. Εμπορία ελιάς & ελαιολάδου, Πελοπόννησος"
+            }
+          />
         </div>
       )}
 

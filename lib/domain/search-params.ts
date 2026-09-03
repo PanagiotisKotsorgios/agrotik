@@ -16,7 +16,12 @@ export function parseBuyerFilters(params: Record<string, string | string[] | und
     else if (k.startsWith("nmax_")) numAttrs[k.slice(5)] = { ...(numAttrs[k.slice(5)] ?? {}), max: Number(v) };
   }
 
-  const buyer_type = g("buyer_type")?.split(",").filter(Boolean) as Array<"merchant" | "factory"> | undefined;
+  const buyer_type = g("buyer_type")
+    ?.split(",")
+    .filter(
+      (role): role is "merchant" | "factory" | "agri_supplier" =>
+        role === "merchant" || role === "factory" || role === "agri_supplier",
+    );
 
   return {
     product_id: g("product_id") || undefined,

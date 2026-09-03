@@ -100,25 +100,35 @@ export default async function ListingsPage() {
     .order("updated_at", { ascending: false });
 
   const isFactory = profile?.role === "factory";
+  const isAgriSupplier = profile?.role === "agri_supplier";
+  const supplierProducts = isAgriSupplier
+    ? products.filter((p) => p.category === "Αγροεφόδια & υπηρεσίες")
+    : products;
 
   return (
     <>
       <div className="mb-6">
         <Eyebrow>Τιμοκατάλογοι</Eyebrow>
         <h1 className="display text-3xl text-brand-dark mt-1 field-underline">
-          {isFactory ? "Οι τιμοκατάλογοί μου" : "Οι τιμές που αγοράζω"}
+          {isAgriSupplier
+            ? "Ο κατάλογος αγροεφοδίων μου"
+            : isFactory
+              ? "Οι τιμοκατάλογοί μου"
+              : "Οι τιμές που αγοράζω"}
         </h1>
         <p className="mt-3 text-brand-muted">
-          {isFactory
-            ? "Μπορείς να έχεις πολλαπλούς τιμοκαταλόγους: αγοράς από παραγωγό ή έμπορο, χονδρικής/λιανικής πώλησης. Καθένας εμφανίζεται στους σωστούς χρήστες."
-            : "Ενημέρωσε συχνά — οι αγρότες και αλιείς που σε παρακολουθούν λαμβάνουν ειδοποίηση όταν αλλάζεις τιμή."}
+          {isAgriSupplier
+            ? "Καταχώρησε λιπάσματα, φυτοπροστασία, σπόρους, εργαλεία και υπηρεσίες με τιμή. Οι παραγωγοί θα σε βρουν στη σελίδα «Αγροεφόδια» και θα σε καλέσουν στο τηλέφωνό σου — η πλατφόρμα δεν λειτουργεί ως eshop."
+            : isFactory
+              ? "Μπορείς να έχεις πολλαπλούς τιμοκαταλόγους: αγοράς από παραγωγό ή έμπορο, χονδρικής/λιανικής πώλησης. Καθένας εμφανίζεται στους σωστούς χρήστες."
+              : "Ενημέρωσε συχνά — οι αγρότες και αλιείς που σε παρακολουθούν λαμβάνουν ειδοποίηση όταν αλλάζεις τιμή."}
         </p>
       </div>
       <PriceListingsManager
         initialListings={(listings as any[]) ?? []}
-        products={products}
+        products={supplierProducts}
         regions={regions}
-        role={profile?.role as "merchant" | "factory"}
+        role={profile?.role as "merchant" | "factory" | "agri_supplier"}
       />
     </>
   );

@@ -280,13 +280,14 @@ function parsePage(value: string | string[] | undefined): number {
   return Number.isFinite(page) && page > 0 ? page : 1;
 }
 
-function Tabs({ active }: { active: "buyers" | "producers" }) {
+function Tabs({ active }: { active: "buyers" | "producers" | "suppliers" }) {
   const items = [
     { key: "buyers", href: "/search/buyers", label: "Βρες Αγοραστή", icon: "store" as const },
     { key: "producers", href: "/search/producers", label: "Βρες Παραγωγό", icon: "seedling" as const },
+    { key: "suppliers", href: "/search/suppliers", label: "Αγροεφόδια", icon: "listCheck" as const },
   ];
   return (
-    <div className="grid grid-cols-2 items-stretch border-b border-brand-border">
+    <div className="grid grid-cols-3 items-stretch border-b border-brand-border">
       {items.map((t) => (
         <Link
           key={t.key}

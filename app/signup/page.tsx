@@ -30,6 +30,7 @@ export default async function SignupPage({
     "beekeeper",
     "merchant",
     "factory",
+    "agri_supplier",
   ] as const;
   type SignupRole = (typeof ALLOWED_ROLES)[number];
   const initialRole: SignupRole = (ALLOWED_ROLES as readonly string[]).includes(params.role ?? "")

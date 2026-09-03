@@ -27,6 +27,7 @@ const ALL_PUBLIC_ROLES = [
   "farmer_beekeeper",
   "merchant",
   "factory",
+  "agri_supplier",
 ];
 
 const ROLE_FILTERS = [
@@ -37,6 +38,7 @@ const ROLE_FILTERS = [
   { key: "beekeeper", label: "Μελισσοκόμοι", role: "beekeeper" },
   { key: "merchant", label: "Έμποροι", role: "merchant" },
   { key: "factory", label: "Εργοστάσια", role: "factory" },
+  { key: "agri_supplier", label: "Αγροεφόδια", role: "agri_supplier" },
 ];
 
 /**

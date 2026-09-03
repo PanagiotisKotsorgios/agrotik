@@ -215,6 +215,7 @@ export function UserActions({
               <option value="farmer_beekeeper">Αγρότης & Μελισσοκόμος</option>
               <option value="merchant">Έμπορος</option>
               <option value="factory">Εργοστάσιο</option>
+              <option value="agri_supplier">Γεωπόνος / Αγροεφόδια</option>
               <option value="admin">Διαχειριστής</option>
             </Select>
             <Button type="submit" size="sm" disabled={pending || selectedRole === role}>Αποθήκευση</Button>

@@ -17,6 +17,7 @@ const roleSchema = z.enum([
   "farmer_beekeeper",
   "merchant",
   "factory",
+  "agri_supplier",
   "admin",
 ]);
 const notificationSchema = z.object({

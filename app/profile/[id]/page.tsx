@@ -231,7 +231,9 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           <div className="flex items-center justify-between mb-4">
             <div>
               <Eyebrow>
-                {type === "price"
+                {type === "price" && profile.role === "agri_supplier"
+                  ? "Αγροεφόδια"
+                  : type === "price"
                   ? "Τιμοκατάλογος"
                   : profile.role === "farmer_fisher"
                     ? "Παραγωγή & αλιεύματα"
@@ -248,7 +250,9 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                               : "Παραγωγή"}
               </Eyebrow>
               <h2 className="display text-2xl text-brand-dark mt-1 field-underline">
-                {type === "price"
+                {type === "price" && profile.role === "agri_supplier"
+                  ? "Προϊόντα & υπηρεσίες που πουλάει"
+                  : type === "price"
                   ? "Τιμές που αγοράζει"
                   : profile.role === "farmer_fisher"
                     ? "Διαθέσιμη παραγωγή & αλιεύματα"

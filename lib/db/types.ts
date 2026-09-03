@@ -14,6 +14,7 @@ export type UserRole =
   | "farmer_beekeeper"
   | "merchant"
   | "factory"
+  | "agri_supplier"
   | "admin";
 export type ProductStatus = "active" | "pending" | "rejected";
 export type NotificationKind =

@@ -67,7 +67,7 @@ export default async function ProducersSearchPage({
     <>
       <Header />
       <div className="w-full min-w-0 max-w-6xl mx-auto overflow-x-hidden px-4 py-8">
-        <div className="grid grid-cols-2 items-stretch border-b border-brand-border">
+        <div className="grid grid-cols-3 items-stretch border-b border-brand-border">
           <Link
             href="/search/buyers"
             className="min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-5 py-3 border-b-2 border-transparent text-center text-brand-muted hover:text-brand-dark text-sm sm:text-lg leading-tight"
@@ -79,6 +79,12 @@ export default async function ProducersSearchPage({
             className="min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-5 py-3 border-b-2 border-brand-dark text-center font-semibold text-brand-dark text-sm sm:text-lg leading-tight -mb-px"
           >
             <Icon name="seedling" className="shrink-0" /> <span>Βρες Παραγωγό</span>
+          </Link>
+          <Link
+            href="/search/suppliers"
+            className="min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-5 py-3 border-b-2 border-transparent text-center text-brand-muted hover:text-brand-dark text-sm sm:text-lg leading-tight"
+          >
+            <Icon name="listCheck" className="shrink-0" /> <span>Αγροεφόδια</span>
           </Link>
         </div>
 

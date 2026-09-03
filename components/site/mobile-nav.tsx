@@ -109,6 +109,7 @@ export function MobileNav({
             <MobileGroup title="Αναζήτηση">
               <MobileLink href="/search/buyers" icon="store">Βρες Αγοραστή</MobileLink>
               <MobileLink href="/search/producers" icon="seedling">Βρες Παραγωγό</MobileLink>
+              <MobileLink href="/search/suppliers" icon="listCheck">Αγροεφόδια</MobileLink>
             </MobileGroup>
             <MobileGroup title="Πληροφορίες">
               <MobileLink href="/how-it-works" icon="listCheck">Πώς λειτουργεί</MobileLink>
@@ -121,6 +122,7 @@ export function MobileNav({
           <MobileGroup title="Αναζήτηση">
             <MobileLink href="/search/buyers" icon="store">Βρες Αγοραστή</MobileLink>
             <MobileLink href="/search/producers" icon="seedling">Βρες Παραγωγό</MobileLink>
+            <MobileLink href="/search/suppliers" icon="listCheck">Αγροεφόδια</MobileLink>
           </MobileGroup>
         )}
 

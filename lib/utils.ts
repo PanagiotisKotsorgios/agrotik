@@ -36,9 +36,14 @@ export function roleLabel(role: string): string {
     case "farmer_beekeeper": return "Αγρότης & Μελισσοκόμος";
     case "merchant": return "Έμπορος";
     case "factory": return "Εργοστάσιο";
+    case "agri_supplier": return "Γεωπόνος / Αγροεφόδια";
     case "admin": return "Διαχειριστής";
     default: return role;
   }
+}
+
+export function isAgriSupplierRole(role: string | null | undefined): boolean {
+  return role === "agri_supplier";
 }
 
 export function isProducerRole(role: string | null | undefined): boolean {
@@ -68,10 +73,11 @@ export function hasBeekeeperRole(role: string | null | undefined): boolean {
 
 export function roleBadgeTone(
   role: string | null | undefined,
-): "brand" | "fisher" | "olive" | "warn" {
+): "brand" | "fisher" | "olive" | "warn" | "danger" {
   if (hasFisherRole(role)) return "fisher";
   if (hasBeekeeperRole(role)) return "warn";
   if (hasStockbreederRole(role)) return "olive";
+  if (isAgriSupplierRole(role)) return "danger";
   return "brand";
 }
 
