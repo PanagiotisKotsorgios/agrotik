@@ -4,7 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { savePriceListing, deletePriceListing } from "@/lib/actions/listings";
-import type { Product, Region, PriceVariant, AttributesSchema, PriceListKind } from "@/lib/db/types";
+import { createSupplierProduct } from "@/lib/actions/products";
+import type { Product, Region, PriceVariant, AttributesSchema, PriceListKind, GalleryItem } from "@/lib/db/types";
 import { PRICE_LIST_KIND_LABEL, PRICE_LIST_KIND_HELP } from "@/lib/db/types";
 import { attributeLabel, priceFormat } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
@@ -17,10 +18,29 @@ interface ListingRow {
   title?: string | null;
   region_code: string;
   notes: string | null;
+  description?: string | null;
+  gallery?: GalleryItem[];
   variants: PriceVariant[];
   updated_at: string;
   products: { name_el: string; unit: string; attributes_schema: AttributesSchema };
   regions: { name_el: string };
+}
+
+function slugify(input: string): string {
+  const trans: Record<string, string> = {
+    ά: "a", έ: "e", ή: "h", ί: "i", ό: "o", ύ: "y", ώ: "w",
+    α: "a", β: "v", γ: "g", δ: "d", ε: "e", ζ: "z", η: "h", θ: "th",
+    ι: "i", κ: "k", λ: "l", μ: "m", ν: "n", ξ: "x", ο: "o", π: "p",
+    ρ: "r", σ: "s", ς: "s", τ: "t", υ: "y", φ: "f", χ: "ch", ψ: "ps", ω: "w",
+    ϊ: "i", ϋ: "y", ΐ: "i", ΰ: "y",
+  };
+  const lower = input.trim().toLowerCase();
+  let out = "";
+  for (const ch of lower) out += trans[ch] ?? ch;
+  return out
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
 }
 
 const KIND_OPTIONS_BY_ROLE: Record<"merchant" | "factory" | "agri_supplier", PriceListKind[]> = {
@@ -165,9 +185,14 @@ function PriceEditor({
   onCancel: () => void;
   onSaved: (row: ListingRow) => void;
 }) {
+  const [availableProducts, setAvailableProducts] = useState<Product[]>(products);
   const [productId, setProductId] = useState<string>(initial.product_id ?? products[0]?.id ?? "");
   const [regionCode, setRegionCode] = useState<string>(initial.region_code ?? regions[0]?.code ?? "");
   const [notes, setNotes] = useState(initial.notes ?? "");
+  const [description, setDescription] = useState<string>(initial.description ?? "");
+  const [gallery, setGallery] = useState<GalleryItem[]>(
+    Array.isArray(initial.gallery) ? initial.gallery : [],
+  );
   const [kind, setKind] = useState<PriceListKind>(initial.kind ?? kindOptions[0]);
   const [title, setTitle] = useState<string>(initial.title ?? "");
   const [variants, setVariants] = useState<PriceVariant[]>(
@@ -177,9 +202,13 @@ function PriceEditor({
   );
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const [newProductOpen, setNewProductOpen] = useState(false);
 
-  const product = products.find((p) => p.id === productId);
+  const product = availableProducts.find((p) => p.id === productId);
   const attrEntries = product ? Object.entries(product.attributes_schema) : [];
+  const categories = Array.from(new Set(availableProducts.map((p) => p.category))).sort((a, b) =>
+    a.localeCompare(b, "el"),
+  );
 
   return (
     <Card>
@@ -200,7 +229,16 @@ function PriceEditor({
         )}
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
-            <Label>Προϊόν</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label className="mb-0">Προϊόν</Label>
+              <button
+                type="button"
+                className="text-xs text-brand-mid hover:underline"
+                onClick={() => setNewProductOpen((prev) => !prev)}
+              >
+                {newProductOpen ? "Ακύρωση νέου προϊόντος" : "+ Νέο προϊόν"}
+              </button>
+            </div>
             <Select
               value={productId}
               onChange={(e) => {
@@ -208,7 +246,7 @@ function PriceEditor({
                 setVariants([{ attributes: {}, price: 0, currency: "EUR" }]);
               }}
             >
-              {products.map((p) => (
+              {availableProducts.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name_el}
                 </option>
@@ -226,6 +264,20 @@ function PriceEditor({
             </Select>
           </div>
         </div>
+
+        {newProductOpen && (
+          <NewProductPanel
+            defaultCategory={product?.category ?? categories[0] ?? ""}
+            categories={categories}
+            onCreated={(created) => {
+              setAvailableProducts((prev) => [...prev, created]);
+              setProductId(created.id);
+              setVariants([{ attributes: {}, price: 0, currency: "EUR" }]);
+              setNewProductOpen(false);
+            }}
+            onCancel={() => setNewProductOpen(false)}
+          />
+        )}
 
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -327,6 +379,65 @@ function PriceEditor({
         </div>
 
         <div>
+          <Label>Περιγραφή προϊόντος (προαιρετικό)</Label>
+          <Textarea
+            rows={4}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={4000}
+            placeholder="Λεπτομέρειες που θα δει ο αγοραστής στην αναλυτική σελίδα (χρήση, ιδιότητες, οδηγίες...)"
+          />
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <Label className="mb-0">Φωτογραφίες (URLs) — προαιρετικό</Label>
+            {gallery.length < 12 && (
+              <button
+                type="button"
+                onClick={() => setGallery((prev) => [...prev, { url: "", alt: "" }])}
+                className="text-sm text-brand-mid hover:underline"
+              >
+                + Προσθήκη φωτογραφίας
+              </button>
+            )}
+          </div>
+          <p className="mb-2 text-xs text-brand-muted">
+            Επικόλλησε δημόσια URLs εικόνων (https://…). Μέχρι 12 φωτογραφίες ανά καταχώρηση.
+          </p>
+          <div className="space-y-2">
+            {gallery.map((g, i) => (
+              <div key={i} className="grid grid-cols-[1fr_1fr_40px] gap-2 items-center">
+                <Input
+                  type="url"
+                  placeholder="https://…/photo.jpg"
+                  value={g.url}
+                  onChange={(e) =>
+                    setGallery((prev) => prev.map((x, xi) => (xi === i ? { ...x, url: e.target.value } : x)))
+                  }
+                />
+                <Input
+                  type="text"
+                  placeholder="Λεζάντα (προαιρετικά)"
+                  maxLength={200}
+                  value={g.alt ?? ""}
+                  onChange={(e) =>
+                    setGallery((prev) => prev.map((x, xi) => (xi === i ? { ...x, alt: e.target.value } : x)))
+                  }
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setGallery((prev) => prev.filter((_, xi) => xi !== i))}
+                >
+                  <Icon name="trash" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
           <Label>Σημειώσεις (προαιρετικό)</Label>
           <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
@@ -339,11 +450,16 @@ function PriceEditor({
             onClick={() =>
               start(async () => {
                 setError(null);
+                const cleanGallery = gallery
+                  .filter((g) => g.url.trim().length > 0)
+                  .map((g) => ({ url: g.url.trim(), alt: (g.alt ?? "").trim() || undefined }));
                 const res = await savePriceListing({
                   id: initial.id,
                   product_id: productId,
                   region_code: regionCode,
                   notes,
+                  description: description.trim() || undefined,
+                  gallery: cleanGallery,
                   kind,
                   title: title || undefined,
                   variants: variants.filter((v) => v.price > 0),
@@ -357,6 +473,8 @@ function PriceEditor({
                     title: title || null,
                     region_code: regionCode,
                     notes,
+                    description: description.trim() || null,
+                    gallery: cleanGallery,
                     variants: variants.filter((v) => v.price > 0),
                     updated_at: new Date().toISOString(),
                     products: {
@@ -378,5 +496,139 @@ function PriceEditor({
         </div>
       </div>
     </Card>
+  );
+}
+
+function NewProductPanel({
+  defaultCategory,
+  categories,
+  onCreated,
+  onCancel,
+}: {
+  defaultCategory: string;
+  categories: string[];
+  onCreated: (created: Product) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [category, setCategory] = useState<string>(defaultCategory);
+  const [customCategory, setCustomCategory] = useState("");
+  const [unit, setUnit] = useState("τεμάχιο");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+
+  return (
+    <div className="rounded-xl border border-brand-mid/40 bg-brand-bg/60 p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="font-semibold text-brand-dark inline-flex items-center gap-2">
+          <Icon name="plus" /> Νέο προϊόν στον κατάλογο
+        </div>
+        <Badge tone="muted">Χωρίς έγκριση admin</Badge>
+      </div>
+      <p className="text-xs text-brand-muted">
+        Το προϊόν γίνεται ενεργό αμέσως. Ο admin μπορεί να το αφαιρέσει αν κάτι είναι λάθος.
+      </p>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div>
+          <Label>Όνομα προϊόντος</Label>
+          <Input
+            value={name}
+            maxLength={120}
+            required
+            onChange={(e) => {
+              const v = e.target.value;
+              setName(v);
+              if (!slug) setSlug(slugify(v));
+            }}
+            placeholder="π.χ. Compo Nitrophoska Special 12-12-17+2"
+          />
+        </div>
+        <div>
+          <Label>Slug (μοναδικό ID)</Label>
+          <Input
+            value={slug}
+            required
+            maxLength={80}
+            pattern="[a-z0-9][a-z0-9_\-]*"
+            onChange={(e) => setSlug(slugify(e.target.value))}
+            placeholder="compo-nitrophoska-12-12-17"
+          />
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div>
+          <Label>Κατηγορία</Label>
+          <Select
+            value={category === "__new__" ? "__new__" : category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            {categories.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+            <option value="__new__">+ Νέα κατηγορία…</option>
+          </Select>
+          {category === "__new__" && (
+            <Input
+              className="mt-2"
+              value={customCategory}
+              onChange={(e) => setCustomCategory(e.target.value)}
+              maxLength={80}
+              placeholder="Όνομα νέας κατηγορίας"
+            />
+          )}
+        </div>
+        <div>
+          <Label>Μονάδα μέτρησης</Label>
+          <Input
+            value={unit}
+            required
+            maxLength={20}
+            onChange={(e) => setUnit(e.target.value)}
+            placeholder="κιλό, λίτρο, τεμάχιο, στρέμμα…"
+          />
+        </div>
+      </div>
+
+      {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
+
+      <div className="flex gap-2 justify-end">
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={pending}>Ακύρωση</Button>
+        <Button
+          type="button"
+          disabled={pending}
+          icon={pending ? "spinner" : "check"}
+          onClick={() =>
+            start(async () => {
+              setError(null);
+              const finalCategory = category === "__new__" ? customCategory.trim() : category.trim();
+              const res = await createSupplierProduct({
+                name_el: name.trim(),
+                slug: slugify(slug),
+                category: finalCategory,
+                unit: unit.trim(),
+              });
+              if (!res.ok) return setError(res.error);
+              if (!res.id) return setError("Άγνωστο σφάλμα δημιουργίας");
+              onCreated({
+                id: res.id,
+                slug: res.slug!,
+                name_el: name.trim(),
+                category: finalCategory,
+                unit: unit.trim(),
+                attributes_schema: {},
+                status: "active",
+                proposed_by: null,
+                created_at: new Date().toISOString(),
+              });
+            })
+          }
+        >
+          Δημιουργία & επιλογή
+        </Button>
+      </div>
+    </div>
   );
 }

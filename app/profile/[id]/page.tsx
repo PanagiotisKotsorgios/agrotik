@@ -300,14 +300,21 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                   <Card key={l.id}>
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <CardTitle>{l.products.name_el}</CardTitle>
+                        <CardTitle>
+                          <Link href={`/listing/${l.id}`} className="hover:underline">
+                            {l.products.name_el}
+                          </Link>
+                        </CardTitle>
                         <div className="text-xs text-brand-muted mt-0.5 flex items-center gap-1.5">
                           <Icon name="location" /> Παραλαβή · {l.regions?.name_el ?? l.region_code}
                         </div>
                       </div>
-                      <span className="eyebrow text-brand-muted">
-                        Ενημέρωση {formatRelative(l.updated_at)}
-                      </span>
+                      <Link
+                        href={`/listing/${l.id}`}
+                        className="text-xs text-brand-mid hover:underline inline-flex items-center gap-1"
+                      >
+                        Δες αναλυτικά <Icon name="arrowRight" />
+                      </Link>
                     </div>
                     <table className="w-full text-sm border-t border-brand-border">
                       <tbody>

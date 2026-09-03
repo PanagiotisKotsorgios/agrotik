@@ -2,6 +2,7 @@ import { createSupabaseService } from "@/lib/supabase/service";
 import { Card, Badge, Eyebrow } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { ProductActions } from "./product-actions";
+import { AdminDeleteProduct } from "./admin-delete-product";
 import Link from "next/link";
 import { attributeLabel } from "@/lib/utils";
 
@@ -68,7 +69,10 @@ export default async function AdminProducts({
                   </div>
                 )}
               </div>
-              {status === "pending" && <ProductActions id={p.id} />}
+              <div className="flex flex-col items-end gap-2 shrink-0">
+                {status === "pending" && <ProductActions id={p.id} />}
+                <AdminDeleteProduct id={p.id} name={p.name_el} />
+              </div>
             </div>
           </Card>
         ))}

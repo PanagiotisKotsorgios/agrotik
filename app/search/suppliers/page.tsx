@@ -163,53 +163,56 @@ export default async function SuppliersSearchPage({
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {pageResults.map((r: any) => (
-              <Link
-                key={r.profile.id + (r.listing?.id ?? "")}
-                href={`/profile/${r.profile.id}`}
-                className="group block bg-brand-surface hover:bg-white border border-brand-border hover:border-brand-dark/40 rounded-card p-4 shadow-card transition-colors"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge tone="danger"><Icon name="listCheck" /> Αγροεφόδια</Badge>
-                      <span className="font-semibold text-brand-dark truncate">{r.profile.display_name}</span>
-                    </div>
-                    <div className="text-sm text-brand-muted mt-1">
-                      <Icon name="location" className="text-brand-earth" /> {r.profile.regions?.name_el ?? r.profile.region_code}
-                      {r.profile.municipality && ` · ${r.profile.municipality}`}
-                    </div>
-                    {r.listing ? (
-                      <div className="mt-3 rounded-md bg-white/60 border border-brand-border p-3">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <span className="font-medium text-brand-dark">{r.listing.products.name_el}</span>
-                          {r.listing.variants?.[0]?.price != null && (
-                            <span className="figures font-semibold text-brand-earth">
-                              {priceFormat(Number(r.listing.variants[0].price), r.listing.products.unit)}
-                            </span>
+            {pageResults.map((card) => {
+              const href = card.listing_id ? `/listing/${card.listing_id}` : `/profile/${card.profile.id}`;
+              return (
+                <Link
+                  key={`${card.profile.id}-${card.listing_id ?? "none"}`}
+                  href={href}
+                  className="group block bg-brand-surface hover:bg-white border border-brand-border hover:border-brand-dark/40 rounded-card p-4 shadow-card transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge tone="danger"><Icon name="listCheck" /> Αγροεφόδια</Badge>
+                        <span className="font-semibold text-brand-dark truncate">{card.profile.display_name}</span>
+                      </div>
+                      <div className="text-sm text-brand-muted mt-1">
+                        <Icon name="location" className="text-brand-earth" /> {card.region_name}
+                        {card.municipality && ` · ${card.municipality}`}
+                      </div>
+                      {card.product ? (
+                        <div className="mt-3 rounded-md bg-white/60 border border-brand-border p-3">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="font-medium text-brand-dark truncate">{card.product.name_el}</span>
+                            {card.best_price != null && (
+                              <span className="figures font-semibold text-brand-earth whitespace-nowrap">
+                                {priceFormat(Number(card.best_price), card.product.unit)}
+                              </span>
+                            )}
+                          </div>
+                          {card.best_attributes && Object.keys(card.best_attributes).length > 0 && (
+                            <div className="text-xs text-brand-muted mt-1">
+                              {Object.entries(card.best_attributes)
+                                .map(([k, v]) => `${attributeLabel(k)}: ${v}`)
+                                .join(" · ")}
+                            </div>
                           )}
                         </div>
-                        {r.listing.variants?.[0]?.attributes && Object.keys(r.listing.variants[0].attributes).length > 0 && (
-                          <div className="text-xs text-brand-muted mt-1">
-                            {Object.entries(r.listing.variants[0].attributes)
-                              .map(([k, v]) => `${attributeLabel(k)}: ${v}`)
-                              .join(" · ")}
-                          </div>
-                        )}
+                      ) : (
+                        <p className="text-sm text-brand-muted mt-2 line-clamp-2">
+                          {card.profile.bio || "Το κατάστημα δεν έχει καταχωρίσει τιμοκατάλογο ακόμη."}
+                        </p>
+                      )}
+                      <div className="eyebrow text-brand-muted mt-3 inline-flex items-center gap-2">
+                        <Icon name="phone" /> Καλέστε στο τηλέφωνο για διαθεσιμότητα και προσφορά.
                       </div>
-                    ) : (
-                      <p className="text-sm text-brand-muted mt-2 line-clamp-2">
-                        {r.profile.bio || "Το κατάστημα δεν έχει καταχωρίσει τιμοκατάλογο ακόμη."}
-                      </p>
-                    )}
-                    <div className="eyebrow text-brand-muted mt-3 inline-flex items-center gap-2">
-                      <Icon name="phone" /> Καλέστε στο τηλέφωνο για διαθεσιμότητα και προσφορά.
                     </div>
+                    <Icon name="arrowRight" className="text-brand-muted group-hover:text-brand-dark shrink-0 text-lg mt-1" />
                   </div>
-                  <Icon name="arrowRight" className="text-brand-muted group-hover:text-brand-dark shrink-0 text-lg mt-1" />
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
 
