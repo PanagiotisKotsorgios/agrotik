@@ -16,11 +16,22 @@ const variantSchema = z.object({
   currency: z.literal("EUR").default("EUR"),
 });
 
+const galleryItemSchema = z.object({
+  url: z
+    .string()
+    .url("Λάθος διεύθυνση εικόνας")
+    .max(2048)
+    .refine((value) => /^https?:\/\//i.test(value), "Επιτρέπονται μόνο http(s) URLs"),
+  alt: z.string().max(200).optional(),
+});
+
 const priceListingSchema = z.object({
   id: z.string().uuid().optional(),
   product_id: z.string().uuid(),
   region_code: z.string().min(1),
   notes: z.string().optional(),
+  description: z.string().max(4000).optional(),
+  gallery: z.array(galleryItemSchema).max(12).optional(),
   kind: z
     .enum(["buy_from_producer", "buy_from_merchant", "sell_wholesale", "sell_retail"])
     .optional(),
@@ -39,8 +50,22 @@ export async function savePriceListing(input: unknown): Promise<ActionResult & {
   if (!user) return { ok: false, error: "Απαιτείται σύνδεση" };
 
   const { data: me } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (!me || (me.role !== "merchant" && me.role !== "factory")) {
-    return { ok: false, error: "Μόνο έμποροι/εργοστάσια μπορούν να καταχωρήσουν τιμοκατάλογο" };
+  if (
+    !me ||
+    (me.role !== "merchant" && me.role !== "factory" && me.role !== "agri_supplier")
+  ) {
+    return {
+      ok: false,
+      error: "Μόνο έμποροι, εργοστάσια και καταστήματα αγροεφοδίων μπορούν να καταχωρήσουν τιμοκατάλογο",
+    };
+  }
+
+  // Suppliers only publish sell_retail — refuse other kinds even if
+  // someone crafts the request.
+  const defaultKind = me.role === "agri_supplier" ? "sell_retail" : "buy_from_producer";
+  const requestedKind = parsed.data.kind ?? defaultKind;
+  if (me.role === "agri_supplier" && requestedKind !== "sell_retail") {
+    return { ok: false, error: "Οι πάροχοι αγροεφοδίων επιτρέπεται να καταχωρούν μόνο retail." };
   }
 
   const payload = {
@@ -48,7 +73,9 @@ export async function savePriceListing(input: unknown): Promise<ActionResult & {
     product_id: parsed.data.product_id,
     region_code: parsed.data.region_code,
     notes: parsed.data.notes ?? null,
-    kind: parsed.data.kind ?? "buy_from_producer",
+    description: parsed.data.description ?? null,
+    gallery: parsed.data.gallery ?? [],
+    kind: requestedKind,
     title: parsed.data.title ?? null,
     variants: parsed.data.variants,
     is_active: true,

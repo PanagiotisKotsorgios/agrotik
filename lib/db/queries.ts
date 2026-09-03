@@ -16,6 +16,9 @@ export interface BuyerCard {
   product: Pick<Product, "id" | "name_el" | "unit" | "category"> | null;
   best_price: number | null;
   best_attributes: Record<string, string | number> | null;
+  // ID of the listing that provided the best price — used to link to
+  // /listing/[id]. Null when the profile has no active listing.
+  listing_id: string | null;
   updated_at: string;
   has_listing: boolean;
 }
@@ -137,12 +140,19 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
     let lstQ = supabase
       .from("price_listings")
       .select(
-        `owner_id, product_id, kind, variants, updated_at,
+        `id, owner_id, product_id, kind, variants, updated_at,
          products!inner(id, name_el, unit, category, status)`,
       )
       .in("owner_id", ownerIds)
       .eq("is_active", true)
-      .eq("kind", "buy_from_producer")
+      .in(
+        "kind",
+        // Suppliers use sell_retail; buyer roles (merchant/factory) use
+        // buy_from_producer for their price cards.
+        filters.buyer_type?.every((r) => r === "agri_supplier")
+          ? ["sell_retail"]
+          : ["buy_from_producer"],
+      )
       .eq("products.status", "active")
       .limit(2000);
     if (filters.product_id) lstQ = lstQ.eq("product_id", filters.product_id);
@@ -154,7 +164,7 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
   // 3. Bucket listings by owner and pick the best matching variant.
   const bestByOwner = new Map<
     string,
-    { product: any; best_price: number; best_attributes: any; updated_at: string }
+    { listing_id: string; product: any; best_price: number; best_attributes: any; updated_at: string }
   >();
   for (const row of listings) {
     const candidates = (row.variants ?? []).filter((v: any) => {
@@ -172,6 +182,7 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
     const existing = bestByOwner.get(row.owner_id);
     if (!existing || existing.best_price > Number(best.price)) {
       bestByOwner.set(row.owner_id, {
+        listing_id: row.id,
         product: row.products,
         best_price: Number(best.price),
         best_attributes: best.attributes,
@@ -201,6 +212,7 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
       product: match?.product ?? null,
       best_price: match?.best_price ?? null,
       best_attributes: match?.best_attributes ?? null,
+      listing_id: match?.listing_id ?? null,
       updated_at: match?.updated_at ?? p.updated_at,
       has_listing: Boolean(match),
     });
@@ -413,7 +425,9 @@ export async function getProfileListings(profileId: string, role: string) {
   if (role === "merchant" || role === "factory" || role === "agri_supplier") {
     const { data } = await supabase
       .from("price_listings")
-      .select("*, products(name_el, unit, attributes_schema), regions(name_el)")
+      .select(
+        "id, owner_id, product_id, kind, title, region_code, notes, description, gallery, variants, is_active, created_at, updated_at, products(name_el, unit, attributes_schema), regions(name_el)",
+      )
       .eq("owner_id", profileId)
       .eq("is_active", true)
       .order("updated_at", { ascending: false });

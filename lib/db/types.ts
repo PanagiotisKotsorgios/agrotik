@@ -102,6 +102,8 @@ export interface PriceListing {
   variants: PriceVariant[];
   region_code: string;
   notes: string | null;
+  description: string | null;
+  gallery: GalleryItem[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
