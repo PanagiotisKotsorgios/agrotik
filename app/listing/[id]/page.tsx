@@ -13,6 +13,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { attributeLabel, formatRelative, priceFormat, roleBadgeTone, roleLabel } from "@/lib/utils";
 import { PRICE_LIST_KIND_LABEL, type PriceListKind } from "@/lib/db/types";
 import { ListingCarousel } from "@/components/site/listing-carousel";
+import { RelatedListings } from "@/components/site/related-listings";
 import { getAppOrigin } from "@/lib/app-origin";
 
 interface Listing {
@@ -63,64 +64,6 @@ async function fetchListing(id: string): Promise<Listing | null> {
   const listing = data as unknown as Listing | null;
   if (!listing || !listing.owner?.is_active || !listing.owner?.is_public) return null;
   return listing;
-}
-
-async function fetchRelated(listing: Listing): Promise<Listing[]> {
-  const supabase = await createSupabaseServer();
-  const excludeIds = [listing.id];
-  const results: Listing[] = [];
-
-  // 1. Same owner, other listings.
-  const { data: sameOwner } = await supabase
-    .from("price_listings")
-    .select(LISTING_SELECT)
-    .eq("is_active", true)
-    .eq("owner_id", listing.owner_id)
-    .neq("id", listing.id)
-    .order("updated_at", { ascending: false })
-    .limit(6);
-  for (const row of (sameOwner as unknown as Listing[]) ?? []) {
-    if (row.owner?.is_active && row.owner?.is_public) {
-      results.push(row);
-      excludeIds.push(row.id);
-      if (results.length >= 6) return results;
-    }
-  }
-
-  // 2. Same product from other sellers.
-  const { data: sameProduct } = await supabase
-    .from("price_listings")
-    .select(LISTING_SELECT)
-    .eq("is_active", true)
-    .eq("product_id", listing.product_id)
-    .not("id", "in", `(${excludeIds.join(",")})`)
-    .order("updated_at", { ascending: false })
-    .limit(6);
-  for (const row of (sameProduct as unknown as Listing[]) ?? []) {
-    if (row.owner?.is_active && row.owner?.is_public) {
-      results.push(row);
-      excludeIds.push(row.id);
-      if (results.length >= 6) return results;
-    }
-  }
-
-  // 3. Fallback: same category from other sellers.
-  const { data: sameCategory } = await supabase
-    .from("price_listings")
-    .select(LISTING_SELECT)
-    .eq("is_active", true)
-    .eq("products.category", listing.products.category)
-    .not("id", "in", `(${excludeIds.join(",")})`)
-    .order("updated_at", { ascending: false })
-    .limit(6);
-  for (const row of (sameCategory as unknown as Listing[]) ?? []) {
-    if (row.owner?.is_active && row.owner?.is_public) {
-      results.push(row);
-      if (results.length >= 6) return results;
-    }
-  }
-
-  return results;
 }
 
 function bestPrice(listing: Listing): number | null {
@@ -198,8 +141,6 @@ export default async function ListingDetailPage({
   const price = bestPrice(listing);
   const productName = listing.products.name_el;
   const displayTitle = listing.title || productName;
-  const [related] = await Promise.all([fetchRelated(listing)]);
-
   const origin = getAppOrigin();
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
@@ -406,86 +347,17 @@ export default async function ListingDetailPage({
           </aside>
         </div>
 
-        {related.length > 0 && <RelatedSection current={listing} items={related} />}
+        <RelatedListings
+          excludeListingId={listing.id}
+          sameOwnerFirstFor={listing.owner_id}
+          productId={listing.product_id}
+          category={listing.products.category}
+          heading="Άλλα προϊόντα από το ίδιο κατάστημα (ή παρόμοια)"
+          eyebrow="Προτεινόμενα"
+        />
       </main>
       <Footer />
     </>
   );
 }
 
-function RelatedSection({ current, items }: { current: Listing; items: Listing[] }) {
-  const bySameOwner = items.filter((row) => row.owner_id === current.owner_id);
-  const byOthers = items.filter((row) => row.owner_id !== current.owner_id);
-  return (
-    <section aria-labelledby="related-heading" className="space-y-4">
-      <div>
-        <Eyebrow>Προτεινόμενα</Eyebrow>
-        <h2 id="related-heading" className="display text-2xl text-brand-dark mt-1">
-          {bySameOwner.length > 0
-            ? "Άλλα προϊόντα από το ίδιο κατάστημα"
-            : "Παρόμοια προϊόντα από άλλα καταστήματα"}
-        </h2>
-      </div>
-      <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {items.map((item) => (
-          <li key={item.id}>
-            <RelatedCard item={item} />
-          </li>
-        ))}
-      </ul>
-      {bySameOwner.length > 0 && byOthers.length > 0 && (
-        <p className="text-xs text-brand-muted">
-          Πάνω από ένα κατάστημα εμπορεύεται παρόμοια προϊόντα. Δες τη λίστα καταστημάτων{" "}
-          <Link href="/search/suppliers" className="text-brand-mid hover:underline">εδώ</Link>.
-        </p>
-      )}
-    </section>
-  );
-}
-
-function RelatedCard({ item }: { item: Listing }) {
-  const gallery = Array.isArray(item.gallery) ? item.gallery : [];
-  const cover = gallery.find((g) => typeof g.url === "string" && /^https?:\/\//i.test(g.url));
-  const price = bestPrice(item);
-  const period = item.variants.find((v) => v.attributes?.period)?.attributes?.period as string | undefined;
-  return (
-    <Link
-      href={`/listing/${item.id}`}
-      className="group block rounded-card overflow-hidden border border-brand-border bg-brand-surface hover:border-brand-dark/40 hover:shadow-card transition-colors"
-    >
-      <div className="relative aspect-[4/3] bg-brand-bg">
-        {cover ? (
-          <Image
-            src={cover.url}
-            alt={cover.alt ?? item.products.name_el}
-            fill
-            unoptimized
-            sizes="(max-width: 768px) 50vw, 25vw"
-            className="object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-brand-muted">
-            <Icon name="image" className="text-2xl" />
-          </div>
-        )}
-      </div>
-      <div className="p-3 space-y-1">
-        <div className="text-[11px] uppercase tracking-wide text-brand-muted truncate">
-          {item.products.category}
-        </div>
-        <div className="font-semibold text-brand-dark text-sm leading-tight line-clamp-2">
-          {item.title || item.products.name_el}
-        </div>
-        <div className="text-xs text-brand-muted truncate">{item.owner.display_name}</div>
-        {price !== null && (
-          <div className="figures font-semibold text-brand-earth text-sm">
-            {priceFormat(price, item.products.unit)}
-            {item.kind === "rent_supply" && period && (
-              <span className="text-xs font-normal text-brand-muted"> / {period}</span>
-            )}
-          </div>
-        )}
-      </div>
-    </Link>
-  );
-}

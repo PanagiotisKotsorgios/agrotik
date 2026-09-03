@@ -170,7 +170,9 @@ export default async function SuppliersSearchPage({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {pageResults.map((card) => {
-              const href = card.listing_id ? `/listing/${card.listing_id}` : `/profile/${card.profile.id}`;
+              // Always land on the supplier's profile first — from there the
+              // visitor picks a category and drills into the products.
+              const href = `/profile/${card.profile.id}`;
               return (
                 <Link
                   key={`${card.profile.id}-${card.listing_id ?? "none"}`}

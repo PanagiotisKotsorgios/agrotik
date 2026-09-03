@@ -11,9 +11,20 @@ import { getProfileById, getProfileListings } from "@/lib/db/queries";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { attributeLabel, formatQuantityNumber, formatRelative, hasBeekeeperRole, hasFisherRole, hasStockbreederRole, pluralizeQuantityUnit, priceFormat, roleBadgeTone, roleLabel } from "@/lib/utils";
 import { FavoriteButton } from "./favorite-button";
+import { RelatedListings } from "@/components/site/related-listings";
 
-export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProfilePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id } = await params;
+  const query = await searchParams;
+  const rawCategory = Array.isArray(query.category) ? query.category[0] : query.category;
+  const selectedCategory = rawCategory && rawCategory.trim().length > 0 ? rawCategory.trim() : null;
+
   const profile: any = await getProfileById(id);
   if (!profile || !profile.is_active) return notFound();
 
@@ -37,6 +48,23 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   }
   const canMessage = !!user && user.id !== id;
   const gallery: { url: string; alt?: string }[] = Array.isArray(profile.gallery) ? profile.gallery : [];
+
+  const allCategories =
+    type === "price"
+      ? Array.from(
+          new Set(
+            ((listings as any[]) ?? [])
+              .map((l) => l?.products?.category)
+              .filter((c): c is string => typeof c === "string" && c.length > 0),
+          ),
+        ).sort((a, b) => a.localeCompare(b, "el"))
+      : [];
+  const filteredListings =
+    type === "price" && selectedCategory
+      ? (listings as any[]).filter((l) => l?.products?.category === selectedCategory)
+      : (listings as any[]);
+  const categoryNotFound =
+    type === "price" && selectedCategory && filteredListings.length === 0;
 
   return (
     <>
@@ -228,6 +256,33 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
 
         {/* Listings */}
         <div>
+          {allCategories.length > 1 && (
+            <div className="mb-4 flex flex-wrap gap-2">
+              <Link
+                href={`/profile/${id}`}
+                className={
+                  !selectedCategory
+                    ? "px-3 py-1.5 rounded-full text-sm font-semibold bg-brand-dark text-white border border-brand-dark"
+                    : "px-3 py-1.5 rounded-full text-sm border border-brand-border text-brand-ink hover:border-brand-dark/40 hover:bg-brand-dark/5"
+                }
+              >
+                Όλες οι κατηγορίες
+              </Link>
+              {allCategories.map((c) => (
+                <Link
+                  key={c}
+                  href={`/profile/${id}?category=${encodeURIComponent(c)}`}
+                  className={
+                    selectedCategory === c
+                      ? "px-3 py-1.5 rounded-full text-sm font-semibold bg-brand-dark text-white border border-brand-dark"
+                      : "px-3 py-1.5 rounded-full text-sm border border-brand-border text-brand-ink hover:border-brand-dark/40 hover:bg-brand-dark/5"
+                  }
+                >
+                  {c}
+                </Link>
+              ))}
+            </div>
+          )}
           <div className="flex items-center justify-between mb-4">
             <div>
               <Eyebrow>
@@ -269,10 +324,19 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                               : "Διαθέσιμη παραγωγή"}
               </h2>
             </div>
-            <Badge tone="muted">{listings.length} καταχωρήσεις</Badge>
+            <Badge tone="muted">{filteredListings.length} καταχωρήσεις</Badge>
           </div>
 
-          {listings.length === 0 ? (
+          {categoryNotFound ? (
+            <Card>
+              <p className="text-brand-muted inline-flex items-center gap-2">
+                <Icon name="info" /> Καμία καταχώρηση σε αυτή την κατηγορία.{" "}
+                <Link href={`/profile/${id}`} className="text-brand-mid hover:underline">
+                  Δες όλες
+                </Link>
+              </p>
+            </Card>
+          ) : listings.length === 0 ? (
             <Card>
               <div className="text-brand-muted flex items-center gap-2">
                 <Icon name="info" />
@@ -295,7 +359,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             </Card>
           ) : (
             <div className="space-y-3">
-              {listings.map((l: any) =>
+              {filteredListings.map((l: any) =>
                 type === "price" ? (
                   <Card key={l.id}>
                     <div className="flex items-center justify-between mb-3">
@@ -381,6 +445,20 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             </div>
           )}
         </div>
+
+        {type === "price" && (
+          <RelatedListings
+            sameOwnerFirstFor={null}
+            excludeOwnerId={id}
+            category={selectedCategory}
+            heading={
+              selectedCategory
+                ? `Παρόμοια σε ${selectedCategory} από άλλα καταστήματα`
+                : "Παρόμοια από άλλα καταστήματα"
+            }
+            eyebrow="Προτεινόμενα"
+          />
+        )}
       </div>
       <Footer />
     </>
