@@ -448,12 +448,61 @@ function PriceEditor({
             {gallery.map((g, i) => {
               const trimmed = (g.url ?? "").trim();
               const looksLikeUrl = /^https?:\/\//i.test(trimmed);
+              const move = (from: number, to: number) =>
+                setGallery((prev) => {
+                  if (to < 0 || to >= prev.length || from === to) return prev;
+                  const next = prev.slice();
+                  const [row] = next.splice(from, 1);
+                  next.splice(to, 0, row);
+                  return next;
+                });
               return (
                 <div
                   key={i}
-                  className="grid grid-cols-[72px_1fr_40px] sm:grid-cols-[72px_1fr_1fr_40px] gap-2 items-center"
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", String(i));
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const from = Number(e.dataTransfer.getData("text/plain"));
+                    if (Number.isFinite(from)) move(from, i);
+                  }}
+                  className="grid grid-cols-[24px_72px_1fr_40px] sm:grid-cols-[24px_72px_1fr_1fr_40px] gap-2 items-center rounded-md hover:bg-brand-bg/50"
                 >
-                  <div className="w-[72px] h-[72px] rounded-md overflow-hidden bg-brand-bg border border-brand-border flex items-center justify-center text-brand-muted">
+                  <div className="flex flex-col items-center gap-0.5 text-brand-muted">
+                    <button
+                      type="button"
+                      onClick={() => move(i, i - 1)}
+                      disabled={i === 0}
+                      aria-label="Μετακίνηση πάνω"
+                      className="text-xs leading-none px-1 py-0.5 rounded hover:bg-brand-border/60 disabled:opacity-30"
+                    >
+                      ▲
+                    </button>
+                    <span
+                      className="cursor-grab active:cursor-grabbing select-none"
+                      aria-label={`Σειρά ${i + 1}. Σύρε για αλλαγή σειράς.`}
+                      title="Σύρε για αλλαγή σειράς"
+                    >
+                      ⋮⋮
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => move(i, i + 1)}
+                      disabled={i === gallery.length - 1}
+                      aria-label="Μετακίνηση κάτω"
+                      className="text-xs leading-none px-1 py-0.5 rounded hover:bg-brand-border/60 disabled:opacity-30"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                  <div className="relative w-[72px] h-[72px] rounded-md overflow-hidden bg-brand-bg border border-brand-border flex items-center justify-center text-brand-muted">
                     {looksLikeUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -467,6 +516,11 @@ function PriceEditor({
                       />
                     ) : (
                       <Icon name="image" />
+                    )}
+                    {i === 0 && looksLikeUrl && (
+                      <span className="absolute bottom-0 inset-x-0 bg-brand-dark/80 text-white text-[10px] py-0.5 text-center font-semibold">
+                        Κύρια
+                      </span>
                     )}
                   </div>
                   <Input
@@ -497,6 +551,11 @@ function PriceEditor({
                 </div>
               );
             })}
+            {gallery.length > 1 && (
+              <p className="text-xs text-brand-muted">
+                Σύρε τις γραμμές ή χρησιμοποίησε τα βέλη για να αλλάξεις σειρά. Η πρώτη φωτογραφία γίνεται η κύρια εικόνα του προϊόντος.
+              </p>
+            )}
           </div>
         </div>
 
