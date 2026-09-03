@@ -49,6 +49,15 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
 
   const d = parsed.data;
   type ProducerRole = NonNullable<typeof d.producer_role>;
+  const PRODUCER_ROLE_SET = new Set<ProducerRole>([
+    "farmer",
+    "fisher",
+    "farmer_fisher",
+    "stockbreeder",
+    "beekeeper",
+    "farmer_stockbreeder",
+    "farmer_beekeeper",
+  ]);
   let nextProducerRole: ProducerRole | undefined;
   if (d.producer_role) {
     const { data: currentProfile } = await supabase
@@ -56,19 +65,18 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
       .select("role")
       .eq("id", user.id)
       .single();
-    // Allowed self-transitions: a producer may upgrade from a solo role
-    // to the matching combined role, but not downgrade or jump to an
-    // unrelated activity. Combined roles are terminal.
-    const allowedTransitions: Record<string, ProducerRole[]> = {
-      farmer: ["farmer", "farmer_fisher", "farmer_stockbreeder", "farmer_beekeeper"],
-      fisher: ["fisher", "farmer_fisher"],
-      stockbreeder: ["stockbreeder", "farmer_stockbreeder"],
-      beekeeper: ["beekeeper", "farmer_beekeeper"],
-      farmer_fisher: ["farmer_fisher"],
-      farmer_stockbreeder: ["farmer_stockbreeder"],
-      farmer_beekeeper: ["farmer_beekeeper"],
-    };
-    if (!currentProfile || !allowedTransitions[currentProfile.role]?.includes(d.producer_role)) {
+    // A producer may freely switch between any producer role — upgrade
+    // to a combined role, downgrade back to a solo one, or swap for a
+    // different combination. Old listings stay in the database (RLS
+    // still permits any producer role) but only surface in the
+    // dashboard listings screen matching the new role's categories.
+    // Cross-account jumps (e.g. producer ↔ merchant/factory/admin)
+    // are still blocked because the enum keeps them out of the schema.
+    if (
+      !currentProfile ||
+      !PRODUCER_ROLE_SET.has(currentProfile.role as ProducerRole) ||
+      !PRODUCER_ROLE_SET.has(d.producer_role)
+    ) {
       return { ok: false, error: "Η αλλαγή δραστηριότητας δεν επιτρέπεται" };
     }
     nextProducerRole = d.producer_role;

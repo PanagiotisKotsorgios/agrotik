@@ -181,32 +181,20 @@ export function ProfileEditor({ profile, regions }: { profile: Profile; regions:
             <div className="rounded-xl border border-sky-900/20 bg-sky-50 p-4">
               <Label htmlFor="producer_role">Δραστηριότητα λογαριασμού</Label>
               <Select id="producer_role" name="producer_role" defaultValue={profile.role}>
-                {/* Current role — always selectable, so the user can just save
-                    the form without changing anything. */}
-                {profile.role === "farmer" && <option value="farmer">Αγρότης</option>}
-                {profile.role === "fisher" && <option value="fisher">Αλιέας</option>}
-                {profile.role === "stockbreeder" && <option value="stockbreeder">Κτηνοτρόφος</option>}
-                {profile.role === "beekeeper" && <option value="beekeeper">Μελισσοκόμος</option>}
-                {profile.role === "farmer_fisher" && <option value="farmer_fisher">Αγρότης & Αλιέας</option>}
-                {profile.role === "farmer_stockbreeder" && (
+                <optgroup label="Μία δραστηριότητα">
+                  <option value="farmer">Αγρότης</option>
+                  <option value="fisher">Αλιέας</option>
+                  <option value="stockbreeder">Κτηνοτρόφος</option>
+                  <option value="beekeeper">Μελισσοκόμος</option>
+                </optgroup>
+                <optgroup label="Δύο δραστηριότητες">
+                  <option value="farmer_fisher">Αγρότης & Αλιέας</option>
                   <option value="farmer_stockbreeder">Αγρότης & Κτηνοτρόφος</option>
-                )}
-                {profile.role === "farmer_beekeeper" && (
                   <option value="farmer_beekeeper">Αγρότης & Μελισσοκόμος</option>
-                )}
-                {/* Upgrade paths — one solo role → one combined role. */}
-                {(profile.role === "farmer" || profile.role === "fisher") && (
-                  <option value="farmer_fisher">➕ Προσθήκη: Αγρότης & Αλιέας</option>
-                )}
-                {(profile.role === "farmer" || profile.role === "stockbreeder") && (
-                  <option value="farmer_stockbreeder">➕ Προσθήκη: Αγρότης & Κτηνοτρόφος</option>
-                )}
-                {(profile.role === "farmer" || profile.role === "beekeeper") && (
-                  <option value="farmer_beekeeper">➕ Προσθήκη: Αγρότης & Μελισσοκόμος</option>
-                )}
+                </optgroup>
               </Select>
               <p className="mt-2 text-xs leading-relaxed text-sky-950/75">
-                Μπορείς να προσθέσεις άλλη μια δραστηριότητα στον ίδιο λογαριασμό — με το ίδιο email και τηλέφωνο θα καταχωρίζεις και τα δύο είδη προϊόντων. Η επιλογή είναι μόνιμη.
+                Μπορείς να αλλάξεις ελεύθερα οποτεδήποτε — π.χ. από «Αγρότης &amp; Μελισσοκόμος» πίσω σε «Αγρότης» ή σε «Αγρότης &amp; Κτηνοτρόφος». Οι παλιές καταχωρήσεις σου δεν διαγράφονται· εμφανίζονται στην αναζήτηση όσο ταιριάζουν με τη νέα δραστηριότητα.
               </p>
             </div>
           )}
