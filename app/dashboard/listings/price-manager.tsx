@@ -445,34 +445,58 @@ function PriceEditor({
             Ανέβασε φωτογραφία (JPEG / PNG / WEBP, έως 5 MB) ή επικόλλησε δημόσιο URL. Μέχρι 12 φωτογραφίες ανά καταχώρηση.
           </p>
           <div className="space-y-2">
-            {gallery.map((g, i) => (
-              <div key={i} className="grid grid-cols-[1fr_1fr_40px] gap-2 items-center">
-                <Input
-                  type="url"
-                  placeholder="https://…/photo.jpg"
-                  value={g.url}
-                  onChange={(e) =>
-                    setGallery((prev) => prev.map((x, xi) => (xi === i ? { ...x, url: e.target.value } : x)))
-                  }
-                />
-                <Input
-                  type="text"
-                  placeholder="Λεζάντα (προαιρετικά)"
-                  maxLength={200}
-                  value={g.alt ?? ""}
-                  onChange={(e) =>
-                    setGallery((prev) => prev.map((x, xi) => (xi === i ? { ...x, alt: e.target.value } : x)))
-                  }
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setGallery((prev) => prev.filter((_, xi) => xi !== i))}
+            {gallery.map((g, i) => {
+              const trimmed = (g.url ?? "").trim();
+              const looksLikeUrl = /^https?:\/\//i.test(trimmed);
+              return (
+                <div
+                  key={i}
+                  className="grid grid-cols-[72px_1fr_40px] sm:grid-cols-[72px_1fr_1fr_40px] gap-2 items-center"
                 >
-                  <Icon name="trash" />
-                </Button>
-              </div>
-            ))}
+                  <div className="w-[72px] h-[72px] rounded-md overflow-hidden bg-brand-bg border border-brand-border flex items-center justify-center text-brand-muted">
+                    {looksLikeUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={trimmed}
+                        alt={g.alt ?? ""}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <Icon name="image" />
+                    )}
+                  </div>
+                  <Input
+                    type="url"
+                    placeholder="https://…/photo.jpg"
+                    value={g.url}
+                    onChange={(e) =>
+                      setGallery((prev) => prev.map((x, xi) => (xi === i ? { ...x, url: e.target.value } : x)))
+                    }
+                  />
+                  <Input
+                    type="text"
+                    placeholder="Λεζάντα (προαιρετικά)"
+                    maxLength={200}
+                    value={g.alt ?? ""}
+                    onChange={(e) =>
+                      setGallery((prev) => prev.map((x, xi) => (xi === i ? { ...x, alt: e.target.value } : x)))
+                    }
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setGallery((prev) => prev.filter((_, xi) => xi !== i))}
+                    aria-label="Διαγραφή φωτογραφίας"
+                  >
+                    <Icon name="trash" />
+                  </Button>
+                </div>
+              );
+            })}
           </div>
         </div>
 
