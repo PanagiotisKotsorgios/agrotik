@@ -122,6 +122,10 @@ const attributeLabels: Record<string, string> = {
   drying: "Ξήρανση",
   frames_count: "Πλαίσια",
   queen_year: "Έτος βασίλισσας",
+  // Rentals
+  period: "Χρέωση ανά",
+  deposit: "Εγγύηση",
+  delivery: "Παράδοση",
 };
 
 export function attributeLabel(key: string): string {

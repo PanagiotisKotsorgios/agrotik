@@ -147,10 +147,10 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
       .eq("is_active", true)
       .in(
         "kind",
-        // Suppliers use sell_retail; buyer roles (merchant/factory) use
-        // buy_from_producer for their price cards.
+        // Suppliers publish sell_retail + rent_supply; buyer roles
+        // (merchant/factory) use buy_from_producer for their price cards.
         filters.buyer_type?.every((r) => r === "agri_supplier")
-          ? ["sell_retail"]
+          ? ["sell_retail", "rent_supply"]
           : ["buy_from_producer"],
       )
       .eq("products.status", "active")

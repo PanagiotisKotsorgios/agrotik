@@ -33,7 +33,7 @@ const priceListingSchema = z.object({
   description: z.string().max(4000).optional(),
   gallery: z.array(galleryItemSchema).max(12).optional(),
   kind: z
-    .enum(["buy_from_producer", "buy_from_merchant", "sell_wholesale", "sell_retail"])
+    .enum(["buy_from_producer", "buy_from_merchant", "sell_wholesale", "sell_retail", "rent_supply"])
     .optional(),
   title: z.string().max(120).optional(),
   variants: z.array(variantSchema).min(1, "Απαιτείται τουλάχιστον μία τιμή"),
@@ -60,12 +60,19 @@ export async function savePriceListing(input: unknown): Promise<ActionResult & {
     };
   }
 
-  // Suppliers only publish sell_retail — refuse other kinds even if
-  // someone crafts the request.
+  // Suppliers may publish either a retail sale (sell_retail) or a
+  // rental (rent_supply). Refuse any other kind for them.
   const defaultKind = me.role === "agri_supplier" ? "sell_retail" : "buy_from_producer";
   const requestedKind = parsed.data.kind ?? defaultKind;
-  if (me.role === "agri_supplier" && requestedKind !== "sell_retail") {
-    return { ok: false, error: "Οι πάροχοι αγροεφοδίων επιτρέπεται να καταχωρούν μόνο retail." };
+  if (
+    me.role === "agri_supplier" &&
+    requestedKind !== "sell_retail" &&
+    requestedKind !== "rent_supply"
+  ) {
+    return {
+      ok: false,
+      error: "Οι πάροχοι αγροεφοδίων επιτρέπεται να καταχωρούν μόνο πωλήσεις ή ενοικιάσεις.",
+    };
   }
 
   const payload = {

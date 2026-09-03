@@ -91,7 +91,8 @@ export type PriceListKind =
   | "buy_from_producer"
   | "buy_from_merchant"
   | "sell_wholesale"
-  | "sell_retail";
+  | "sell_retail"
+  | "rent_supply";
 
 export interface PriceListing {
   id: string;
@@ -114,6 +115,7 @@ export const PRICE_LIST_KIND_LABEL: Record<PriceListKind, string> = {
   buy_from_merchant: "Αγοράζω από έμπορο",
   sell_wholesale: "Πουλάω χονδρικής",
   sell_retail: "Πουλάω λιανικής",
+  rent_supply: "Ενοικίαση εργαλείου / μηχανήματος",
 };
 
 export const PRICE_LIST_KIND_HELP: Record<PriceListKind, string> = {
@@ -121,6 +123,7 @@ export const PRICE_LIST_KIND_HELP: Record<PriceListKind, string> = {
   buy_from_merchant: "Τιμές αγοράς για εμπόρους/μεσίτες. Εμφανίζεται σε εμπόρους.",
   sell_wholesale: "Τιμές χονδρικής πώλησης προς άλλους αγοραστές.",
   sell_retail: "Τιμές λιανικής — ορατές δημόσια σε όλους.",
+  rent_supply: "Ενοικιαζόμενα εργαλεία και μηχανήματα (π.χ. τιναχτίρι ελιάς). Δώσε τιμή ανά ημέρα, εργασία, μήνα ή έτος στο πεδίο «Χρέωση ανά».",
 };
 
 export interface ProductionListing {

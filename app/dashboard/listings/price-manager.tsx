@@ -46,9 +46,9 @@ function slugify(input: string): string {
 const KIND_OPTIONS_BY_ROLE: Record<"merchant" | "factory" | "agri_supplier", PriceListKind[]> = {
   merchant: ["buy_from_producer", "sell_wholesale", "sell_retail"],
   factory: ["buy_from_producer", "buy_from_merchant", "sell_wholesale", "sell_retail"],
-  // Suppliers only sell their catalogue to producers. They never buy
-  // produce back from a farm, so only the retail kind fits.
-  agri_supplier: ["sell_retail"],
+  // Suppliers sell products retail OR rent out equipment
+  // (τιναχτήρια, ψεκαστικά, μηχανήματα …). Never buy from farms.
+  agri_supplier: ["sell_retail", "rent_supply"],
 };
 
 const KIND_TONE: Record<PriceListKind, "brand" | "olive" | "warn" | "muted"> = {
@@ -56,6 +56,7 @@ const KIND_TONE: Record<PriceListKind, "brand" | "olive" | "warn" | "muted"> = {
   buy_from_merchant: "olive",
   sell_wholesale: "warn",
   sell_retail: "muted",
+  rent_supply: "warn",
 };
 
 export function PriceListingsManager({
@@ -281,7 +282,11 @@ function PriceEditor({
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <Label>Τιμές ανά κατηγορία ({product?.unit})</Label>
+            <Label>
+              {kind === "rent_supply"
+                ? "Τιμές ενοικίασης"
+                : `Τιμές ανά κατηγορία (${product?.unit})`}
+            </Label>
             <button
               type="button"
               onClick={() =>
@@ -342,7 +347,30 @@ function PriceEditor({
                       />
                     ),
                   )}
-                  {attrEntries.length === 0 && (
+                  {kind === "rent_supply" && (
+                    <Select
+                      value={String(v.attributes["period"] ?? "")}
+                      onChange={(e) =>
+                        setVariants((prev) =>
+                          prev.map((x, xi) =>
+                            xi === i
+                              ? { ...x, attributes: { ...x.attributes, period: e.target.value } }
+                              : x,
+                          ),
+                        )
+                      }
+                    >
+                      <option value="">Χρέωση ανά…</option>
+                      <option value="ημέρα">ημέρα</option>
+                      <option value="εβδομάδα">εβδομάδα</option>
+                      <option value="μήνα">μήνα</option>
+                      <option value="έτος">έτος</option>
+                      <option value="εργασία">εργασία</option>
+                      <option value="στρέμμα">στρέμμα</option>
+                      <option value="ώρα">ώρα</option>
+                    </Select>
+                  )}
+                  {attrEntries.length === 0 && kind !== "rent_supply" && (
                     <div className="text-sm text-brand-text/50 flex items-center px-3">
                       (καμία κατηγορία)
                     </div>

@@ -16,6 +16,7 @@ import { Footer } from "@/components/site/footer";
 import { LiveSearchInput } from "@/components/site/live-search-input";
 import { LiveFilterForm } from "@/components/site/live-filter-form";
 import { SearchPagination } from "@/components/site/search-pagination";
+import { FiltersDrawer } from "@/components/site/filters-drawer";
 
 const PAGE_SIZE = 12;
 const SUPPLIER_CATEGORY = "Αγροεφόδια & υπηρεσίες";
@@ -95,6 +96,7 @@ export default async function SuppliersSearchPage({
 
         <LiveSearchInput placeholder="Αναζήτηση καταστήματος ή γεωπονικού γραφείου…" />
 
+        <FiltersDrawer activeCount={countActive(params)}>
         <LiveFilterForm
           key={JSON.stringify(params)}
           resultsId="search-results"
@@ -140,6 +142,7 @@ export default async function SuppliersSearchPage({
             <Button type="submit" size="sm" icon="search">Εφαρμογή</Button>
           </div>
         </LiveFilterForm>
+        </FiltersDrawer>
 
         <div
           id="search-results"
@@ -233,4 +236,15 @@ function parsePage(raw: string | string[] | undefined): number {
   const value = Array.isArray(raw) ? raw[0] : raw;
   const page = Number(value ?? 1);
   return Number.isFinite(page) && page > 0 ? page : 1;
+}
+
+function countActive(params: Record<string, string | string[] | undefined>): number {
+  let n = 0;
+  for (const [k, v] of Object.entries(params)) {
+    if (!v) continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    if (k === "sort" || k === "page") continue;
+    n++;
+  }
+  return n;
 }

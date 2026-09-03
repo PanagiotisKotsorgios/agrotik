@@ -101,6 +101,9 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                 {listing.products.category}
                 {" · "}
                 {PRICE_LIST_KIND_LABEL[listing.kind]}
+                {listing.kind === "rent_supply" && (
+                  <Badge tone="warn" className="ml-2 align-middle">Προς ενοικίαση</Badge>
+                )}
               </Eyebrow>
               <h1 className="display text-3xl sm:text-4xl text-brand-dark mt-2 leading-tight">
                 {listing.title || listing.products.name_el}
@@ -114,22 +117,36 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             </div>
 
             <Card>
-              <CardTitle>Τιμές {`(${listing.products.unit})`}</CardTitle>
+              <CardTitle>
+                {listing.kind === "rent_supply"
+                  ? "Τιμές ενοικίασης"
+                  : `Τιμές (${listing.products.unit})`}
+              </CardTitle>
               <div className="mt-3 divide-y divide-brand-border">
                 {listing.variants.map((v, i) => {
-                  const attrs = Object.entries(v.attributes ?? {})
-                    .map(([k, val]) => `${attributeLabel(k)}: ${val}`)
-                    .join(" · ");
+                  const period = v.attributes?.period as string | undefined;
+                  const restEntries = Object.entries(v.attributes ?? {})
+                    .filter(([k]) => k !== "period")
+                    .map(([k, val]) => `${attributeLabel(k)}: ${val}`);
+                  const desc = restEntries.length > 0 ? restEntries.join(" · ") : "Βασική τιμή";
                   return (
                     <div key={i} className="flex items-center justify-between gap-3 py-2.5">
-                      <span className="text-sm text-brand-ink/85">{attrs || "Βασική τιμή"}</span>
-                      <span className="figures font-semibold text-brand-earth">
+                      <span className="text-sm text-brand-ink/85">{desc}</span>
+                      <span className="figures font-semibold text-brand-earth whitespace-nowrap">
                         {priceFormat(Number(v.price), listing.products.unit)}
+                        {listing.kind === "rent_supply" && period && (
+                          <span className="text-sm font-normal text-brand-muted"> / {period}</span>
+                        )}
                       </span>
                     </div>
                   );
                 })}
               </div>
+              {listing.kind === "rent_supply" && (
+                <p className="mt-3 text-xs text-brand-muted">
+                  Οι παραπάνω τιμές αφορούν ενοικίαση. Επικοινώνησε με το κατάστημα για διαθεσιμότητα, εγγύηση και όρους παράδοσης.
+                </p>
+              )}
             </Card>
 
             {listing.description && (
