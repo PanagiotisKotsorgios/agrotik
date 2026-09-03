@@ -40,7 +40,10 @@ export default async function SuppliersSearchPage({
       region_code: g("region_code"),
       municipality: g("municipality"),
       product_id: g("product_id"),
-      product_category: SUPPLIER_CATEGORY,
+      // No default category filter — showing all agri_supplier profiles
+      // (including those without any listing yet), matching /search/
+      // buyers and /search/producers behaviour. If the user picks a
+      // product, that's applied via product_id above.
       name: g("name"),
       sort: (g("sort") as "price_asc" | "price_desc" | "updated") ?? "updated",
     }),

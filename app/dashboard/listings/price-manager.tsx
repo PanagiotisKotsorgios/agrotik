@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { savePriceListing, deletePriceListing } from "@/lib/actions/listings";
 import { createSupplierProduct } from "@/lib/actions/products";
+import { PhotoUploadButton } from "@/components/site/photo-upload-button";
 import type { Product, Region, PriceVariant, AttributesSchema, PriceListKind, GalleryItem } from "@/lib/db/types";
 import { PRICE_LIST_KIND_LABEL, PRICE_LIST_KIND_HELP } from "@/lib/db/types";
 import { attributeLabel, priceFormat } from "@/lib/utils";
@@ -418,20 +419,30 @@ function PriceEditor({
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <Label className="mb-0">Φωτογραφίες (URLs) — προαιρετικό</Label>
-            {gallery.length < 12 && (
-              <button
-                type="button"
-                onClick={() => setGallery((prev) => [...prev, { url: "", alt: "" }])}
-                className="text-sm text-brand-mid hover:underline"
-              >
-                + Προσθήκη φωτογραφίας
-              </button>
-            )}
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <Label className="mb-0">Φωτογραφίες — προαιρετικό</Label>
+            <div className="flex flex-wrap items-center gap-2">
+              {gallery.length < 12 && (
+                <PhotoUploadButton
+                  disabled={gallery.length >= 12}
+                  onUploaded={({ url }) =>
+                    setGallery((prev) => (prev.length >= 12 ? prev : [...prev, { url, alt: "" }]))
+                  }
+                />
+              )}
+              {gallery.length < 12 && (
+                <button
+                  type="button"
+                  onClick={() => setGallery((prev) => [...prev, { url: "", alt: "" }])}
+                  className="text-sm text-brand-mid hover:underline"
+                >
+                  + Επικόλληση URL
+                </button>
+              )}
+            </div>
           </div>
           <p className="mb-2 text-xs text-brand-muted">
-            Επικόλλησε δημόσια URLs εικόνων (https://…). Μέχρι 12 φωτογραφίες ανά καταχώρηση.
+            Ανέβασε φωτογραφία (JPEG / PNG / WEBP, έως 5 MB) ή επικόλλησε δημόσιο URL. Μέχρι 12 φωτογραφίες ανά καταχώρηση.
           </p>
           <div className="space-y-2">
             {gallery.map((g, i) => (
