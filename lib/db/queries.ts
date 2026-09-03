@@ -1,5 +1,8 @@
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { bestVariant } from "@/lib/domain/variants";
 import type {
+  PriceListing,
+  ProductionListing,
   Product,
   Profile,
   Region,
@@ -160,10 +163,10 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
     });
     if (candidates.length === 0) continue;
     const best = candidates.reduce((a: any, b: any) =>
-      Number(a.price) >= Number(b.price) ? a : b,
+      Number(a.price) <= Number(b.price) ? a : b,
     );
     const existing = bestByOwner.get(row.owner_id);
-    if (!existing || existing.best_price < Number(best.price)) {
+    if (!existing || existing.best_price > Number(best.price)) {
       bestByOwner.set(row.owner_id, {
         product: row.products,
         best_price: Number(best.price),
@@ -207,17 +210,11 @@ export async function searchBuyers(filters: BuyerFilters): Promise<BuyerCard[]> 
       cards.sort((a, b) => b.updated_at.localeCompare(a.updated_at));
       break;
     case "price_asc":
-      cards.sort((a, b) => {
-        if (a.has_listing !== b.has_listing) return a.has_listing ? -1 : 1;
-        return (a.best_price ?? Infinity) - (b.best_price ?? Infinity);
-      });
-      break;
-    case "price_desc":
     default:
       cards.sort((a, b) => {
-        // A buyer's purchase price is an offer to the producer, so higher is better.
+        // Prioritize profiles WITH listings when sorting by price ascending
         if (a.has_listing !== b.has_listing) return a.has_listing ? -1 : 1;
-        return (b.best_price ?? -Infinity) - (a.best_price ?? -Infinity);
+        return (a.best_price ?? Infinity) - (b.best_price ?? Infinity);
       });
   }
   return cards;
@@ -282,10 +279,11 @@ export async function searchProducers(filters: ProducerFilters): Promise<Produce
     if (filters.producer_type === "farmer") lstQ = lstQ.neq("products.category", "Αλιευτικά είδη");
     if (filters.quantity_min) lstQ = lstQ.gte("quantity", filters.quantity_min);
     if (filters.quantity_max) lstQ = lstQ.lte("quantity", filters.quantity_max);
-    const availabilityDate = filters.date ?? new Date().toISOString().slice(0, 10);
-    lstQ = lstQ
-      .or(`available_from.is.null,available_from.lte.${availabilityDate}`)
-      .or(`available_until.is.null,available_until.gte.${availabilityDate}`);
+    if (filters.date) {
+      lstQ = lstQ
+        .or(`available_from.is.null,available_from.lte.${filters.date}`)
+        .or(`available_until.is.null,available_until.gte.${filters.date}`);
+    }
     const { data: lst } = await lstQ;
     listings = ((lst ?? []) as any[]).filter((row) =>
       attributesMatch(row.attributes ?? {}, filters.attributes, filters.number_attrs),
@@ -369,65 +367,28 @@ export async function getProductCategories(): Promise<string[]> {
   return [...set].sort();
 }
 
-const PUBLIC_PROFILE_COLUMNS = [
-  "id",
-  "role",
-  "display_name",
-  "region_code",
-  "municipality",
-  "avatar_url",
-  "cover_url",
-  "gallery",
-  "bio",
-  "website",
-  "year_founded",
-  "employees_range",
-  "certifications",
-  "specialties",
-  "opening_hours",
-  "is_public",
-  "is_active",
-  "is_verified",
-  "deleted_at",
-  "created_at",
-  "updated_at",
-  "regions(name_el)",
-].join(",");
-
-export async function getProfileById(id: string, includeContact = false) {
+export async function getProfileById(id: string) {
   const supabase = await createSupabaseServer();
-  const selection = includeContact ? "*, regions(name_el)" : PUBLIC_PROFILE_COLUMNS;
-  const { data } = await supabase.from("profiles").select(selection).eq("id", id).single();
+  const { data } = await supabase.from("profiles").select("*, regions(name_el)").eq("id", id).single();
   return data;
 }
 
-export async function getProfileListings(
-  profileId: string,
-  role: string,
-  viewerRole?: string | null,
-  isOwner = false,
-) {
+export async function getProfileListings(profileId: string, role: string) {
   const supabase = await createSupabaseServer();
   if (role === "merchant" || role === "factory") {
-    const audienceKinds = isOwner || viewerRole === "admin" || viewerRole === "merchant" || viewerRole === "factory"
-      ? ["buy_from_producer", "buy_from_merchant", "sell_wholesale", "sell_retail"]
-      : ["buy_from_producer", "sell_retail"];
     const { data } = await supabase
       .from("price_listings")
       .select("*, products(name_el, unit, attributes_schema), regions(name_el)")
       .eq("owner_id", profileId)
       .eq("is_active", true)
-      .in("kind", audienceKinds)
       .order("updated_at", { ascending: false });
     return { type: "price" as const, listings: (data as any[]) ?? [] };
   }
-  const today = new Date().toISOString().slice(0, 10);
   const { data } = await supabase
     .from("production_listings")
     .select("*, products(name_el, unit), regions(name_el)")
     .eq("owner_id", profileId)
     .eq("is_active", true)
-    .or(`available_until.is.null,available_until.gte.${today}`)
     .order("updated_at", { ascending: false });
   return { type: "production" as const, listings: (data as any[]) ?? [] };
 }

@@ -7,16 +7,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function safeHttpUrl(value: unknown): string | null {
-  if (typeof value !== "string" || value.length > 2048) return null;
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.href : null;
-  } catch {
-    return null;
-  }
-}
-
 export function formatRelative(iso: string): string {
   try {
     return formatDistanceToNow(new Date(iso), { addSuffix: true, locale: el });
@@ -71,31 +61,7 @@ export function attributeLabel(key: string): string {
 }
 
 export function priceFormat(n: number, unit: string): string {
-  return `${formatCurrency(n)}/${unit}`;
-}
-
-const currencyFormatter = new Intl.NumberFormat("el-GR", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-const dateFormatter = new Intl.DateTimeFormat("el-GR", {
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
-
-export function formatCurrency(value: number | string): string {
-  const number = Number(value);
-  return Number.isFinite(number) ? currencyFormatter.format(number) : String(value);
-}
-
-export function formatDate(value: string | null | undefined): string {
-  if (!value) return "";
-  const date = new Date(`${value.slice(0, 10)}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? value : dateFormatter.format(date);
+  return `${n.toFixed(2)} €/${unit}`;
 }
 
 const quantityNumberFormatter = new Intl.NumberFormat("el-GR", {

@@ -20,9 +20,6 @@ export function NotificationBell({
   const [count, setCount] = useState(initialCount);
   const [msgs, setMsgs] = useState(initialMessages);
 
-  useEffect(() => setCount(initialCount), [initialCount]);
-  useEffect(() => setMsgs(initialMessages), [initialMessages]);
-
   useEffect(() => {
     const supabase = createSupabaseBrowser();
     const c1 = supabase
@@ -32,15 +29,6 @@ export function NotificationBell({
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
         () => setCount((c) => c + 1),
       )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
-        (payload) => {
-          if ((payload.new as { read_at?: string | null }).read_at) {
-            setCount((current) => Math.max(0, current - 1));
-          }
-        },
-      )
       .subscribe();
     const c2 = supabase
       .channel(`msg:${userId}`)
@@ -48,15 +36,6 @@ export function NotificationBell({
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${userId}` },
         () => setMsgs((m) => m + 1),
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "messages", filter: `recipient_id=eq.${userId}` },
-        (payload) => {
-          if ((payload.new as { read_at?: string | null }).read_at) {
-            setMsgs((current) => Math.max(0, current - 1));
-          }
-        },
       )
       .subscribe();
     return () => {

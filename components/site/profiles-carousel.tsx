@@ -163,7 +163,7 @@ export function ProfilesCarousel({ profiles }: { profiles: CarouselProfile[] }) 
             Ποιοι μπήκαν πρόσφατα
           </h2>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="hidden sm:flex items-center gap-2">
           <button
             type="button"
             onClick={() => scrollBy(-320)}

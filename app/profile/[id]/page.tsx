@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 
-import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -10,102 +9,34 @@ import { Card, Badge, Eyebrow, CardTitle } from "@/components/ui/card";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { getProfileById, getProfileListings } from "@/lib/db/queries";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { attributeLabel, formatDate, formatQuantityNumber, formatRelative, hasFisherRole, pluralizeQuantityUnit, priceFormat, roleBadgeTone, roleLabel, safeHttpUrl } from "@/lib/utils";
+import { attributeLabel, formatQuantityNumber, formatRelative, hasFisherRole, pluralizeQuantityUnit, priceFormat, roleBadgeTone, roleLabel } from "@/lib/utils";
 import { FavoriteButton } from "./favorite-button";
-import { PRICE_LIST_KIND_LABEL, type PriceListKind } from "@/lib/db/types";
-import { DealButton } from "./deal-button";
-import { Gallery } from "@/components/site/gallery-lightbox";
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}): Promise<Metadata> {
-  const { id } = await params;
-  const profile: any = await getProfileById(id, false).catch(() => null);
-  if (!profile || !profile.is_active) {
-    return { title: "Προφίλ", robots: { index: false, follow: false } };
-  }
-  const name: string = profile.display_name || "Προφίλ";
-  const role = roleLabel(profile.role);
-  const region = profile.region_code ? ` — ${profile.region_code}` : "";
-  const description =
-    profile.bio?.slice(0, 155) ||
-    `${role}${region}. Δείτε τιμές, παραγωγή και στοιχεία επικοινωνίας στο AGROTIK.`;
-  const image = profile.avatar_url || profile.cover_url || "/hero.jpg";
-  return {
-    title: `${name} · ${role}`,
-    description,
-    alternates: { canonical: `/profile/${id}` },
-    openGraph: {
-      type: "profile",
-      title: name,
-      description,
-      url: `/profile/${id}`,
-      images: [{ url: image, alt: name }],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: name,
-      description,
-      images: [image],
-    },
-  };
-}
 
 export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createSupabaseServer();
+  const profile: any = await getProfileById(id);
+  if (!profile || !profile.is_active) return notFound();
+
+  const [{ type, listings }, supabase] = await Promise.all([
+    getProfileListings(id, profile.role),
+    createSupabaseServer(),
+  ]);
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   let isFavorited = false;
-  let hasRecordedDeal = false;
   let viewerRole: string | null = null;
   if (user) {
-    const [fav, me, deal] = await Promise.all([
+    const [fav, me] = await Promise.all([
       supabase.from("favorites").select("user_id").eq("user_id", user.id).eq("target_id", id).maybeSingle(),
       supabase.from("profiles").select("role").eq("id", user.id).single(),
-      supabase
-        .from("deal_marks")
-        .select("id")
-        .eq("farmer_id", user.id)
-        .eq("target_id", id)
-        .limit(1)
-        .maybeSingle(),
     ]);
     isFavorited = !!fav.data;
-    hasRecordedDeal = !!deal.data;
     viewerRole = me.data?.role ?? null;
   }
-  const profile: any = await getProfileById(id, Boolean(user));
-  if (!profile || !profile.is_active) return notFound();
-
-  const { type, listings } = await getProfileListings(
-    id,
-    profile.role,
-    viewerRole,
-    user?.id === id,
-  );
   const canMessage = !!user && user.id !== id;
-  const canRecordDeal =
-    !!user &&
-    user.id !== id &&
-    (viewerRole === "farmer" || viewerRole === "fisher" || viewerRole === "farmer_fisher") &&
-    (profile.role === "merchant" || profile.role === "factory");
   const gallery: { url: string; alt?: string }[] = Array.isArray(profile.gallery) ? profile.gallery : [];
-  const websiteUrl = safeHttpUrl(profile.website);
-  const dealProducts = Array.from(
-    new Map(
-      listings
-        .filter((listing: any) => listing.kind === "buy_from_producer")
-        .map((listing: any) => [
-          listing.product_id,
-          { id: listing.product_id as string, name: listing.products?.name_el as string },
-        ]),
-    ).values(),
-  );
 
   return (
     <>
@@ -135,14 +66,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             <div className="flex items-start gap-4 min-w-0">
               <Avatar url={profile.avatar_url} name={profile.display_name} />
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone={roleBadgeTone(profile.role)}>{roleLabel(profile.role)}</Badge>
-                  {profile.is_verified && (
-                    <Badge tone="ok" aria-label="Επαληθευμένο προφίλ">
-                      <Icon name="ok" /> Επαληθευμένο
-                    </Badge>
-                  )}
-                </div>
+                <Badge tone={roleBadgeTone(profile.role)}>{roleLabel(profile.role)}</Badge>
                 <h1 className="display text-3xl sm:text-4xl text-brand-dark leading-tight mt-1">
                   {profile.display_name}
                 </h1>
@@ -172,28 +96,27 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                 {profile.bio && (
                   <p className="mt-4 text-brand-ink/90 leading-relaxed max-w-prose">{profile.bio}</p>
                 )}
-                {websiteUrl && (
+                {profile.website && (
                   <a
-                    href={websiteUrl}
+                    href={profile.website}
                     target="_blank"
                     rel="noreferrer"
                     className="mt-3 inline-flex items-center gap-1.5 text-brand-mid hover:text-brand-dark text-sm font-semibold"
                   >
-                    <Icon name="globe" /> {websiteUrl.replace(/^https?:\/\//, "")}
+                    <Icon name="globe" /> {profile.website.replace(/^https?:\/\//, "")}
                   </a>
                 )}
               </div>
             </div>
 
             <div className="flex flex-col items-stretch sm:items-end gap-2 shrink-0">
-              {user && profile.phone && (
-                <a
-                  href={`tel:${profile.phone}`}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-brand-dark text-white text-[15px] font-semibold hover:bg-brand-mid"
-                >
-                  <Icon name="phone" /> {profile.phone}
-                </a>
-              )}
+              {/* Free-to-all contact button — no login gate */}
+              <a
+                href={`tel:${profile.phone}`}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-brand-dark text-white text-[15px] font-semibold hover:bg-brand-mid"
+              >
+                <Icon name="phone" /> {profile.phone}
+              </a>
 
               {canMessage && (
                 <Link
@@ -208,14 +131,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                 <FavoriteButton targetId={profile.id} initialFavorited={isFavorited} />
               )}
 
-              {canRecordDeal && (
-                <DealButton
-                  targetId={profile.id}
-                  products={dealProducts}
-                  initialRecorded={hasRecordedDeal}
-                />
-              )}
-
               {user && user.id !== id && (
                 <Link
                   href={`/dashboard/report?target=profile&id=${id}`}
@@ -227,22 +142,20 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {/* Public business details plus authenticated-only contact fields. */}
+          {/* Full contact info — always visible */}
           <div className="mt-6 pt-4 border-t border-brand-border grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-            {user && profile.phone && (
-              <InfoRow icon="phone" label="Τηλέφωνο">
-                <a className="hover:underline" href={`tel:${profile.phone}`}>{profile.phone}</a>
-              </InfoRow>
-            )}
-            {user && profile.vat_number && <InfoRow icon="tag" label="ΑΦΜ">{profile.vat_number}</InfoRow>}
-            {user && profile.address_line && <InfoRow icon="mapLocation" label="Διεύθυνση">{profile.address_line}</InfoRow>}
+            <InfoRow icon="phone" label="Τηλέφωνο">
+              <a className="hover:underline" href={`tel:${profile.phone}`}>{profile.phone}</a>
+            </InfoRow>
+            {profile.vat_number && <InfoRow icon="tag" label="ΑΦΜ">{profile.vat_number}</InfoRow>}
+            {profile.address_line && <InfoRow icon="mapLocation" label="Διεύθυνση">{profile.address_line}</InfoRow>}
             {profile.opening_hours && <InfoRow icon="calendar" label="Ώρες">{profile.opening_hours}</InfoRow>}
             {profile.certifications && <InfoRow icon="shield" label="Πιστοποιήσεις">{profile.certifications}</InfoRow>}
             {profile.specialties && <InfoRow icon="wheat" label="Ειδικότητες">{profile.specialties}</InfoRow>}
-            {websiteUrl && (
+            {profile.website && (
               <InfoRow icon="globe" label="Ιστότοπος">
-                <a href={websiteUrl} target="_blank" rel="noreferrer" className="hover:underline text-brand-mid">
-                  {websiteUrl.replace(/^https?:\/\//, "")}
+                <a href={profile.website} target="_blank" rel="noreferrer" className="hover:underline text-brand-mid">
+                  {profile.website.replace(/^https?:\/\//, "")}
                 </a>
               </InfoRow>
             )}
@@ -279,7 +192,13 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             <div className="flex items-baseline justify-between mb-3">
               <Eyebrow>Φωτογραφίες</Eyebrow>
             </div>
-            <Gallery images={gallery} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {gallery.map((g, i) => (
+                <div key={i} className="relative aspect-square rounded-md overflow-hidden bg-brand-bg border border-brand-border">
+                  <Image src={g.url} alt={g.alt ?? ""} fill className="object-cover hover:scale-105 transition-transform duration-500" unoptimized sizes="(max-width: 640px) 50vw, 25vw" />
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -289,7 +208,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             <div>
               <Eyebrow>
                 {type === "price"
-                  ? "Τιμοκατάλογοι"
+                  ? "Τιμοκατάλογος"
                   : profile.role === "farmer_fisher"
                     ? "Παραγωγή & αλιεύματα"
                     : profile.role === "fisher"
@@ -298,7 +217,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
               </Eyebrow>
               <h2 className="display text-2xl text-brand-dark mt-1 field-underline">
                 {type === "price"
-                  ? "Διαθέσιμοι τιμοκατάλογοι"
+                  ? "Τιμές που αγοράζει"
                   : profile.role === "farmer_fisher"
                     ? "Διαθέσιμη παραγωγή & αλιεύματα"
                     : profile.role === "fisher"
@@ -329,15 +248,9 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                   <Card key={l.id}>
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <CardTitle>{l.title || l.products.name_el}</CardTitle>
-                          <Badge tone="muted">
-                            {PRICE_LIST_KIND_LABEL[(l.kind ?? "buy_from_producer") as PriceListKind]}
-                          </Badge>
-                        </div>
-                        {l.title && <div className="text-sm text-brand-muted mt-0.5">{l.products.name_el}</div>}
+                        <CardTitle>{l.products.name_el}</CardTitle>
                         <div className="text-xs text-brand-muted mt-0.5 flex items-center gap-1.5">
-                          <Icon name="location" /> Περιοχή · {l.regions?.name_el ?? l.region_code}
+                          <Icon name="location" /> Παραλαβή · {l.regions?.name_el ?? l.region_code}
                         </div>
                       </div>
                       <span className="eyebrow text-brand-muted">
@@ -364,13 +277,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                       <p className="mt-3 text-sm text-brand-muted italic border-l-2 border-brand-earth/40 pl-3">
                         {l.notes}
                       </p>
-                    )}
-                    {user && user.id !== id && (
-                      <div className="mt-3 text-right">
-                        <Link href={`/dashboard/report?target=price_listing&id=${l.id}`} className="text-xs text-brand-muted hover:text-brand-dark inline-flex items-center gap-1">
-                          <Icon name="flag" /> Αναφορά καταχώρησης
-                        </Link>
-                      </div>
                     )}
                   </Card>
                 ) : (
@@ -399,18 +305,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                         {(l.available_from || l.available_until) && (
                           <div className="text-xs text-brand-muted mt-2 inline-flex items-center gap-1.5">
                             <Icon name="calendar" />
-                            {l.available_from ? formatDate(l.available_from) : "τώρα"} → {l.available_until ? formatDate(l.available_until) : "ανοιχτό"}
+                            {l.available_from ?? "τώρα"} → {l.available_until ?? "ανοιχτό"}
                           </div>
                         )}
                         {l.notes && (
                           <p className="mt-3 text-sm text-brand-muted italic border-l-2 border-brand-earth/40 pl-3">{l.notes}</p>
-                        )}
-                        {user && user.id !== id && (
-                          <div className="mt-3">
-                            <Link href={`/dashboard/report?target=production_listing&id=${l.id}`} className="text-xs text-brand-muted hover:text-brand-dark inline-flex items-center gap-1">
-                              <Icon name="flag" /> Αναφορά καταχώρησης
-                            </Link>
-                          </div>
                         )}
                       </div>
                       <span className="eyebrow text-brand-muted shrink-0">

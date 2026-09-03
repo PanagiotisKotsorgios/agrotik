@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { Card, Eyebrow, Badge } from "@/components/ui/card";
@@ -227,12 +226,9 @@ function PersonCard({
 function AvatarBadge({ url, name }: { url: string | null; name: string }) {
   if (url) {
     return (
-      <Image
+      <img
         src={url}
         alt={name}
-        width={56}
-        height={56}
-        unoptimized
         className="w-14 h-14 rounded-full object-cover shrink-0 border-2 border-white shadow-sm bg-brand-bg"
       />
     );

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { Eyebrow } from "@/components/ui/card";
+import { Card, Eyebrow } from "@/components/ui/card";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { hasFisherRole, isProducerRole, roleLabel } from "@/lib/utils";
 

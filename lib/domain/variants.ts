@@ -50,7 +50,7 @@ export function formatVariant(v: PriceVariant, unit: string): string {
 }
 
 /**
- * Return the highest offered purchase-price variant (best for the producer), optionally
+ * Return the cheapest (best-for-farmer) variant of a listing, optionally
  * filtered by attribute match.
  */
 export function bestVariant(
@@ -63,5 +63,5 @@ export function bestVariant(
       )
     : variants;
   if (matching.length === 0) return null;
-  return matching.reduce((a, b) => (a.price >= b.price ? a : b));
+  return matching.reduce((a, b) => (a.price <= b.price ? a : b));
 }

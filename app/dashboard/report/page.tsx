@@ -15,10 +15,9 @@ export default async function ReportPage({
   if (!user) redirect("/login");
 
   const p = await searchParams;
-  const allowedTargets = ["profile", "price_listing", "production_listing", "message"] as const;
-  const target = allowedTargets.includes(p.target as (typeof allowedTargets)[number]) ? p.target : "profile";
+  const target = (p.target as any) || "profile";
   const id = p.id;
-  if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) redirect("/dashboard");
+  if (!id) redirect("/dashboard");
 
   return (
     <>

@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
-import { healthResponse } from "@/lib/health";
 
-export async function GET() {
-  return healthResponse();
+export function GET() {
+  return Response.json(
+    { status: "ok" },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

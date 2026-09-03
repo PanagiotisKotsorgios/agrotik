@@ -6,26 +6,13 @@ import { createSupabaseService } from "@/lib/supabase/service";
 import { sendBrevoEmail, renderEmailShell } from "@/lib/brevo";
 import { getAppOrigin } from "@/lib/app-origin";
 import type { ActionResult } from "./auth";
-import { consumeRateLimit } from "@/lib/rate-limit";
 
 const sendSchema = z.object({
   recipient_id: z.string().uuid(),
   body: z.string().trim().min(1).max(4000),
 });
 
-export interface SentMessage {
-  id: string;
-  sender_id: string;
-  recipient_id: string;
-  body: string;
-  created_at: string;
-}
-
-type SendMessageResult =
-  | { ok: true; message: SentMessage }
-  | { ok: false; error: string };
-
-export async function sendMessage(input: unknown): Promise<SendMessageResult> {
+export async function sendMessage(input: unknown): Promise<ActionResult> {
   const parsed = sendSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Μη έγκυρα δεδομένα" };
 
@@ -36,28 +23,12 @@ export async function sendMessage(input: unknown): Promise<SendMessageResult> {
   if (!user) return { ok: false, error: "Απαιτείται σύνδεση" };
   if (user.id === parsed.data.recipient_id) return { ok: false, error: "Δεν μπορείς να στείλεις στον εαυτό σου" };
 
-  if (!(await consumeRateLimit("messages", user.id, 20, 60))) {
-    return { ok: false, error: "Έστειλες πολλά μηνύματα σε λίγο χρόνο. Περίμενε ένα λεπτό." };
-  }
-
-  const { data: participants } = await supabase
-    .from("profiles")
-    .select("id, is_active, deleted_at")
-    .in("id", [user.id, parsed.data.recipient_id]);
-  const activeIds = new Set((participants ?? []).filter((profile) => profile.is_active && !profile.deleted_at).map((profile) => profile.id));
-  if (!activeIds.has(user.id)) return { ok: false, error: "Ο λογαριασμός σου δεν είναι ενεργός" };
-  if (!activeIds.has(parsed.data.recipient_id)) return { ok: false, error: "Ο παραλήπτης δεν είναι διαθέσιμος" };
-
-  const { data: inserted, error } = await supabase
-    .from("messages")
-    .insert({
-      sender_id: user.id,
-      recipient_id: parsed.data.recipient_id,
-      body: parsed.data.body,
-    })
-    .select("id, sender_id, recipient_id, body, created_at")
-    .single();
-  if (error || !inserted) return { ok: false, error: error?.message ?? "Το μήνυμα δεν αποθηκεύτηκε" };
+  const { error } = await supabase.from("messages").insert({
+    sender_id: user.id,
+    recipient_id: parsed.data.recipient_id,
+    body: parsed.data.body,
+  });
+  if (error) return { ok: false, error: error.message };
 
   // Fire off email (best-effort) via service role — look up recipient email
   const svc = createSupabaseService();
@@ -83,7 +54,7 @@ export async function sendMessage(input: unknown): Promise<SendMessageResult> {
 
   revalidatePath(`/dashboard/messages/${parsed.data.recipient_id}`);
   revalidatePath("/dashboard/messages");
-  return { ok: true, message: inserted as SentMessage };
+  return { ok: true };
 }
 
 export async function markThreadRead(withUserId: string): Promise<ActionResult> {

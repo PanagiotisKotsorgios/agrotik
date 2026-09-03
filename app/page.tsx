@@ -26,7 +26,6 @@ async function safeFetchLandingData() {
            regions(name_el)`,
         )
         .eq("is_active", true)
-        .eq("kind", "buy_from_producer")
         .eq("profiles.is_active", true)
         .eq("profiles.is_public", true)
         .order("updated_at", { ascending: false })

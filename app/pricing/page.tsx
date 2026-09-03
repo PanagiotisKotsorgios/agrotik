@@ -4,13 +4,7 @@ import { Footer } from "@/components/site/footer";
 import { Card, Eyebrow } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 
-export const dynamic = "force-static";
-export const revalidate = 3600;
-
-export const metadata = {
-  title: "Κόστος",
-  alternates: { canonical: "/pricing" },
-};
+export const metadata = { title: "Κόστος" };
 
 export default function PricingPage() {
   return (

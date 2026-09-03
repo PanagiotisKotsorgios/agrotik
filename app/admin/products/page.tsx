@@ -2,7 +2,6 @@ import { createSupabaseService } from "@/lib/supabase/service";
 import { Card, Badge, Eyebrow } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { ProductActions } from "./product-actions";
-import { AddProductButton, EditProductButton, DeactivateButton } from "./product-editor";
 import Link from "next/link";
 import { attributeLabel } from "@/lib/utils";
 
@@ -17,7 +16,7 @@ export default async function AdminProducts({
 
   const { data: products } = await svc
     .from("products")
-    .select("*, proposer:profiles!products_proposed_by_fkey(display_name)")
+    .select("*")
     .eq("status", status)
     .order("name_el");
 
@@ -29,12 +28,9 @@ export default async function AdminProducts({
 
   return (
     <>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <Eyebrow>Κατάλογος</Eyebrow>
-          <h1 className="display text-3xl text-brand-dark mt-1 field-underline">Προϊόντα</h1>
-        </div>
-        <AddProductButton />
+      <div className="mb-6">
+        <Eyebrow>Κατάλογος</Eyebrow>
+        <h1 className="display text-3xl text-brand-dark mt-1 field-underline">Προϊόντα</h1>
       </div>
 
       <div className="flex gap-2 mb-4 text-sm">
@@ -71,19 +67,8 @@ export default async function AdminProducts({
                     Χαρακτηριστικά: {Object.keys(p.attributes_schema).map(attributeLabel).join(", ")}
                   </div>
                 )}
-                {p.proposer?.display_name && (
-                  <div className="text-xs text-brand-muted mt-1">Πρόταση από: {p.proposer.display_name}</div>
-                )}
               </div>
-              <div className="flex flex-wrap items-start gap-2">
-                {status === "pending" && <ProductActions id={p.id} />}
-                {status !== "pending" && (
-                  <>
-                    <EditProductButton product={p as any} />
-                    <DeactivateButton id={p.id} status={p.status} />
-                  </>
-                )}
-              </div>
+              {status === "pending" && <ProductActions id={p.id} />}
             </div>
           </Card>
         ))}

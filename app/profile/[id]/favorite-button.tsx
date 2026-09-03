@@ -13,22 +13,16 @@ export function FavoriteButton({
 }) {
   const [favorited, setFavorited] = useState(initialFavorited);
   const [pending, start] = useTransition();
-  const [error, setError] = useState<string | null>(null);
 
   return (
-    <div>
     <button
       type="button"
       onClick={() =>
         start(async () => {
-          setError(null);
           const prev = favorited;
           setFavorited(!prev);
           const res = await toggleFavorite(targetId);
-          if (!res.ok) {
-            setFavorited(prev);
-            setError(res.error);
-          }
+          if (!res.ok) setFavorited(prev);
         })
       }
       disabled={pending}
@@ -43,7 +37,5 @@ export function FavoriteButton({
       <Icon name="heart" />
       {favorited ? "Στα αγαπημένα" : "Παρακολούθηση"}
     </button>
-    {error && <p className="mt-1 text-xs text-red-700" role="alert">{error}</p>}
-    </div>
   );
 }

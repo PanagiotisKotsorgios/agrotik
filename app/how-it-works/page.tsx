@@ -4,13 +4,7 @@ import { Footer } from "@/components/site/footer";
 import { Card, Eyebrow, CardTitle } from "@/components/ui/card";
 import { Icon, type IconName } from "@/components/ui/icon";
 
-export const dynamic = "force-static";
-export const revalidate = 3600;
-
-export const metadata = {
-  title: "Πώς λειτουργεί",
-  alternates: { canonical: "/how-it-works" },
-};
+export const metadata = { title: "Πώς λειτουργεί" };
 
 export default function HowItWorksPage() {
   return (

@@ -5,7 +5,6 @@ import { createSupabaseBrowser } from "@/lib/supabase/browser";
 import { Icon } from "@/components/ui/icon";
 import { Badge } from "@/components/ui/card";
 import { roleBadgeTone, roleLabel } from "@/lib/utils";
-import Image from "next/image";
 
 interface Hit {
   id: string;
@@ -39,8 +38,6 @@ export function GlobalLiveSearch() {
   const [hits, setHits] = useState<Hit[]>([]);
   const [suggestions, setSuggestions] = useState<Hit[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const requestRef = useRef(0);
 
   const supabaseRef = useRef<ReturnType<typeof createSupabaseBrowser> | null>(null);
   if (!supabaseRef.current) supabaseRef.current = createSupabaseBrowser();
@@ -48,7 +45,7 @@ export function GlobalLiveSearch() {
   // Suggested random profiles once on mount
   useEffect(() => {
     (async () => {
-      const { data, error: suggestionError } = await supabaseRef.current!
+      const { data } = await supabaseRef.current!
         .from("profiles")
         .select("id, display_name, role, region_code, municipality, bio, avatar_url, regions(name_el)")
         .eq("is_active", true)
@@ -57,10 +54,6 @@ export function GlobalLiveSearch() {
         .in("role", ["farmer", "fisher", "farmer_fisher", "merchant", "factory"])
         .is("deleted_at", null)
         .limit(24);
-      if (suggestionError) {
-        setError("Δεν μπορέσαμε να φορτώσουμε τις προτάσεις.");
-        return;
-      }
       const arr = ((data as any as Hit[]) ?? [])
         .slice()
         .sort(() => Math.random() - 0.5)
@@ -75,12 +68,9 @@ export function GlobalLiveSearch() {
     if (!isFiltered) {
       setHits([]);
       setLoading(false);
-      setError(null);
       return;
     }
-    const requestId = ++requestRef.current;
     setLoading(true);
-    setError(null);
     const t = setTimeout(async () => {
       let query = supabaseRef
         .current!.from("profiles")
@@ -100,7 +90,7 @@ export function GlobalLiveSearch() {
             : query.eq("role", activeFilter.role);
       }
 
-      const term = q.trim().replace(/[,().%\\]/g, " ").replace(/\s+/g, " ").slice(0, 80);
+      const term = q.trim();
       if (term.length >= 2) {
         const like = `%${term}%`;
         query = query.or(
@@ -108,21 +98,11 @@ export function GlobalLiveSearch() {
         );
       }
 
-      const { data, error: searchError } = await query.limit(18);
-      if (requestId !== requestRef.current) return;
-      if (searchError) {
-        setHits([]);
-        setError("Η αναζήτηση απέτυχε. Δοκίμασε ξανά.");
-        setLoading(false);
-        return;
-      }
+      const { data } = await query.limit(18);
       setHits((data as any as Hit[]) ?? []);
       setLoading(false);
     }, 250);
-    return () => {
-      clearTimeout(t);
-      if (requestRef.current === requestId) requestRef.current += 1;
-    };
+    return () => clearTimeout(t);
   }, [q, roleFilter, isFiltered]);
 
   const showing = isFiltered ? hits : suggestions;
@@ -139,7 +119,7 @@ export function GlobalLiveSearch() {
         <input
           type="search"
           value={q}
-          onChange={(e) => setQ(e.target.value.slice(0, 120))}
+          onChange={(e) => setQ(e.target.value)}
           placeholder="Ψάξε με όνομα, επωνυμία ή περιοχή…"
           className="w-full pl-12 pr-11 py-4 rounded-full border-2 border-brand-dark/30 bg-white text-[17px] text-brand-ink placeholder:text-brand-muted/70 focus:outline-none focus:border-brand-mid focus:ring-4 focus:ring-brand-mid/20 shadow-card"
         />
@@ -187,10 +167,6 @@ export function GlobalLiveSearch() {
           <div className="text-center text-brand-muted text-sm inline-flex items-center gap-2 py-8 justify-center w-full">
             <Icon name="spinner" className="animate-spin" /> Ψάχνουμε…
           </div>
-        ) : error ? (
-          <div className="text-center text-red-700 py-8 border border-red-200 rounded-2xl bg-red-50" role="alert">
-            {error}
-          </div>
         ) : showing.length === 0 ? (
           <div className="text-center text-brand-muted py-8 border border-dashed border-brand-border rounded-2xl bg-white">
             Κανένα αποτέλεσμα{q.trim() ? ` για «${q.trim()}»` : ""}. Δοκίμασε άλλο φίλτρο.
@@ -206,12 +182,10 @@ export function GlobalLiveSearch() {
                   <div className="flex items-start gap-3 min-w-0">
                     <div className="w-11 h-11 rounded-full bg-brand-dark text-white flex items-center justify-center font-semibold display shrink-0 overflow-hidden">
                       {h.avatar_url ? (
-                        <Image
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
                           src={h.avatar_url}
                           alt={h.display_name}
-                          width={44}
-                          height={44}
-                          unoptimized
                           className="w-full h-full object-cover"
                         />
                       ) : (

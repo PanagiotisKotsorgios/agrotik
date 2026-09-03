@@ -3,7 +3,6 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { updateReport } from "@/lib/actions/reports";
-import { useRouter } from "next/navigation";
 
 export function ReportRowActions({
   id,
@@ -15,14 +14,6 @@ export function ReportRowActions({
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const [pending, start] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-  const run = (patch: Parameters<typeof updateReport>[1]) => start(async () => {
-    setError(null);
-    const result = await updateReport(id, patch);
-    if (!result.ok) return setError(result.error);
-    router.refresh();
-  });
 
   return (
     <div className="flex flex-col gap-2 shrink-0">
@@ -31,7 +22,7 @@ export function ReportRowActions({
           size="sm"
           variant="secondary"
           disabled={pending}
-          onClick={() => run({ status: "reviewing" })}
+          onClick={() => start(() => updateReport(id, { status: "reviewing" }).then(() => location.reload()))}
         >
           Σε εξέταση
         </Button>
@@ -51,7 +42,7 @@ export function ReportRowActions({
               size="sm"
               variant="primary"
               disabled={pending}
-              onClick={() => run({ status: "resolved", admin_note: note })}
+              onClick={() => start(() => updateReport(id, { status: "resolved", admin_note: note }).then(() => location.reload()))}
             >
               Επιλύθηκε
             </Button>
@@ -59,14 +50,13 @@ export function ReportRowActions({
               size="sm"
               variant="danger"
               disabled={pending}
-              onClick={() => run({ status: "dismissed", admin_note: note })}
+              onClick={() => start(() => updateReport(id, { status: "dismissed", admin_note: note }).then(() => location.reload()))}
             >
               Απόρριψη
             </Button>
           </div>
         </div>
       )}
-      {error && <p className="max-w-64 text-xs text-red-700" role="alert">{error}</p>}
     </div>
   );
 }

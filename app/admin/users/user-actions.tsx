@@ -10,7 +10,6 @@ import {
   setUserActive,
   setUserPublic,
   setUserRole,
-  setUserVerified,
 } from "@/lib/actions/admin";
 import { sendMessage } from "@/lib/actions/messages";
 import type { ActionResult } from "@/lib/actions/auth";
@@ -22,7 +21,6 @@ export function UserActions({
   displayName,
   isActive,
   isPublic,
-  isVerified = false,
   role,
   isSelf,
 }: {
@@ -30,7 +28,6 @@ export function UserActions({
   displayName: string;
   isActive: boolean;
   isPublic: boolean;
-  isVerified?: boolean;
   role: string;
   isSelf: boolean;
 }) {
@@ -116,21 +113,6 @@ export function UserActions({
               onClick={() => run(() => setUserActive(userId, !isActive), isActive ? "Ο λογαριασμός ανεστάλη." : "Ο λογαριασμός ενεργοποιήθηκε.")}
             >
               {isActive ? "Αναστολή" : "Ενεργοποίηση"}
-            </Button>
-            <Button
-              type="button"
-              variant={isVerified ? "outline" : "secondary"}
-              size="sm"
-              icon={isVerified ? "xmark" : "ok"}
-              disabled={pending}
-              onClick={() =>
-                run(
-                  () => setUserVerified(userId, !isVerified),
-                  isVerified ? "Αφαιρέθηκε η επαλήθευση." : "Το προφίλ επαληθεύτηκε.",
-                )
-              }
-            >
-              {isVerified ? "Αφαίρεση επαλήθευσης" : "Επαλήθευση"}
             </Button>
             <Button type="button" variant="danger" size="sm" icon="trash" disabled={pending} onClick={permanentlyDelete}>
               Οριστική διαγραφή

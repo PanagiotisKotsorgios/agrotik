@@ -1,8 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { Header } from "@/components/site/header";
 import { Card, Badge, Eyebrow } from "@/components/ui/card";
 import { Select, Label, Input } from "@/components/ui/input";
@@ -10,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { searchProducers, getRegions, getActiveProducts } from "@/lib/db/queries";
 import { parseProducerFilters } from "@/lib/domain/search-params";
-import { attributeLabel, formatDate, formatQuantityNumber, formatRelative, hasFisherRole, pluralizeQuantityUnit, roleBadgeTone, roleLabel } from "@/lib/utils";
+import { attributeLabel, formatQuantityNumber, formatRelative, hasFisherRole, pluralizeQuantityUnit, roleBadgeTone, roleLabel } from "@/lib/utils";
 import { FilterChips } from "@/components/site/filter-chips";
 import { AttributeFilters } from "@/components/site/attribute-filters";
 import { FiltersDrawer } from "@/components/site/filters-drawer";
@@ -18,16 +16,8 @@ import { Footer } from "@/components/site/footer";
 import { LiveSearchInput } from "@/components/site/live-search-input";
 import { LiveFilterForm } from "@/components/site/live-filter-form";
 import { SearchPagination } from "@/components/site/search-pagination";
-import { SaveSearchButton } from "@/components/site/save-search-button";
 
 const PAGE_SIZE = 12;
-
-export const metadata: Metadata = {
-  title: "Παραγωγοί",
-  description:
-    "Βρείτε αγρότες και αλιείς σε όλη την Ελλάδα. Φιλτράρετε ανά προϊόν, περιοχή και ποιότητα.",
-  alternates: { canonical: "/search/producers" },
-};
 
 export default async function ProducersSearchPage({
   searchParams,
@@ -157,6 +147,11 @@ export default async function ProducersSearchPage({
             </div>
 
             <div>
+              <Label>Όνομα παραγωγού / αλιέα</Label>
+              <Input name="name" placeholder="Αναζήτηση…" defaultValue={filters.name ?? ""} />
+            </div>
+
+            <div>
               <Label>Ταξινόμηση</Label>
               <Select name="sort" defaultValue={filters.sort ?? "updated"}>
                 <option value="updated">Πιο πρόσφατα</option>
@@ -178,15 +173,12 @@ export default async function ProducersSearchPage({
         </LiveFilterForm>
         </FiltersDrawer>
 
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <FilterChips
-            basePath="/search/producers"
-            params={params}
-            regionLabels={regionMap}
-            productLabels={productMap}
-          />
-          <SaveSearchButton scope="producers" />
-        </div>
+        <FilterChips
+          basePath="/search/producers"
+          params={params}
+          regionLabels={regionMap}
+          productLabels={productMap}
+        />
 
         <div
           id="search-results"
@@ -232,12 +224,9 @@ export default async function ProducersSearchPage({
                     }`}
                   >
                     {r.profile.avatar_url ? (
-                      <Image
+                      <img
                         src={r.profile.avatar_url}
                         alt={`Φωτογραφία προφίλ ${r.profile.display_name}`}
-                        width={64}
-                        height={64}
-                        unoptimized
                         loading="lazy"
                         className="w-full h-full object-cover"
                       />
@@ -276,7 +265,7 @@ export default async function ProducersSearchPage({
                           <div className="text-sm text-brand-muted mt-2 flex min-w-0 flex-wrap items-center gap-1.5">
                             <Icon name="calendar" className="shrink-0" />
                             <span className="min-w-0 break-words">
-                              {r.available_from ? formatDate(r.available_from) : "τώρα"} → {r.available_until ? formatDate(r.available_until) : "ανοιχτό"}
+                              {r.available_from ?? "τώρα"} → {r.available_until ?? "ανοιχτό"}
                             </span>
                           </div>
                         )}

@@ -96,16 +96,6 @@ input[type="checkbox"], input[type="radio"] {
 /* Better readable defaults for form labels */
 label { font-weight: 600; }
 
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto !important; }
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
 /* Article typography for legal/info pages */
 .prose-agrotik { max-width: 65ch; color: #141412; line-height: 1.7; }
 .prose-agrotik h2 { font-family: var(--font-fraunces), serif; color: #1B4D2E; font-size: 1.6rem; margin-top: 2.2rem; margin-bottom: 0.6rem; letter-spacing: -0.01em; }

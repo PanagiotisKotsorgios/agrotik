@@ -3,7 +3,6 @@ import { getRegions } from "@/lib/db/queries";
 import { Eyebrow } from "@/components/ui/card";
 import { ProfileEditor } from "./profile-editor";
 import { ChangePasswordForm } from "./change-password-form";
-import { DeleteAccountForm } from "./delete-account-form";
 
 import { redirect } from "next/navigation";
 export default async function DashboardProfile() {
@@ -27,9 +26,6 @@ export default async function DashboardProfile() {
       <ProfileEditor profile={profile!} regions={regions} />
       <div className="mt-6">
         <ChangePasswordForm />
-      </div>
-      <div className="mt-6">
-        <DeleteAccountForm />
       </div>
     </>
   );

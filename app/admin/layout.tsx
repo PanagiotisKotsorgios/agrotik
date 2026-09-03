@@ -2,16 +2,21 @@ export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
 import { Header } from "@/components/site/header";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { LogoutButton } from "@/components/site/logout-button";
 import { DashboardMobileNav } from "@/components/site/dashboard-mobile-nav";
 import { SidebarNav } from "@/components/site/sidebar-nav";
 import { Icon, type IconName } from "@/components/ui/icon";
-import { getSession } from "@/lib/auth/session";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { userId, profile } = await getSession();
-  if (!userId) redirect("/login");
-  if (profile?.role !== "admin" || !profile.is_active) redirect("/dashboard");
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "admin") redirect("/dashboard");
 
   const items: { href: string; icon: IconName; label: string }[] = [
     { href: "/admin", icon: "chart", label: "Στατιστικά" },
@@ -19,7 +24,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin/messages", icon: "chat", label: "Μηνύματα" },
     { href: "/admin/products", icon: "box", label: "Προϊόντα" },
     { href: "/admin/reports", icon: "flag", label: "Αναφορές" },
-    { href: "/admin/audit-log", icon: "listCheck", label: "Ημερολόγιο ελέγχου" },
     { href: "/admin/settings", icon: "gear", label: "Ρυθμίσεις" },
     { href: "/admin/exports", icon: "download", label: "Εξαγωγές / Backup" },
   ];

@@ -8,15 +8,6 @@ import type { ActionResult } from "./auth";
 
 const userIdSchema = z.string().uuid();
 const roleSchema = z.enum(["farmer", "fisher", "farmer_fisher", "merchant", "factory", "admin"]);
-const slugSchema = z.string().trim().min(2).max(80).regex(/^[a-z0-9][a-z0-9_-]*$/, "Το slug πρέπει να είναι μικρά γράμματα/αριθμοί/παύλες");
-const productInputSchema = z.object({
-  slug: slugSchema,
-  name_el: z.string().trim().min(2).max(120),
-  category: z.string().trim().min(2).max(60),
-  unit: z.string().trim().min(1).max(20),
-  attributes_schema: z.record(z.string(), z.any()).optional(),
-  status: z.enum(["active", "pending", "rejected"]).default("active"),
-});
 const notificationSchema = z.object({
   userId: z.string().uuid(),
   title: z.string().trim().min(2, "Ο τίτλος είναι πολύ μικρός").max(120),
@@ -29,36 +20,9 @@ async function requireAdmin() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .eq("is_active", true)
-    .is("deleted_at", null)
-    .single();
+  const { data } = await supabase.from("profiles").select("role").eq("id", user.id).single();
   if (data?.role !== "admin") return null;
   return user;
-}
-
-async function writeAudit(
-  actorId: string,
-  action: string,
-  targetType: string | null,
-  targetId: string | null,
-  detail?: Record<string, unknown>,
-) {
-  try {
-    const svc = createSupabaseService();
-    await svc.from("admin_audit").insert({
-      actor_id: actorId,
-      action,
-      target_type: targetType,
-      target_id: targetId,
-      detail: detail ?? null,
-    });
-  } catch (error) {
-    console.error("[admin audit]", action, error);
-  }
 }
 
 export async function setUserActive(userId: string, active: boolean): Promise<ActionResult> {
@@ -71,28 +35,7 @@ export async function setUserActive(userId: string, active: boolean): Promise<Ac
   const svc = createSupabaseService();
   const { error } = await svc.from("profiles").update({ is_active: active }).eq("id", userId);
   if (error) return { ok: false, error: error.message };
-  await writeAudit(admin.id, active ? "user.reactivate" : "user.suspend", "profile", userId);
   revalidatePath("/admin/users");
-  return { ok: true };
-}
-
-export async function setUserVerified(userId: string, verified: boolean): Promise<ActionResult> {
-  const admin = await requireAdmin();
-  if (!admin) return { ok: false, error: "Δεν έχεις δικαίωμα" };
-  if (!userIdSchema.safeParse(userId).success) return { ok: false, error: "Μη έγκυρος χρήστης" };
-  const svc = createSupabaseService();
-  const { data, error } = await svc
-    .from("profiles")
-    .update({ is_verified: verified })
-    .eq("id", userId)
-    .is("deleted_at", null)
-    .select("id")
-    .maybeSingle();
-  if (error) return { ok: false, error: error.message };
-  if (!data) return { ok: false, error: "Ο χρήστης δεν βρέθηκε" };
-  await writeAudit(admin.id, verified ? "user.verify" : "user.unverify", "profile", userId);
-  revalidatePath("/admin/users");
-  revalidatePath(`/profile/${userId}`);
   return { ok: true };
 }
 
@@ -135,7 +78,6 @@ export async function setUserRole(userId: string, role: string): Promise<ActionR
   const svc = createSupabaseService();
   const { error } = await svc.from("profiles").update({ role: parsedRole.data }).eq("id", userId);
   if (error) return { ok: false, error: error.message };
-  await writeAudit(admin.id, "user.role_change", "profile", userId, { role: parsedRole.data });
   revalidatePath("/admin/users");
   return { ok: true };
 }
@@ -166,9 +108,6 @@ export async function sendAdminNotification(input: unknown): Promise<ActionResul
     },
   });
   if (error) return { ok: false, error: error.message };
-  await writeAudit(admin.id, "notice.send", "profile", parsed.data.userId, {
-    title: parsed.data.title,
-  });
 
   const { data: recipient } = await svc.auth.admin.getUserById(parsed.data.userId);
   if (recipient?.user?.email) {
@@ -205,119 +144,24 @@ export async function deleteUserPermanently(userId: string): Promise<ActionResul
   const { error } = await svc.auth.admin.deleteUser(userId, false);
   if (error) return { ok: false, error: error.message };
 
-  await writeAudit(admin.id, "user.delete", "profile", userId);
   revalidatePath("/admin/users");
   return { ok: true };
 }
 
 export async function approveProduct(id: string): Promise<ActionResult> {
-  const admin = await requireAdmin();
-  if (!admin) return { ok: false, error: "Δεν έχεις δικαίωμα" };
-  if (!userIdSchema.safeParse(id).success) return { ok: false, error: "Μη έγκυρο προϊόν" };
+  if (!(await requireAdmin())) return { ok: false, error: "Δεν έχεις δικαίωμα" };
   const svc = createSupabaseService();
-  const { data, error } = await svc.from("products").update({ status: "active" }).eq("id", id).eq("status", "pending").select("id").maybeSingle();
+  const { error } = await svc.from("products").update({ status: "active" }).eq("id", id);
   if (error) return { ok: false, error: error.message };
-  if (!data) return { ok: false, error: "Η πρόταση δεν βρέθηκε ή έχει ήδη εξεταστεί" };
-  await writeAudit(admin.id, "product.approve", "product", id);
   revalidatePath("/admin/products");
   return { ok: true };
 }
 
 export async function rejectProduct(id: string): Promise<ActionResult> {
-  const admin = await requireAdmin();
-  if (!admin) return { ok: false, error: "Δεν έχεις δικαίωμα" };
-  if (!userIdSchema.safeParse(id).success) return { ok: false, error: "Μη έγκυρο προϊόν" };
+  if (!(await requireAdmin())) return { ok: false, error: "Δεν έχεις δικαίωμα" };
   const svc = createSupabaseService();
-  const { data, error } = await svc.from("products").update({ status: "rejected" }).eq("id", id).eq("status", "pending").select("id").maybeSingle();
+  const { error } = await svc.from("products").update({ status: "rejected" }).eq("id", id);
   if (error) return { ok: false, error: error.message };
-  if (!data) return { ok: false, error: "Η πρόταση δεν βρέθηκε ή έχει ήδη εξεταστεί" };
-  await writeAudit(admin.id, "product.reject", "product", id);
-  revalidatePath("/admin/products");
-  return { ok: true };
-}
-
-function parseAttributesSchema(raw: FormDataEntryValue | null): Record<string, unknown> | undefined {
-  if (!raw) return {};
-  const text = String(raw).trim();
-  if (!text) return {};
-  try {
-    const value = JSON.parse(text);
-    if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
-  } catch {
-    // fall through — validation error surfaced below
-  }
-  return undefined;
-}
-
-export async function createProduct(formData: FormData): Promise<ActionResult> {
-  const admin = await requireAdmin();
-  if (!admin) return { ok: false, error: "Δεν έχεις δικαίωμα" };
-  const attrs = parseAttributesSchema(formData.get("attributes_schema"));
-  if (attrs === undefined) return { ok: false, error: "Το attributes_schema δεν είναι έγκυρο JSON" };
-  const parsed = productInputSchema.safeParse({
-    slug: formData.get("slug") ?? "",
-    name_el: formData.get("name_el") ?? "",
-    category: formData.get("category") ?? "",
-    unit: formData.get("unit") ?? "",
-    attributes_schema: attrs,
-    status: formData.get("status") ?? "active",
-  });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Μη έγκυρα στοιχεία" };
-  const svc = createSupabaseService();
-  const { data, error } = await svc.from("products").insert({
-    slug: parsed.data.slug,
-    name_el: parsed.data.name_el,
-    category: parsed.data.category,
-    unit: parsed.data.unit,
-    attributes_schema: parsed.data.attributes_schema ?? {},
-    status: parsed.data.status,
-  }).select("id").single();
-  if (error) return { ok: false, error: error.message };
-  await writeAudit(admin.id, "product.create", "product", data.id, { slug: parsed.data.slug });
-  revalidatePath("/admin/products");
-  return { ok: true };
-}
-
-export async function updateProduct(id: string, formData: FormData): Promise<ActionResult> {
-  const admin = await requireAdmin();
-  if (!admin) return { ok: false, error: "Δεν έχεις δικαίωμα" };
-  if (!userIdSchema.safeParse(id).success) return { ok: false, error: "Μη έγκυρο προϊόν" };
-  const attrs = parseAttributesSchema(formData.get("attributes_schema"));
-  if (attrs === undefined) return { ok: false, error: "Το attributes_schema δεν είναι έγκυρο JSON" };
-  const parsed = productInputSchema.safeParse({
-    slug: formData.get("slug") ?? "",
-    name_el: formData.get("name_el") ?? "",
-    category: formData.get("category") ?? "",
-    unit: formData.get("unit") ?? "",
-    attributes_schema: attrs,
-    status: formData.get("status") ?? "active",
-  });
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Μη έγκυρα στοιχεία" };
-  const svc = createSupabaseService();
-  const { data, error } = await svc.from("products").update({
-    slug: parsed.data.slug,
-    name_el: parsed.data.name_el,
-    category: parsed.data.category,
-    unit: parsed.data.unit,
-    attributes_schema: parsed.data.attributes_schema ?? {},
-    status: parsed.data.status,
-  }).eq("id", id).select("id").maybeSingle();
-  if (error) return { ok: false, error: error.message };
-  if (!data) return { ok: false, error: "Το προϊόν δεν βρέθηκε" };
-  await writeAudit(admin.id, "product.update", "product", id);
-  revalidatePath("/admin/products");
-  return { ok: true };
-}
-
-export async function setProductStatus(id: string, status: "active" | "pending" | "rejected"): Promise<ActionResult> {
-  const admin = await requireAdmin();
-  if (!admin) return { ok: false, error: "Δεν έχεις δικαίωμα" };
-  if (!userIdSchema.safeParse(id).success) return { ok: false, error: "Μη έγκυρο προϊόν" };
-  const svc = createSupabaseService();
-  const { data, error } = await svc.from("products").update({ status }).eq("id", id).select("id").maybeSingle();
-  if (error) return { ok: false, error: error.message };
-  if (!data) return { ok: false, error: "Το προϊόν δεν βρέθηκε" };
-  await writeAudit(admin.id, `product.status.${status}`, "product", id);
   revalidatePath("/admin/products");
   return { ok: true };
 }

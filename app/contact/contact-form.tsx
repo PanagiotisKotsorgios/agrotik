@@ -23,10 +23,6 @@ export function ContactForm() {
       }
       id="contact-form"
     >
-      <div className="absolute -left-[10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
-        <Label htmlFor="company-fax">Company fax</Label>
-        <Input id="company-fax" name="company_fax" tabIndex={-1} autoComplete="off" />
-      </div>
       <div className="grid sm:grid-cols-2 gap-3">
         <div>
           <Label htmlFor="c-name">Όνομα</Label>

@@ -1,13 +1,12 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Select, Textarea, Label } from "@/components/ui/input";
+import { Textarea, Label } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { submitReport } from "@/lib/actions/reports";
 
 export function ReportForm({ targetType, targetId }: { targetType: string; targetId: string }) {
-  const [category, setCategory] = useState("misleading");
   const [reason, setReason] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
@@ -20,7 +19,7 @@ export function ReportForm({ targetType, targetId }: { targetType: string; targe
         e.preventDefault();
         start(async () => {
           setMsg(null);
-          const res = await submitReport({ target_type: targetType, target_id: targetId, category, reason });
+          const res = await submitReport({ target_type: targetType, target_id: targetId, reason });
           if (!res.ok) return setMsg({ ok: false, text: res.error });
           setMsg({ ok: true, text: "Ευχαριστούμε — η αναφορά υποβλήθηκε." });
           setReason("");
@@ -28,17 +27,6 @@ export function ReportForm({ targetType, targetId }: { targetType: string; targe
         });
       }}
     >
-      <div>
-        <Label htmlFor="report-category">Κατηγορία</Label>
-        <Select id="report-category" value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="misleading">Παραπλανητικό περιεχόμενο</option>
-          <option value="spam">Spam ή ανεπιθύμητη προώθηση</option>
-          <option value="abuse">Προσβλητική ή παρενοχλητική συμπεριφορά</option>
-          <option value="privacy">Προσωπικά δεδομένα</option>
-          <option value="unsafe">Επικίνδυνο ή παράνομο περιεχόμενο</option>
-          <option value="other">Άλλο</option>
-        </Select>
-      </div>
       <div>
         <Label htmlFor="reason">Περιέγραψε τι συμβαίνει</Label>
         <Textarea

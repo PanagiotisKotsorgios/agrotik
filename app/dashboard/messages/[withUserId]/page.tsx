@@ -1,9 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { Card, Badge } from "@/components/ui/card";
+import { Card, Eyebrow, Badge } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
-import { roleBadgeTone, roleLabel } from "@/lib/utils";
+import { formatRelative, roleBadgeTone, roleLabel } from "@/lib/utils";
+import { markThreadRead } from "@/lib/actions/messages";
 import { MessageComposer } from "./composer";
 import { LiveThread } from "./live-thread";
 import { createSupabaseService } from "@/lib/supabase/service";
@@ -37,6 +38,9 @@ export default async function ThreadPage({
     )
     .order("created_at", { ascending: true })
     .limit(500);
+
+  // Mark unread messages from peer as read (best-effort)
+  await markThreadRead(withUserId);
 
   return (
     <>
